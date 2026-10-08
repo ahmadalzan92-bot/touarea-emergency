@@ -812,6 +812,52 @@
       --fsec-bg:linear-gradient(160deg,#f9fafd 0%,#eceff7 100%);
       --fsec-head:linear-gradient(120deg,#2a5384,#0b2545);
     }
+    #incidentForm .fsec-5{
+      --fsec-accent:#8e24aa;
+      --fsec-bg:linear-gradient(160deg,#fdf9ff 0%,#f3eafa 100%);
+      --fsec-head:linear-gradient(120deg,#a048c8,#6a1b9a);
+    }
+    .att-box{display:flex;flex-wrap:wrap;gap:10px}
+    .att-item{
+      display:flex;align-items:center;gap:9px;width:260px;max-width:100%;
+      border:1px solid var(--line);border-radius:12px;background:#fff;
+      padding:8px 10px;box-shadow:0 8px 16px -14px rgba(13,36,64,.55);
+    }
+    .att-thumb{
+      width:46px;height:46px;border-radius:9px;flex:0 0 auto;overflow:hidden;
+      background:linear-gradient(135deg,#e6eefd,#cfe2f7);
+      display:flex;align-items:center;justify-content:center;font-size:1.05rem;color:#0f4c81;
+    }
+    .att-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .att-meta{flex:1;min-width:0}
+    .att-meta .att-name{font-size:.82rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:right}
+    .att-meta .att-size{font-size:.72rem;color:#64748b}
+    .att-del{border:none;background:transparent;color:#dc3545;padding:4px 6px;border-radius:8px}
+    .att-del:hover{background:#fdecea}
+    .att-empty{color:#64748b;font-size:.85rem}
+    .att-note{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .att-tiles{display:flex;flex-wrap:wrap;gap:6px}
+    .att-chip{
+      width:54px;height:54px;border:none;border-radius:9px;padding:0;overflow:hidden;
+      background:#eef3fb;display:flex;align-items:center;justify-content:center;cursor:pointer;
+      box-shadow:0 6px 12px -10px rgba(13,36,64,.5);
+    }
+    .att-chip img{width:100%;height:100%;object-fit:cover;display:block}
+    .att-chip-file{width:auto;min-width:54px;height:54px;padding:0 7px;gap:5px;flex-direction:column;font-size:.6rem;font-weight:700;color:#6a1b9a;background:#f6edfb}
+    .att-chip-file i{font-size:.85rem}
+    .attach-overlay{position:fixed;inset:0;z-index:4100;background:rgba(6,20,38,.82);display:flex;align-items:center;justify-content:center;padding:16px}
+    .attach-viewer{background:#fff;border-radius:16px;max-width:860px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.5)}
+    .attach-viewer-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);color:#0b2545;font-weight:700;background:linear-gradient(180deg,#f7fafd,#fff)}
+    .attach-viewer-head .att-v-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:right;font-size:.9rem}
+    .attach-viewer-head .btn{border-radius:9px}
+    .attach-viewer-body{padding:14px;overflow:auto;text-align:center;background:#0b2545}
+    .attach-viewer-body img{max-width:100%;max-height:68vh;border-radius:10px;display:inline-block}
+    .attach-viewer-body video{max-width:100%;max-height:68vh;border-radius:10px;background:#000}
+    .attach-viewer-body .pdf-block{background:#fff;border-radius:10px;padding:26px 16px;text-align:center}
+    .attach-viewer-body .pdf-block i{font-size:2.2rem;color:#dc3545;margin-bottom:8px}
+    .attach-viewer-foot{display:flex;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+    .attach-viewer-foot .spacer{flex:1}
+    .wp-inline-pdf{width:100%;height:62vh;border:0;border-radius:10px;background:#fff}
     #incidentForm .fsec-submit{
       margin-top:2px;padding:15px;border-radius:14px;
       background:linear-gradient(135deg,#f7faff,#edf3fb);
@@ -925,6 +971,13 @@
     .action-buttons .btn-info{background-image:linear-gradient(135deg,#22b3ef,#0369a1)}
 
     .print-only{display:none}
+
+    .print-att-grid{display:flex;flex-wrap:wrap;gap:12px}
+    .print-att{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;width:150px;text-align:center}
+    .print-att img{width:100%;height:110px;object-fit:cover;border-radius:6px;display:block}
+    .print-att-name{font-size:.72rem;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .print-att-file{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:110px;color:#0f4c81}
+    .print-att-ico{font-size:2rem}
 
     .list-group-item{background:#fff;border-color:var(--line);color:var(--ink);transition:background .18s var(--ease)}
     .list-group-item:hover{background:#f2f7fd}
@@ -1120,6 +1173,22 @@
             <button type="button" class="btn btn-secondary" onclick="closeAdmin()">إغلاق</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+  <div id="attachOverlay" class="attach-overlay" style="display:none" onclick="if(event.target===this)closeAttachViewer()">
+    <div class="attach-viewer">
+      <div class="attach-viewer-head">
+        <i class="fas fa-paperclip"></i><span class="att-v-title" id="attachTitle">مرفق</span>
+        <button type="button" class="btn btn-sm btn-light" onclick="closeAttachViewer()"><i class="fas fa-xmark"></i> إغلاق</button>
+      </div>
+      <div class="attach-viewer-body" id="attachBody"></div>
+      <div class="attach-viewer-foot">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="attachPrev"><i class="fas fa-chevron-right"></i> السابق</button>
+        <span class="small text-muted" id="attachCount"></span>
+        <div class="spacer"></div>
+        <a class="btn btn-sm btn-primary" id="attachDownload" href="#" download="ملف"><i class="fas fa-download"></i> تحميل</a>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="attachNext">التالي <i class="fas fa-chevron-left"></i></button>
       </div>
     </div>
   </div>
@@ -1493,6 +1562,17 @@
                   <i class="fas fa-plus"></i> إضافة الكادر إلى المهمة
                 </button>
               </div>
+              </div>
+
+              <div class="fsec fsec-5">
+                <div class="fsec-head"><span class="fsec-num">05</span><i class="fas fa-paperclip"></i><span>المرفقات</span><span class="fsec-sub">صور · فيديو · ملفات PDF</span></div>
+
+              <div class="mb-3">
+                <label class="form-label">إرفاق صور أو فيديو أو ملف PDF <span class="text-muted small">(اختياري)</span></label>
+                <input type="file" class="form-control" id="attachmentInput" accept="image/*,video/*,.pdf,.PDF,application/pdf" multiple>
+                <div class="form-text">يمكن اختيار أكثر من ملف. تُعرض المرفقات عند فتح البلاغ من الخريطة أو من سجل البلاغات. تُضغط الصور تلقائياً لتوفير المساحة (حد أقصى ~3MB لكل ملف، يُرفض الأكبر).</div>
+              </div>
+              <div id="attachmentPreview" class="att-box"></div>
               </div>
 
               <div class="fsec-submit d-grid gap-2">
@@ -1926,10 +2006,10 @@
       return (key==='opendirKey'||key==='opendirPasswords') ? key : (ACTIVE_DIR&&ACTIVE_DIR.key||'madaba')+'__'+key;
     }
     function getLS(key, fallback){ try{ return JSON.parse(localStorage.getItem(rawLSKey(key)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
-    function setLS(key, val){ const k=rawLSKey(key); localStorage.setItem(k, JSON.stringify(val)); cloudPush(k, val); }
+    function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); }
     function lsKeyFor(key, dirKey){ return (key==='opendirKey'||key==='opendirPasswords') ? key : dirKey+'__'+key; }
     function getLSFor(dirKey, key, fallback){ try{ return JSON.parse(localStorage.getItem(lsKeyFor(key,dirKey)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
-    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); localStorage.setItem(k, JSON.stringify(val)); cloudPush(k, val); }
+    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); }
 
     // ======================== المزامنة السحابية (Cloudflare Worker API) ========================
     const CLOUD_API_BASE = 'https://touarea-api.ahmadalzan92.workers.dev';
@@ -3117,8 +3197,117 @@
       renderSelectedStaff();
     }
 
+    // ======================== المرفقات (صور/فيديو/PDF) ========================
+    const ATTACH_MAX_BYTES = 3*1024*1024; // 3MB لكل ملف — يُرفض الأكبر (لتوفير مساحة التخزين المحلي)
+    let pendingAttachments = [];
+    function attachmentKind(a){
+      const t=(a.type||'');
+      if(/^image\//i.test(t)) return 'image';
+      if(/^video\//i.test(t)) return 'video';
+      if(/pdf/i.test(t)||/\.pdf$/i.test(a.name||'')) return 'pdf';
+      return 'file';
+    }
+    function attachmentIcon(k){
+      if(k==='image') return 'fas fa-image';
+      if(k==='video') return 'fas fa-video';
+      if(k==='pdf') return 'fas fa-file-pdf';
+      return 'fas fa-file';
+    }
+    function readFileAsDataURL(file){
+      return new Promise((resolve,reject)=>{
+        const rd=new FileReader();
+        rd.onload=()=>resolve(rd.result);
+        rd.onerror=()=>reject(rd.error||new Error('read failed'));
+        rd.readAsDataURL(file);
+      });
+    }
+    function fileSizeText(bytes){
+      if(bytes>=1048576) return (bytes/1048576).toFixed(1)+' MB';
+      return Math.max(1,Math.round(bytes/1024))+' KB';
+    }
+    function attachRenderSize(arr){
+      return arr.reduce((s,a)=>s+(a.size||0),0);
+    }
+    function renderAttachmentPreview(){
+      const box=document.getElementById('attachmentPreview');
+      if(!box) return;
+      if(!pendingAttachments.length){
+        box.innerHTML='<span class="att-empty"><i class="fas fa-paperclip"></i> لا توجد مرفقات مضافة بعد.</span>';
+        return;
+      }
+      box.innerHTML=pendingAttachments.map((a,i)=>{
+        const k=attachmentKind(a), preview=(k==='image')?`<img src="${a.data}" alt="">`:`<i class="${attachmentIcon(k)}"></i>`;
+        return `<div class="att-item">
+          <div class="att-thumb">${preview}</div>
+          <div class="att-meta"><div class="att-name" title="${esc(a.name||'')}">${esc(a.name||'ملف')}</div><div class="att-size">${fileSizeText(a.size||0)}</div></div>
+          <button type="button" class="att-del" title="إزالة" onclick="removeAttachment(${i})"><i class="fas fa-times"></i></button>
+        </div>`;
+      }).join('');
+    }
+function compressImageFile(file){
+  return new Promise((resolve)=>{
+    try{
+      if(typeof Image==='undefined'){ resolve(null); return; }
+      const canv=document.createElement('canvas');
+      const ctx=(typeof canv.getContext==='function')?canv.getContext('2d'):null;
+      if(!ctx||typeof ctx.drawImage!=='function'){ resolve(null); return; }
+      const img=new Image();
+      const url=URL.createObjectURL(file);
+      let done=false;
+      const fin=()=>{ if(!done){ done=true; try{URL.revokeObjectURL(url);}catch(e){} } };
+      const to=setTimeout(()=>{ fin(); resolve(null); },8000);
+      img.onload=()=>{
+        try{
+          const MAX=1600;
+          let w=img.width,h=img.height;
+          if(Math.max(w,h)>MAX){ const r=MAX/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+          const c=document.createElement('canvas');c.width=w;c.height=h;
+          const cc=c.getContext('2d');
+          cc.fillStyle='#fff';cc.fillRect(0,0,w,h);
+          cc.drawImage(img,0,0,w,h);
+          const out=c.toDataURL('image/jpeg',0.82);
+          clearTimeout(to);
+          fin();
+          resolve({name:(file.name||'image.jpg').replace(/\.[^.]+$/,'')+'.jpg',type:'image/jpeg',data:out,size:Math.round(out.length*0.75)});
+        }catch(e){ clearTimeout(to); fin(); resolve(null); }
+      };
+      img.onerror=()=>{ clearTimeout(to); fin(); resolve(null); };
+      img.src=url;
+    }catch(e){ resolve(null); }
+  });
+}
+    async function addAttachmentFile(file){
+      try{
+        if(!file) return;
+        if(file.size>ATTACH_MAX_BYTES){ showAlert('الملف «'+(file.name||'')+'» أكبر من 5MB — بالتالي لا يمكن إرفاقه.','danger'); return; }
+        let rec={name:file.name,type:file.type||'',data:'',size:file.size};
+        const kind=attachmentKind(rec);
+        if(kind==='image'){
+          const comp=await compressImageFile(file);
+          if(comp&&comp.data) rec=comp; else rec.data=await readFileAsDataURL(file);
+        }else{
+          rec.data=await readFileAsDataURL(file);
+        }
+        pendingAttachments.push(rec);
+      }catch(e){ showAlert('تعذّرت قراءة الملف: '+e.message,'danger'); }
+      const inp=document.getElementById('attachmentInput'); if(inp) inp.value='';
+      renderAttachmentPreview();
+    }
+    async function addAttachmentsFromFiles(files){
+      if(!files||!files.length) return;
+      for(let i=0;i<files.length;i++){ await addAttachmentFile(files[i]); }
+    }
+    function removeAttachment(i){
+      pendingAttachments.splice(i,1);
+      renderAttachmentPreview();
+    }
+
     // ======================== البلاغات: حفظ وطباعة وتصدير ========================
     let editingReportId = null;
+    (function(){
+      const inp=document.getElementById('attachmentInput');
+      if(inp) inp.addEventListener('change',()=>{ addAttachmentsFromFiles(inp.files); });
+    })();
     document.getElementById('incidentForm').addEventListener('submit', (e)=>{
       e.preventDefault();
       const data = collectIncidentForm();
@@ -3178,6 +3367,8 @@
       setActions(acts.length ? acts : [r.actionsTaken || '']);
       selectedStaffForMission = (r.staff || []).slice();
       renderSelectedStaff();
+      pendingAttachments = (r.attachments || []).slice();
+      renderAttachmentPreview();
       calculateDuration();
       document.getElementById('reportSubmitBtn').innerHTML = '<i class="fas fa-pen"></i> حفظ التعديل';
       document.getElementById('cancelEditReportBtn').classList.remove('d-none');
@@ -3225,6 +3416,7 @@
         location: locationTxt, longitude, latitude,
         actionsTaken, reportStatus, teamNo, workMode, responseSpeed, dayKind,
         staff: selectedStaffForMission.slice(),
+        attachments: pendingAttachments.slice(),
         createdAt: new Date().toISOString()
       };
     }
@@ -3269,6 +3461,21 @@
     }
 
     // دالة بناء تقرير الطباعة المحسنة
+    function printAttachmentsHTML(r){
+      const list=r.attachments||[];
+      if(!list.length) return '';
+      const items=list.map((a,i)=>{
+        const k=attachmentKind(a);
+        if(k==='image'){
+          return `<div class="print-att"><img src="${a.data}" alt="${escapeHtml(a.name||'')}"><div class="print-att-name">${escapeHtml(a.name||'')}</div></div>`;
+        }
+        return `<div class="print-att print-att-file"><div class="print-att-ico"><i class="${attachmentIcon(k)}"></i></div><div class="print-att-name">${escapeHtml(a.name||'')} — ${fileSizeText(a.size||0)}</div></div>`;
+      }).join('');
+      return `<div class="info-box print-box">
+        <div class="info-box-header"><i class="fas fa-paperclip"></i> المرفقات (${list.length})</div>
+        <div class="print-att-grid">${items}</div>
+      </div>`;
+    }
     function buildReportHTML(r){
       const staffHTML = r.staff.map(s=>{
         const veh = (s.vehicleType || s.vehicleNumber) ? ` — ${[s.vehicleType, s.vehicleNumber].filter(Boolean).join(' / ')}` : '';
@@ -3321,6 +3528,8 @@
           <div class="info-box-header">الإجراءات المتخذة</div>
           <div>${escapeHtml(r.actionsTaken)}</div>
         </div>
+
+        ${printAttachmentsHTML(r)}
 
         <div class="info-box danger print-box">
           <div class="info-box-header">الكادر المشارك</div>
@@ -3571,6 +3780,9 @@
         const el = document.getElementById(id);
         if(el) el.value = '';
       });
+      pendingAttachments = [];
+      renderAttachmentPreview();
+      const ainp=document.getElementById('attachmentInput'); if(ainp) ainp.value='';
       if(!keepStaff){ selectedStaffForMission = []; renderSelectedStaff(); }
     }
 
@@ -3900,6 +4112,50 @@ function newReportAt(lon,lat){
   bootstrap.Tab.getOrCreateInstance(document.getElementById('report-tab')).show();
   showAlert('تم نقل الإحداثيات إلى نموذج البلاغ الجديد.');
 }
+function reportAttachChips(r){
+  const list=r.attachments||[];
+  if(!list.length) return '';
+  const chip=a=>{
+    const k=attachmentKind(a);
+    if(k==='image') return `<button type="button" class="att-chip" title="${esc(a.name||'')}"><img src="${a.data}" alt="" onclick="viewAttachment(${r.id},${list.indexOf(a)})"></button>`;
+    return `<button type="button" class="att-chip att-chip-file" title="${esc(a.name||'')}" onclick="viewAttachment(${r.id},${list.indexOf(a)})"><i class="${attachmentIcon(k)}"></i>${esc(String(a.name||'ملف').replace(/\.[^.]+$/,'').slice(-6))}</button>`;
+  };
+  return `<div class="mt-2"><label class="small d-block"><i class="fas fa-paperclip"></i> المرفقات (${list.length})</label><div class="att-tiles">${list.map(chip).join('')}</div></div>`;
+}
+function viewAttachment(id,idx){
+  const r=getLS(LS_KEYS.reports,[]).find(x=>x.id===id);if(!r)return;
+  const list=r.attachments||[];if(!list.length)return;
+  if(idx<0)idx=list.length-1; if(idx>=list.length)idx=0;
+  const a=list[idx];
+  const ov=document.getElementById('attachOverlay');if(!ov)return;
+  const k=attachmentKind(a);
+  const body=document.getElementById('attachBody');
+  const title=document.getElementById('attachTitle');
+  const nof=document.getElementById('attachCount');
+  const prev=document.getElementById('attachPrev'),next=document.getElementById('attachNext');
+  title.textContent=(a.name||'ملف');
+  nof.textContent=(idx+1)+' / '+list.length+' — '+esc(String(r.reportNumber||''))+' · '+esc(String(r.missionType||''));
+  prev.style.visibility=list.length>1?'visible':'hidden';
+  next.style.visibility=list.length>1?'visible':'hidden';
+  prev.onclick=()=>viewAttachment(id,idx-1);
+  next.onclick=()=>viewAttachment(id,idx+1);
+  const dn=document.getElementById('attachDownload');
+  dn.href=a.data||'#';
+  dn.setAttribute('download',a.name||'ملف');
+  dn.style.display=(k==='pdf'||k==='file')?'inline-flex':'none';
+  let html='';
+  if(k==='image'){ html=`<img src="${a.data}" alt="${esc(a.name||'')}">`; }
+  else if(k==='video'){ html=`<video controls autoplay src="${a.data}"></video>`; }
+  else if(k==='pdf'){ html=`<div class="pdf-block"><i class="fas fa-file-pdf"></i><div class="mb-2">ملف PDF: <bdi dir="ltr">${esc(a.name||'')}</bdi> (${fileSizeText(a.size||0)})</div><a class="btn btn-danger" href="${a.data}" download="${esc(a.name||'ملف')}"><i class="fas fa-download"></i> تحميل الملف</a></div>`; }
+  else { html=`<div class="pdf-block"><i class="fas fa-file"></i><div class="mb-2">ملف: <bdi dir="ltr">${esc(a.name||'')}</bdi> (${fileSizeText(a.size||0)})</div><a class="btn btn-primary" href="${a.data}" download="${esc(a.name||'ملف')}"><i class="fas fa-download"></i> تحميل الملف</a></div>`; }
+  body.innerHTML=html;
+  ov.style.display='flex';
+}
+function closeAttachViewer(){
+  const ov=document.getElementById('attachOverlay');if(!ov)return;
+  ov.style.display='none';
+  const v=document.querySelector('#attachBody video');if(v){try{v.pause();}catch(e){}}
+}
 function popupHTML(id,n){
   const r=getLS(LS_KEYS.reports,[]).find(x=>x.id===id);if(!r)return '';
   const opts=Object.keys(STATUSES).map(k=>`<option ${k===(r.status||'منجز')?'selected':''}>${k}</option>`).join('');
@@ -3908,7 +4164,9 @@ function popupHTML(id,n){
 <label class="small">الإجراءات المتخذة</label><textarea id="pAct" class="form-control form-control-sm mb-1" rows="3">${esc(r.actionsTaken)}</textarea><button class="btn btn-sm btn-outline-primary mb-2" onclick="mapSaveAction(${id})">حفظ الإجراء</button>
 <label class="small">الحالة</label><select class="form-select form-select-sm mb-2" onchange="mapSetStatus(${id},this.value)">${opts}</select>
 <div class="row g-1 mb-2"><div class="col-6"><input id="pLon" class="form-control form-control-sm" value="${esc(r.longitude)}" title="خط الطول"></div><div class="col-6"><input id="pLat" class="form-control form-control-sm" value="${esc(r.latitude)}" title="خط العرض"></div></div>
-<button class="btn btn-sm btn-primary" onclick="mapSaveCoords(${id})">حفظ الإحداثيات</button> <small class="text-muted">أو اسحب الدبوس</small></div>`;
+<button class="btn btn-sm btn-primary" onclick="mapSaveCoords(${id})">حفظ الإحداثيات</button> <small class="text-muted">أو اسحب الدبوس</small>
+${reportAttachChips(r)}
+<a class="small d-inline-flex align-items-center gap-1 mt-2 text-decoration-none" href="#" onclick="viewAttachment(${id},0);return false"><i class="fas fa-expand"></i> عرض المرفقات كاملة</a></div>`;
 }
 function renderMap(fit){
   if(!MAP)return;
