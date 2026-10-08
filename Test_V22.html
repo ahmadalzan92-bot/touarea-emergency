@@ -1017,6 +1017,20 @@
     .pass-body{padding:18px}
     .pass-msg{color:#4a5a6e;font-size:.9rem;line-height:1.6}
     .pass-del{color:#dc3545;font-size:.85rem;font-weight:600}
+    #adminModal{display:none;position:fixed;inset:0;z-index:4002;align-items:center;justify-content:center;direction:rtl}
+    .admin-box{position:relative;z-index:1;width:min(680px,94vw);max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,#f7fafd,#fff);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.45);border-top:4px solid #0f4c81}
+    .admin-head{background:linear-gradient(120deg,#0a2140,#0f4c81);color:#fff;padding:14px 18px;font-weight:800;font-size:1.02rem;text-align:center}
+    .admin-panel-title{color:#0a2140;font-size:1rem}
+    .admin-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;border:1px solid #dfe8f3;border-radius:10px;margin-bottom:8px;background:#fff}
+    .admin-row-name{font-weight:800;color:#0a2140;display:inline-flex;gap:8px;align-items:center}
+    .admin-row-name i{color:#e7a30c}
+    .admin-row-status{font-size:.78rem;font-weight:700;padding:3px 10px;border-radius:999px;background:#eef2f7;color:#52627a}
+    .admin-row-status.is-protected{background:rgba(231,163,12,.14);color:#8a5a00}
+    .admin-row-actions{display:inline-flex;gap:6px;flex-wrap:wrap}
+    .admin-set-inline{width:100%;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+    .admin-master-edit{margin-bottom:14px}
+    .home-admin{margin-top:18px;display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:999px;border:1px dashed rgba(255,215,90,.6);color:#ffd75a;cursor:pointer;font-size:.85rem;font-weight:700;background:rgba(255,255,255,.05);transition:background .2s ease,border-color .2s ease}
+    .home-admin:hover{background:rgba(255,215,90,.12);border-color:#ffd75a}
     #staffEditModal,#vehicleEditModal{display:none;position:fixed;inset:0;z-index:4001;align-items:center;justify-content:center;direction:rtl}
     .edit-box{position:relative;z-index:1;width:min(760px,94vw);max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,#f7fafd,#fff);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.45);border-top:4px solid #2a9d5b}
     .edit-box .pass-head{background:linear-gradient(120deg,#0a2140,#0f4c81)}
@@ -1054,6 +1068,7 @@
       </div>
       <div class="home-continue" id="homeContinue"></div>
       <div class="home-grid" id="homeGrid"></div>
+      <div style="text-align:center"><span class="home-admin" onclick="openAdmin()"><i class="fas fa-user-shield"></i> التحكم الرئيسي — إعادة ضبط كلمات المرور</span></div>
       <div class="home-foot">إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ 2025-2026</div>
     </div>
   </div>
@@ -1068,10 +1083,41 @@
           <input type="password" class="form-control" id="passInput" placeholder="أدخل كلمة المرور">
         </div>
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <button type="button" class="btn btn-sm btn-outline-danger pass-del" id="passDelBtn" onclick="passDel()"><i class="fas fa-trash"></i> حذف كلمة المرور</button>
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-secondary" onclick="closePass()">إلغاء</button>
             <button type="button" class="btn btn-success" id="passOkBtn" onclick="passOk()"><span id="passOkLabel"></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="adminModal">
+    <div class="pass-backdrop" onclick="closeAdmin()"></div>
+    <div class="admin-box">
+      <div class="admin-head"><i class="fas fa-user-shield"></i> لوحة التحكم الرئيسية</div>
+      <div class="pass-body">
+        <div id="adminUnlock">
+          <div class="pass-msg mb-3" id="adminMsg">أدخل كلمة المرور الرئيسية للوصول إلى إدارة كلمات مرور المديريات.</div>
+          <div class="mb-3">
+            <label class="form-label fw-bold" id="adminPwLabel">كلمة المرور الرئيسية</label>
+            <input type="password" class="form-control" id="adminInput" placeholder="أدخل كلمة المرور الرئيسية">
+          </div>
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminInitPw()" id="adminFirstBtn"><i class="fas fa-key"></i> <span id="adminFirstLabel">إنشاء كلمة المرور الرئيسية</span></button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-secondary" onclick="closeAdmin()">إلغاء</button>
+              <button type="button" class="btn btn-success" id="adminOkBtn" onclick="adminOk()"><i class="fas fa-unlock-keyhole"></i> دخول لوحة التحكم</button>
+            </div>
+          </div>
+        </div>
+        <div id="adminPanel" style="display:none">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <strong class="admin-panel-title"><i class="fas fa-key"></i> إدارة كلمات مرور المديريات</strong>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminSetMasterPw()"><i class="fas fa-shield-halved"></i> تغيير كلمة المرور الرئيسية</button>
+          </div>
+          <div id="adminDirList"></div>
+          <div class="d-flex justify-content-end mt-3">
+            <button type="button" class="btn btn-secondary" onclick="closeAdmin()">إغلاق</button>
           </div>
         </div>
       </div>
@@ -1164,6 +1210,7 @@
       <span class="credit-brand"><i class="fas fa-pen-nib"></i> إعداد وتصميم <b>م. أحمد الزن</b></span>
       <span class="credit-note"><i class="fas fa-shield-halved"></i> غرفة عمليات إدارة بلاغات الطوارئ — <i class="fas fa-calendar"></i> 2025 - 2026</span>
       <button type="button" class="btn btn-sm btn-outline-warning fw-bold" id="passDirBtn" onclick="openPass('manage', ACTIVE_DIR.key)"><i class="fas fa-key"></i> كلمة المرور</button>
+      <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="openAdmin()"><i class="fas fa-user-shield"></i> التحكم الرئيسي</button>
       <button type="button" class="btn btn-sm btn-warning fw-bold" id="changeDirBtn" onclick="openHome()"><i class="fas fa-right-left"></i> تغيير المديرية</button>
       <span class="cloud-badge offline" id="cloudBadge" title="حالة المزامنة السحابية"><span>☁️</span><span>غير متصل ⚠️</span></span>
     </div>
@@ -2134,17 +2181,17 @@
       title.textContent=d.long;
       if(mode==='enter'){ msg.textContent='هذه المديرية محمية بكلمة مرور. أدخل كلمة المرور للوصول إلى بياناتها المستقلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
       else if(mode==='set'){ msg.textContent='لا توجد كلمة مرور لهذه المديرية بعد. أنشئ كلمة مرور لحماية بياناتها المنفصلة (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ والبدء'; inp.value=''; }
-      else { msg.textContent='أدخل كلمة مرور جديدة لاستبدالها، أو اتركها فارغة ثم اضغط «حذف كلمة المرور».'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
+      else { msg.textContent='أدخل كلمة مرور جديدة لاستبدال كلمة المرور الحالية.'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
       box.style.display='flex';
       setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
     function closePass(){ const box=document.getElementById('passModal'); if(box) box.style.display='none'; }
-    function passDel(){ const d=DIRECTORATES.find(x=>x.key===PASS_DIR); delPass(PASS_DIR); showAlert('تم حذف كلمة مرور '+(d?d.short:'')+'.','info'); closePass(); }
     function passOk(){
       const inp=document.getElementById('passInput'),val=(inp?inp.value.trim():'');
       const d=DIRECTORATES.find(x=>x.key===PASS_DIR)||DIRECTORATES[2];
       if(PASS_MODE==='manage'){
-        if(!val){ showAlert('أدخل كلمة مرور جديدة لحفظها أو اضغط «حذف كلمة المرور».','warning'); return; }
+        if(!val){ showAlert('أدخل كلمة مرور جديدة لاستبدال الحالية.','warning'); return; }
+        if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
         savePass(PASS_DIR,val); showAlert('تم تحديث كلمة مرور '+d.short+'.','success'); closePass(); return;
       }
       if(!val) return showAlert('أدخل كلمة المرور.','warning');
@@ -2155,6 +2202,100 @@
         if(getPass(PASS_DIR)&&val!==getPass(PASS_DIR)){ showAlert('كلمة المرور غير صحيحة، حاول مجدداً.','danger'); if(inp){inp.value='';inp.focus();} return; }
         closePass(); selectDirectorate(PASS_DIR);
       }
+    }
+    function enterDirectorate(key){ const p=getPass(key); if(p){ openPass('enter',key); }else{ openPass('set',key); } }
+    const ADMIN_PW_KEY='opendirAdminPw';
+    let ADMIN_UNLOCKED=false, ADMIN_REWRITE=false;
+    function adminGetPw(){ try{ return localStorage.getItem(ADMIN_PW_KEY)||''; }catch(e){ return ''; } }
+    function adminSetPw(p){ try{ localStorage.setItem(ADMIN_PW_KEY,p); }catch(e){} }
+    function openAdmin(){
+      ADMIN_UNLOCKED=false; ADMIN_REWRITE=false;
+      const box=document.getElementById('adminModal'); if(!box) return;
+      document.getElementById('adminUnlock').style.display='';
+      document.getElementById('adminPanel').style.display='none';
+      const has=adminGetPw(),msg=document.getElementById('adminMsg'),inp=document.getElementById('adminInput'),lbl=document.getElementById('adminPwLabel'),fb=document.getElementById('adminFirstBtn'),fl=document.getElementById('adminFirstLabel');
+      inp.value='';
+      if(has){ msg.textContent='أدخل كلمة المرور الرئيسية للوصول إلى إدارة كلمات مرور المديريات.'; lbl.textContent='كلمة المرور الرئيسية'; fb.style.display='none'; }
+      else { msg.textContent='لا توجد كلمة مرور رئيسية بعد. أنشئها الآن لإدارة كلمات مرور المديريات (3 أحرف فأكثر).'; lbl.textContent='كلمة المرور الرئيسية الجديدة'; fb.style.display='inline-flex'; fl.textContent='إنشاء كلمة المرور الرئيسية'; }
+      box.style.display='flex';
+      setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
+    }
+    function closeAdmin(){ const box=document.getElementById('adminModal'); if(box) box.style.display='none'; }
+    function adminUnlock(pw){
+      if(typeof pw!=='string') pw='';
+      if(pw.length<3) return showAlert('كلمة المرور الرئيسية قصيرة (3 أحرف فأكثر).','warning');
+      adminSetPw(pw); ADMIN_UNLOCKED=true; adminRenderPanel(); showAlert('تم إنشاء كلمة المرور الرئيسية.','success');
+    }
+    function adminInitPw(){
+      const inp=document.getElementById('adminInput'),val=inp?inp.value.trim():'';
+      if(ADMIN_REWRITE){ if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning'); adminSetPw(val); ADMIN_UNLOCKED=true; adminRenderPanel(); showAlert('تم تحديث كلمة المرور الرئيسية.','success'); return; }
+      adminUnlock(val);
+    }
+    function adminOk(){
+      if(ADMIN_UNLOCKED) return;
+      const inp=document.getElementById('adminInput'),val=inp?inp.value.trim():'';
+      if(ADMIN_REWRITE){ if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning'); adminSetPw(val); ADMIN_UNLOCKED=true; adminRenderPanel(); showAlert('تم تحديث كلمة المرور الرئيسية.','success'); return; }
+      if(!adminGetPw()) return adminUnlock(val);
+      if(!val) return showAlert('أدخل كلمة المرور الرئيسية.','warning');
+      if(val!==adminGetPw()){ showAlert('كلمة المرور الرئيسية غير صحيحة.','danger'); inp.value=''; inp.focus(); return; }
+      ADMIN_UNLOCKED=true; adminRenderPanel();
+    }
+    function adminRenderPanel(){
+      const box=document.getElementById('adminModal'); if(!box) return;
+      document.getElementById('adminUnlock').style.display='none';
+      document.getElementById('adminPanel').style.display='';
+      const list=document.getElementById('adminDirList');
+      list.innerHTML=DIRECTORATES.map(d=>{
+        const has=getPass(d.key);
+        return '<div class="admin-row" data-dk="'+d.key+'">'+
+          '<span class="admin-row-name"><i class="fas '+d.icon+'"></i> '+d.short+' <small class="text-muted">('+d.code+')</small></span>'+
+          '<span class="admin-row-status'+(has?' is-protected':'')+'">'+((has)?'<i class="fas fa-lock"></i> محمية':'<i class="fas fa-lock-open"></i> غير محمية')+'</span>'+
+          '<span class="admin-row-actions">'+
+            '<button type="button" class="btn btn-sm btn-outline-primary" onclick="adminSetDir(\''+d.key+'\')"><i class="fas fa-key"></i> تعيين</button>'+
+            '<button type="button" class="btn btn-sm btn-outline-danger" '+(has?'':'disabled')+' onclick="adminDelDir(\''+d.key+'\')"><i class="fas fa-trash"></i> إزالة</button>'+
+          '</span></div>';
+      }).join('');
+    }
+    function adminSetDir(key){
+      window.__adminSetKey=key;
+      const list=document.getElementById('adminDirList');
+      const rows=list.querySelectorAll('.admin-row');
+      let target=null;
+      for(let i=0;i<rows.length;i++){
+        if(rows[i].getAttribute('data-dk')===key){ target=rows[i]; break; }
+      }
+      if(!target) return;
+      const existing=target.querySelector('.admin-set-inline'); if(existing){ existing.remove(); window.__adminSetKey=null; return; }
+      const line=document.createElement('div');
+      line.className='admin-set-inline';
+      line.innerHTML='<input type="text" class="form-control" id="adminSetInput" placeholder="كلمة المرور الجديدة (3 أحرف فأكثر)" style="flex:1;min-width:160px">'+
+        '<div class="d-flex gap-2"><button type="button" class="btn btn-sm btn-success" onclick="adminSaveDir()"><i class="fas fa-check"></i> حفظ</button>'+
+        '<button type="button" class="btn btn-sm btn-secondary" onclick="this.closest(\'.admin-set-inline\').remove();window.__adminSetKey=null">إلغاء</button></div>';
+      target.appendChild(line);
+      const inp=document.getElementById('adminSetInput'); if(inp) setTimeout(function(){ try{inp.focus();}catch(e){} },30);
+    }
+    function adminSaveDir(){
+      const inp=document.getElementById('adminSetInput'),val=inp?inp.value.trim():'';
+      const key=window.__adminSetKey||'';
+      if(!key) return showAlert('لم يتم تحديد مديرية.','warning');
+      if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
+      savePass(key,val); showAlert('تم تعيين كلمة مرور للمديرية.','success'); adminRenderPanel();
+    }
+    function adminDelDir(key){
+      const d=DIRECTORATES.find(x=>x.key===key);
+      if(!confirm('سيتم إزالة كلمة مرور مديرية «'+d.short+'». هل أنت متأكد؟')) return;
+      delPass(key); showAlert('تمت إزالة كلمة مرور '+(d?d.short:'')+'.','info'); adminRenderPanel();
+    }
+    function adminSetMasterPw(){
+      ADMIN_UNLOCKED=false; ADMIN_REWRITE=true;
+      const box=document.getElementById('adminModal'); if(!box) return;
+      document.getElementById('adminUnlock').style.display='';
+      document.getElementById('adminPanel').style.display='none';
+      const msg=document.getElementById('adminMsg'),inp=document.getElementById('adminInput'),lbl=document.getElementById('adminPwLabel'),fb=document.getElementById('adminFirstBtn'),fl=document.getElementById('adminFirstLabel');
+      msg.textContent='أدخل كلمة المرور الرئيسية الجديدة (3 أحرف فأكثر) لاستبدال الحالية.'; lbl.textContent='كلمة المرور الرئيسية الجديدة'; inp.value='';
+      fb.style.display='inline-flex'; fl.textContent='حفظ كلمة المرور الجديدة';
+      box.style.display='flex';
+      setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
     function enterDirectorate(key){ const p=getPass(key); if(p){ openPass('enter',key); }else{ openPass('set',key); } }
     function bootstrapDir(){
