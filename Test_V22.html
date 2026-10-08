@@ -2745,6 +2745,7 @@
       ws['!cols']=[{wch:6},{wch:25},{wch:20},{wch:14}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'كشف الكوادر');
+      XLSX.utils.sheet_add_aoa(ws,[[],['إعداد وتصميم المهندس أحمد الزن'],['صدر هذا التقرير آلياً من نظام طوارئ الأشغال']],{origin:-1});
       XLSX.writeFile(wb, `كشف_الكوادر_مادبا_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
@@ -3044,6 +3045,7 @@
       ws['!cols']=[{wch:6},{wch:12},{wch:15},{wch:15},{wch:10},{wch:16},{wch:12},{wch:16},{wch:18},{wch:25},{wch:30}];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'كشف المركبات');
+      XLSX.utils.sheet_add_aoa(ws,[[],['إعداد وتصميم المهندس أحمد الزن'],['صدر هذا التقرير آلياً من نظام طوارئ الأشغال']],{origin:-1});
       XLSX.writeFile(wb, `كشف_المركبات_${(ACTIVE_DIR&&ACTIVE_DIR.short)||'المديرية'}_2026_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
@@ -3544,7 +3546,7 @@ function compressImageFile(file){
           </div>
         </div>
 
-        <div class="text-center mt-4"><i>إعداد وتصميم م. أحمد الزن — مديرية أشغال ${ACTIVE_DIR?ACTIVE_DIR.short:'مأدبا'}</i></div>
+        <div class="text-center mt-4"><i>إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</i></div>
       `;
     }
 
@@ -3726,7 +3728,7 @@ function compressImageFile(file){
       ws4['!cols']=Array(16).fill({wch:18});
       XLSX.utils.book_append_sheet(wb, ws4, 'تفاصيل الكوادر');
 
-      wb.SheetNames.forEach(n=>XLSX.utils.sheet_add_aoa(wb.Sheets[n],[[],['إعداد وتصميم م. أحمد الزن']],{origin:-1}));
+      wb.SheetNames.forEach(n=>XLSX.utils.sheet_add_aoa(wb.Sheets[n],[[],['إعداد وتصميم المهندس أحمد الزن'],['صدر هذا التقرير آلياً من نظام طوارئ الأشغال']],{origin:-1}));
       XLSX.writeFile(wb, `بيانات_مديرية_الطوارئ_مادبا_${new Date().toISOString().slice(0,10)}.xlsx`);
       showAlert('تم تصدير جميع البيانات بنجاح.');
     }
@@ -3892,7 +3894,7 @@ function frHTML(rs){
 <table class="meta"><tr><td>المحافظة: ${esc(S.prov)}</td><td>اليوم: ${esc(M.days)}</td><td>التاريخ: ${esc(M.range)}</td></tr></table>
 <table class="main"><colgroup><col style="width:4%"><col style="width:12%"><col style="width:8%"><col style="width:16%"><col style="width:9%"><col style="width:5%"><col style="width:14%"><col style="width:7%"><col style="width:6%"><col style="width:6%"><col style="width:7%"><col style="width:6%"></colgroup><thead><tr><th rowspan="2">الرقم</th><th rowspan="2">نوع البلاغ</th><th rowspan="2">رقم البلاغ</th><th rowspan="2">الإجراء المتخذ</th><th rowspan="2">الإحداثيات<br><small>خط الطول (X)<br>خط العرض (Y)</small></th><th rowspan="2">رقم الفرقة</th><th rowspan="2">أسماء العاملين في الفرقة مع بيان الوظيفة</th><th colspan="2">الآليات المستخدمة</th><th rowspan="2">مدة العمل خارج أوقات الدوام الرسمي</th><th rowspan="2">اليوم والتاريخ</th><th rowspan="2">سرعة الاستجابة (خاص بمديرية الطوارئ)</th></tr><tr><th>نوع</th><th>رقم</th></tr></thead><tbody>${rows}</tbody></table>
 <div class="sum">عدد البلاغات: ${rs.length} — ساعات ميدانية: ${fmtH(field)} — ساعات مكتبية: ${fmtH(office)} — الإجمالي: ${fmtH(field+office)} ساعة</div>
-<div class="sig"><div>مدير مديرية الأشغال<br><br>${esc(S.mgr1)}</div><div>مدير مديرية الطوارئ<br><br>${esc(S.mgr2)}</div></div><div class="fr-credit" style="text-align:center;margin-top:22px;font-size:11px;color:#555">إعداد وتصميم م. أحمد الزن</div></div>`;
+<div class="sig"><div>مدير مديرية الأشغال<br><br>${esc(S.mgr1)}</div><div>مدير مديرية الطوارئ<br><br>${esc(S.mgr2)}</div></div><div class="fr-credit" style="text-align:center;margin-top:22px;font-size:11px;color:#555">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div></div>`;
 }
 function renderFinalReport(){
   const rs=frReports(),bad=rs.filter(coordBad);
@@ -3902,7 +3904,7 @@ function renderFinalReport(){
 function printFinalReport(){
   const rs=frReports();if(!rs.length)return showAlert('لا توجد بلاغات ضمن الفترة المحددة.','warning');
   const w=window.open('','_blank');if(!w)return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
-  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير البلاغات</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:10mm 10mm 17mm}@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-size:9pt;color:#555}}body{margin:0}.fr-credit{display:none}.pc{position:fixed;bottom:-12mm;left:0;right:0;text-align:center;font-size:10pt;color:#444;border-top:1px solid #bbb;padding-top:3px}${FR_CSS}</style></head><body>${frHTML(rs)}<div class="pc">إعداد وتصميم م. أحمد الزن — مديرية أشغال مأدبا</div><script>setTimeout(function(){print()},700)<\/script></body></html>`);
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير البلاغات</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:10mm 10mm 17mm}@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-size:9pt;color:#555}}body{margin:0}.fr-credit{display:none}.pc{position:fixed;bottom:-12mm;left:0;right:0;text-align:center;font-size:10pt;color:#444;border-top:1px solid #bbb;padding-top:3px}${FR_CSS}</style></head><body>${frHTML(rs)}<div class="pc">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div><script>setTimeout(function(){print()},700)<\/script></body></html>`);
   w.document.close();
 }
 function buildFinalWS(rs,opts){
@@ -3937,7 +3939,8 @@ function buildFinalWS(rs,opts){
   const bodyEnd=r0;r0+=1;
   put(r0,0,'مدير مديرية الأشغال');put(r0,8,'مدير مديرية الطوارئ');put(r0+1,0,S.mgr1);put(r0+1,8,S.mgr2);
   [r0,r0+1].forEach(r=>{merges.push({s:{r,c:0},e:{r,c:3}});merges.push({s:{r,c:8},e:{r,c:11}});});
-  put(r0+3,0,'إعداد وتصميم م. أحمد الزن');merges.push({s:{r:r0+3,c:0},e:{r:r0+3,c:11}});
+  put(r0+3,0,'إعداد وتصميم المهندس أحمد الزن');merges.push({s:{r:r0+3,c:0},e:{r:r0+3,c:11}});
+  put(r0+4,0,'صدر هذا التقرير آلياً من نظام طوارئ الأشغال');merges.push({s:{r:r0+4,c:0},e:{r:r0+4,c:11}});
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   const thin={style:'thin',color:{rgb:'000000'}},bd={top:thin,bottom:thin,left:thin,right:thin};
   for(let R=0;R<aoa.length;R++)for(let C=0;C<N;C++){
@@ -4297,13 +4300,13 @@ printReport=function(id){
   const css=[...document.querySelectorAll('link[rel=stylesheet],style')].map(e=>e.outerHTML).join('');
   const w=window.open('','_blank');if(!w)return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
   const now=new Date().toLocaleString('ar-JO');
-  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير بلاغ ${esc(r.reportNumber)}</title>${css}<style>${PRINT_EXTRA}</style></head><body><div class="print-only"><h2>${ACTIVE_DIR.long}</h2><h3>تقرير مفصل عن البلاغ</h3><p>تم إنشاء التقرير في: ${now}</p></div><div class="container"><div class="card print-box"><div class="card-header">تفاصيل البلاغ</div><div class="card-body">${buildReportHTML(r)}</div></div></div><div class="pc">إعداد وتصميم م. أحمد الزن — مديرية أشغال ${ACTIVE_DIR.short}</div><script>var t=document.getElementById("printTime");if(t)t.textContent="${now}";setTimeout(function(){print()},900)<\/script></body></html>`);
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير بلاغ ${esc(r.reportNumber)}</title>${css}<style>${PRINT_EXTRA}</style></head><body><div class="print-only"><h2>${ACTIVE_DIR.long}</h2><h3>تقرير مفصل عن البلاغ</h3><p>تم إنشاء التقرير في: ${now}</p></div><div class="container"><div class="card print-box"><div class="card-header">تفاصيل البلاغ</div><div class="card-body">${buildReportHTML(r)}</div></div></div><div class="pc">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div><script>var t=document.getElementById("printTime");if(t)t.textContent="${now}";setTimeout(function(){print()},900)<\/script></body></html>`);
   w.document.close();
 };
 
 // ======================== زر Excel العائم: تصدير الصفحة المفتوحة ========================
 function saveWB(wb,name){
-  wb.SheetNames.forEach(n=>XLSX.utils.sheet_add_aoa(wb.Sheets[n],[[],['إعداد وتصميم م. أحمد الزن']],{origin:-1}));
+  wb.SheetNames.forEach(n=>XLSX.utils.sheet_add_aoa(wb.Sheets[n],[[],['إعداد وتصميم المهندس أحمد الزن'],['صدر هذا التقرير آلياً من نظام طوارئ الأشغال']],{origin:-1}));
   XLSX.writeFile(wb,name+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 function exportCurrentTab(){
@@ -4441,6 +4444,7 @@ function doExportRange(){
     iws['!cols']=[{wch:30},{wch:14},{wch:14},{wch:14}];
     iws['!merges']=[];
     XLSX.utils.book_append_sheet(wb,iws,'الفهرس');
+    XLSX.utils.sheet_add_aoa(iws,[[],['إعداد وتصميم المهندس أحمد الزن'],['صدر هذا التقرير آلياً من نظام طوارئ الأشغال']],{origin:-1});
     filled.forEach(p=>{
       const b=buildFinalWS(p.rs,{
         range:`من ${fmtDMY(p.g.from)} إلى ${fmtDMY(p.g.to)}`,
@@ -4916,6 +4920,7 @@ function exportStaffHoursExcel(){
   styleAOA(wsH,aoaH,bandRowsH,1);
   XLSX.utils.book_append_sheet(wb,wsH,'الجمعة والسبت والعطل');
 
+  wb.SheetNames.forEach(n=>XLSX.utils.sheet_add_aoa(wb.Sheets[n],[[],['إعداد وتصميم المهندس أحمد الزن'],['صدر هذا التقرير آلياً من نظام طوارئ الأشغال']],{origin:-1}));
   XLSX.writeFile(wb,`إحصائية_ساعات_العمل_${today}.xlsx`);
   showAlert(`تم تصدير التقرير المستقل: كشف مفصل لـ ${emps} موظف، ${D.daily.length} سجل يومي — ضمن الدوام ${fmtH(tin)} ساعة / خارج الدوام ${fmtH(tout)} ساعة.`);
 }
