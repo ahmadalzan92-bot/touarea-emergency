@@ -1,0 +1,20 @@
+{
+  "name": "طوارئ 2026",
+  "packageId": "jo.gov.madaba.emergency",
+  "version": "1.0.0",
+  "entry": "app/index.html",
+  "orientation": "portrait",
+  "statusBar": true,
+  "icon": "icon.png",
+  "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_FINE_LOCATION"],
+  "network": {
+    "cleartext": false
+  },
+  "webview": {
+    "backButton": "history",
+    "clearCacheOnStart": false
+  },
+  "splashScreen": {
+    "backgroundColor": "#0d6efd"
+  }
+}
