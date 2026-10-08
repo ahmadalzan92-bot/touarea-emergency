@@ -1,0 +1,11 @@
+# Local data / sensitive files
+data/
+*.xlsx
+*.xls
+
+# Temporary / experiments
+تجارب/
+
+# OS
+Thumbs.db
+desktop.ini
