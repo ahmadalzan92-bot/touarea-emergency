@@ -1,0 +1,8 @@
+name = "touarea-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "touarea-db"
+database_id = "2c40ceb2-19b6-440f-bd9a-4f6bf3e5f604"

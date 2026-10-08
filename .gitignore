@@ -6,6 +6,9 @@ data/
 # Temporary / experiments
 تجارب/
 
+# Cloudflare wrangler local state
+worker/.wrangler/
+
 # OS
 Thumbs.db
 desktop.ini

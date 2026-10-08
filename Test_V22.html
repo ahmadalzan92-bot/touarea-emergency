@@ -592,6 +592,16 @@
     }
     .top-credit .credit-note i{color:#ffd75a}
 
+    .cloud-badge{
+      display:inline-flex;align-items:center;gap:7px;
+      border-radius:999px;padding:5px 13px;font-size:.82rem;font-weight:700;
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+      color:#e8eefa;
+    }
+    .cloud-badge.online{color:#d1f5d1;background:rgba(34,197,94,.22);border-color:rgba(34,197,94,.55)}
+    .cloud-badge.offline{color:#ffd9d9;background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5)}
+    #cloudBadge{display:none}
+
     .header{
       position:relative;overflow:hidden;color:#0b2545;
       background:
@@ -1149,6 +1159,7 @@
       <span class="credit-note"><i class="fas fa-shield-halved"></i> غرفة عمليات إدارة بلاغات الطوارئ — <i class="fas fa-calendar"></i> 2025 - 2026</span>
       <button type="button" class="btn btn-sm btn-outline-warning fw-bold" id="passDirBtn" onclick="openPass('manage', ACTIVE_DIR.key)"><i class="fas fa-key"></i> كلمة المرور</button>
       <button type="button" class="btn btn-sm btn-warning fw-bold" id="changeDirBtn" onclick="openHome()"><i class="fas fa-right-left"></i> تغيير المديرية</button>
+      <span class="cloud-badge offline" id="cloudBadge" title="حالة المزامنة السحابية"><span>☁️</span><span>غير متصل ⚠️</span></span>
     </div>
   </div>
 
@@ -1861,10 +1872,118 @@
       return (key==='opendirKey'||key==='opendirPasswords') ? key : (ACTIVE_DIR&&ACTIVE_DIR.key||'madaba')+'__'+key;
     }
     function getLS(key, fallback){ try{ return JSON.parse(localStorage.getItem(rawLSKey(key)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
-    function setLS(key, val){ localStorage.setItem(rawLSKey(key), JSON.stringify(val)); }
+    function setLS(key, val){ const k=rawLSKey(key); localStorage.setItem(k, JSON.stringify(val)); cloudPush(k, val); }
     function lsKeyFor(key, dirKey){ return (key==='opendirKey'||key==='opendirPasswords') ? key : dirKey+'__'+key; }
     function getLSFor(dirKey, key, fallback){ try{ return JSON.parse(localStorage.getItem(lsKeyFor(key,dirKey)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
-    function setLSFor(dirKey, key, val){ localStorage.setItem(lsKeyFor(key,dirKey), JSON.stringify(val)); }
+    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); localStorage.setItem(k, JSON.stringify(val)); cloudPush(k, val); }
+
+    // ======================== المزامنة السحابية (Cloudflare Worker API) ========================
+    const CLOUD_API_BASE = 'https://touarea-api.ahmadalzan92.workers.dev';
+    const CLOUD_META_KEY = '__cloudSyncMeta';
+    let _cloudOnline = false;
+    let _cloudPollTimer = null;
+    function cloudAvailable(){ return typeof fetch === 'function'; }
+    function cloudMetaGet(){ try{ return JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}'); }catch(e){ return {}; } }
+    function cloudMetaSet(meta){ try{ localStorage.setItem(CLOUD_META_KEY, JSON.stringify(meta)); }catch(e){} }
+    function cloudRawKeyOf(fullKey){
+      const i = fullKey.indexOf('__');
+      if(i < 1) return null;
+      return fullKey.slice(i+2);
+    }
+    function cloudSyncableKey(fullKey){
+      const raw = cloudRawKeyOf(fullKey);
+      if(!raw) return false;
+      return Object.values(LS_KEYS).indexOf(raw) > -1 || fullKey === 'opendirKey';
+    }
+    function cloudSetOnline(ok){
+      _cloudOnline = !!ok;
+      const b = document.getElementById('cloudBadge');
+      if(!b) return;
+      if(cloudAvailable()) b.style.display = 'inline-flex';
+      b.className = 'cloud-badge ' + (_cloudOnline ? 'online' : 'offline');
+      b.querySelector('span:last-child').textContent = _cloudOnline ? 'متصل بالسحابة ☁️' : 'غير متصل ⚠️';
+    }
+    async function cloudReq(path, opts){
+      const res = await fetch(CLOUD_API_BASE + path, opts);
+      if(!res.ok) throw new Error('cloud request failed: ' + path + ' ' + res.status);
+      return res.json();
+    }
+    async function cloudPushNow(fullKey, value){
+      if(!cloudAvailable() || !fullKey || !cloudSyncableKey(fullKey)) return;
+      const text = typeof value === 'string' ? value : JSON.stringify(value);
+      if(text === undefined) return;
+      await cloudReq('/api/key/' + encodeURIComponent(fullKey), {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ value: text })
+      });
+      const meta = cloudMetaGet();
+      meta[fullKey] = Date.now();
+      cloudMetaSet(meta);
+    }
+    function cloudPush(fullKey, value){
+      cloudPushNow(fullKey, value).then(()=>cloudSetOnline(true)).catch(()=>cloudSetOnline(false));
+    }
+    async function cloudPullAll(){
+      if(!cloudAvailable()) return;
+      try{
+        const all = await cloudReq('/api/all');
+        if(!all || typeof all !== 'object'){ cloudSetOnline(true); return; }
+        const meta = cloudMetaGet();
+        let changed = false;
+        const keys = Object.keys(all || {});
+        const existing = {};
+        for(const fullKey of keys) existing[fullKey] = 1;
+        for(const fullKey of keys){
+          if(!cloudSyncableKey(fullKey)) continue;
+          const rec = all[fullKey];
+          if(!rec || rec.value === null || rec.value === undefined) continue;
+          const localRaw = localStorage.getItem(fullKey);
+          const localTs = meta[fullKey] || 0;
+          const cloudTs = rec.ts || 0;
+          if(localRaw === null){
+            try{ localStorage.setItem(fullKey, rec.value); }catch(e){}
+            meta[fullKey] = cloudTs;
+            changed = true;
+          }else if(cloudTs > localTs && cloudTs > 0){
+            try{ localStorage.setItem(fullKey, rec.value); }catch(e){}
+            meta[fullKey] = cloudTs;
+            changed = true;
+          }
+        }
+        for(let di = 0; di < DIRECTORATES.length; di++){
+          const dirKey = DIRECTORATES[di].key;
+          for(const rawKey of Object.values(LS_KEYS)){
+            const fullKey = dirKey + '__' + rawKey;
+            if(existing[fullKey]) continue;
+            const localRaw = localStorage.getItem(fullKey);
+            if(localRaw === null) continue;
+            const localTs = meta[fullKey] || 0;
+            if(localTs > 0) continue;
+            await cloudPushNow(fullKey, localRaw);
+          }
+        }
+        cloudMetaSet(meta);
+        cloudSetOnline(true);
+        if(changed){
+          if(typeof refreshStaffUI === 'function'){ try{ refreshStaffUI(); }catch(e){} }
+          if(typeof refreshVehiclesUI === 'function'){ try{ refreshVehiclesUI(); }catch(e){} }
+          if(typeof refreshReportsUI === 'function'){ try{ refreshReportsUI(); }catch(e){} }
+          if(typeof populateSelectors === 'function'){ try{ populateSelectors(); }catch(e){} }
+          showAlert('☁️ تم تحديث البيانات من السحابة.', 'info');
+        }
+      }catch(e){
+        cloudSetOnline(false);
+      }
+    }
+    function cloudStartPolling(){
+      if(cloudPollTimerReady()) return;
+      if(!cloudAvailable()) return;
+      cloudPullAll();
+      _cloudPollTimer = setInterval(cloudPullAll, 15000);
+      window.addEventListener('beforeunload', ()=>{ if(_cloudPollTimer) clearInterval(_cloudPollTimer); });
+    }
+    function cloudPollTimerReady(){ return _cloudPollTimer !== null && _cloudPollTimer !== undefined; }
     function normAr(t){ return (t||'').toString().trim().toLowerCase().replace(/[\u0623\u0625\u0622]/g,'\u0627').replace(/\u0629/g,'\u0647').replace(/\s+/g,' '); }
     function resolveDirByValue(v){
       const s=normAr(v); if(!s) return null;
@@ -2062,7 +2181,12 @@
       ACTIVE_DIR=DIRECTORATES.find(d=>d.key===key)||DIRECTORATES[2];
       try{localStorage.setItem(DIR_STORAGE,key);}catch(e){}
       applyDirectorate();
-      bootstrapDir();
+      const doBoot=function(){ bootstrapDir(); };
+      if(cloudAvailable()){
+        cloudPullAll().then(doBoot).catch(doBoot);
+      } else {
+        doBoot();
+      }
       const hs=document.getElementById('homeScreen'); if(hs) hs.style.display='none';
     }
     document.addEventListener('keydown',function(ev){
@@ -2087,6 +2211,7 @@
       applyDirectorate();
       openHome();
       showAlert('تم تهيئة النظام وقراءة البيانات المحلية.', 'success');
+      cloudStartPolling();
     });
 
     // ======================== أدوات عامة ========================
