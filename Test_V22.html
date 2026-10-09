@@ -1074,6 +1074,24 @@
     .dir-card-central{background:linear-gradient(160deg,#0b2f22,#117864);border:2px solid rgba(255,215,90,.55)}
     .dir-card-central:hover{border-color:#ffd75a;box-shadow:0 12px 30px rgba(17,120,100,.45)}
     .dir-card-central .dir-long{color:#cfe8e3}
+    .dir-card-guide{background:linear-gradient(160deg,#2b2408,#151004);border:2px solid rgba(255,215,90,.55)}
+    .dir-card-guide:hover{border-color:#ffd75a;box-shadow:0 12px 30px rgba(231,163,12,.40)}
+    .dir-card-guide .dir-ico{background:linear-gradient(135deg,#fff2b8,#ffd75a);color:#3a2f0b}
+    .dir-card-guide .dir-long{color:#f3e6bd}
+    #guideModal{display:none;position:fixed;inset:0;z-index:3500;align-items:center;justify-content:center;direction:rtl}
+    .guide-box{position:relative;z-index:1;width:min(880px,94vw);max-height:90vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#f7fafd,#fff);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5);border-top:4px solid #0f4c81}
+    .guide-head{flex:0 0 auto;background:linear-gradient(120deg,#0a2140,#0f4c81);color:#fff;padding:14px 18px;font-weight:800;font-size:1.05rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .guide-head .btn-close-guide{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:8px;padding:3px 12px;font-weight:700;cursor:pointer}
+    .guide-body{padding:16px 20px 26px;color:#20304a;line-height:1.95;overflow:auto}
+    .guide-body h3{font-size:1.02rem;color:#0a2140;border-right:4px solid #e7a30c;padding-right:10px;margin:20px 0 8px}
+    .guide-body h3:first-child{margin-top:6px}
+    .guide-body ol,.guide-body ul{padding-right:22px;margin:0 0 6px}
+    .guide-body li{margin:4px 0}
+    .guide-note{background:#fff7e0;border:1px solid #f0dca0;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:.92rem}
+    .guide-chip{display:inline-block;background:#0f4c81;color:#fff;border-radius:999px;padding:1px 10px;font-size:.78rem;margin:0 3px;white-space:nowrap}
+    .guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:8px 0}
+    .guide-cell{background:#f2f6fb;border:1px solid #dde7f2;border-radius:12px;padding:12px 14px}
+    .guide-cell b{color:#0a2140}
     .def-pass-hint{display:inline-block;direction:ltr;background:#eef;color:#0b57d0;border:1px dashed #90b4e8;border-radius:6px;padding:1px 8px;font-family:monospace;font-weight:700}
     #passModal{display:none;position:fixed;inset:0;z-index:4000;align-items:center;justify-content:center;direction:rtl}
     .pass-backdrop{position:fixed;inset:0;background:rgba(6,20,40,.6);backdrop-filter:blur(3px)}
@@ -1215,6 +1233,89 @@
             <button type="button" class="btn btn-secondary" onclick="closeAdmin()">إغلاق</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+  <div id="guideModal">
+    <div class="pass-backdrop" onclick="closeGuide()"></div>
+    <div class="guide-box">
+      <div class="guide-head">
+        <span><i class="fas fa-book-open"></i> الدليل الإرشادي — نظام إدارة بلاغات الطوارئ</span>
+        <button type="button" class="btn-close-guide" onclick="closeGuide()"><i class="fas fa-xmark"></i> إغلاق</button>
+      </div>
+      <div class="guide-body">
+        <h3><i class="fas fa-circle-info"></i> ما هي هذه البرمجية؟</h3>
+        <p>نظام متكامل لإدارة بلاغات الطوارئ في مديريات الأشغال العامة والإسكان على مستوى المحافظات. يسمح لكل مديرية بتسجيل بلاغاتها وكوادرها ومركباتها، وإصدار التقارير والكشوف، مع <b>عمل كامل دون اتصال بالإنترنت</b> و<b>مزامنة سحابية</b> للبيانات، إضافة إلى <b>عرض مركزي</b> يجمع بلاغات جميع المحافظات.</p>
+
+        <h3><i class="fas fa-house"></i> 1) الواجهة الرئيسية والدخول</h3>
+        <div class="guide-grid">
+          <div class="guide-cell"><b>بطاقات المديريات</b><br>اختر مديريتك للدخول إلى غرفة عملياتها.</div>
+          <div class="guide-cell"><b>العرض المركزي</b><br>مراقبة مجمعة لكل المديريات + خريطة وإحصاءات.</div>
+          <div class="guide-cell"><b>دليل الاستخدام</b><br>هذه الشاشة: شرح البرمجية وطريقة الاستخدام.</div>
+        </div>
+        <ul>
+          <li>عند أول دخول لمديرية بلا كلمة مرور، ستُطلب منك <b>إنشاء كلمة مرور</b> (3 أحرف فأكثر).</li>
+          <li>في الزيارات اللاحقة تُدخل كلمة المرور نفسها للدخول.</li>
+          <li>رموز القفل تُظهر حالة كل مديرية: <i class="fas fa-lock"></i> محمية، <i class="fas fa-lock-open"></i> بلا كلمة مرور بعد.</li>
+        </ul>
+
+        <h3><i class="fas fa-file-circle-plus"></i> 2) إنشاء بلاغ جديد</h3>
+        <ol>
+          <li>من تبويب <span class="guide-chip">البلاغات</span> اضغط <b>«بلاغ جديد»</b>.</li>
+          <li>عبّئ البيانات: رقم البلاغ، التاريخ، نوع المهمة، والجهة/المحافظة.</li>
+          <li>حدّد الموقع بالضغط على <b>الخريطة</b>، أو استخدم زر <b>«موقعي الحالي»</b> لأخذ إحداثياتك تلقائياً.</li>
+          <li>أضف <b>أرقام المركبات</b> والكوادر المشاركة (يمكن إضافة صفوف متعددة).</li>
+          <li>اكتب الإجراءات المتخذة، وارفق الصور/المستندات عند الحاجة.</li>
+          <li>اضغط <b>حفظ</b> ليُضاف البلاغ إلى السجل.</li>
+        </ol>
+
+        <h3><i class="fas fa-list-check"></i> 3) سجل البلاغات</h3>
+        <ul>
+          <li>استخدم <b>البحث والفلترة</b> (بالفترة/الحالة/النوع) للوصول السريع لأي بلاغ.</li>
+          <li>لكل بلاغ: <b>عرض</b> التفاصيل، <b>تعديل</b>، <b>طباعة</b> تقرير منسّق، و<b>حذف</b>.</li>
+          <li>يمكن <b>تصدير السجل إلى Excel</b> من الأزرار أعلى الجدول.</li>
+        </ul>
+
+        <h3><i class="fas fa-users-gear"></i> 4) الكوادر والمركبات</h3>
+        <ul>
+          <li>تبويب <span class="guide-chip">الكوادر</span>: إضافة/تعديل أسماء الكوادر ومسمياتهم وأرقامهم الوظيفية.</li>
+          <li>تبويب <span class="guide-chip">المركبات</span>: إدارة قائمة المركبات (النوع/الرقم).</li>
+          <li>دعم <b>الاستيراد من Excel</b> و<b>التصدير إلى Excel</b> للقائمتين.</li>
+        </ul>
+
+        <h3><i class="fas fa-chart-column"></i> 5) التقارير والإحصاءات</h3>
+        <ul>
+          <li>حدّد <b>الفترة الزمنية</b> ثم استعرض الإحصاءات (عدد البلاغات الميدانية/المكتبية، الحالات، الكوادر).</li>
+          <li><b>التقرير النهائي المجمّع</b>: يضم ملخصاً وكشوفاً للفترة المحددة، مع إمكانية الطباعة والتصدير إلى Excel.</li>
+        </ul>
+
+        <h3><i class="fas fa-clock"></i> 6) تقرير ساعات العمل</h3>
+        <ol>
+          <li>من تبويب <span class="guide-chip">التحليل</span> اختر الفترة وأصدر <b>تقرير ساعات العمل</b>.</li>
+          <li>يحسب النظام ساعات كل كادر: <b>ميداني/مكتبي</b> و<b>ضمن الدوام/خارج الدوام</b> حسب أيام العمل والعطل الرسمية.</li>
+          <li>يُصدَّر ملف Excel متعدد الأوراق: الإجمالي، التفصيل اليومي، وكشف مفصّل لكل موظف، وورقة مستقلة لأيام الجمعة والسبت والعطل.</li>
+        </ol>
+
+        <h3><i class="fas fa-layer-group"></i> 7) العرض المركزي</h3>
+        <ul>
+          <li>يعرض بلاغات <b>جميع المحافظات</b> مجتمعة مع خريطة تفاعلية وإحصاءات لحظية.</li>
+          <li>يسهّل المتابعة والإشراف المركزي، مع إمكانية التصدير.</li>
+        </ul>
+
+        <h3><i class="fas fa-user-shield"></i> 8) كلمات المرور والتحكم الرئيسي</h3>
+        <ul>
+          <li>رابط <b>«التحكم الرئيسي»</b> أسفل الواجهة الرئيسية يتيح <b>إعادة ضبط كلمات مرور المديريات</b> بكلمة مرور رئيسية.</li>
+        </ul>
+
+        <h3><i class="fas fa-mobile-screen-button"></i> 9) العمل دون اتصال والتحديث</h3>
+        <ul>
+          <li>البرمجية تعمل <b>أوفلاين</b> بعد أول تحميل، وتُزامَن البيانات تلقائياً عند توفر الإنترنت.</li>
+          <li>عند صدور نسخة جديدة يتم <b>تحديث المحتوى تلقائياً</b>؛ وإذا ظهرت لافتة التحديث فحدّث الصفحة.</li>
+          <li>يمكن <b>تثبيت البرنامج على الهاتف</b> من قائمة المتصفح (إضافة إلى الشاشة الرئيسية).</li>
+        </ul>
+
+        <div class="guide-note"><i class="fas fa-lightbulb"></i> <b>نصيحة:</b> لحفظ العمل، اجعل الاتصال متاحاً دورياً لتُرفع بياناتك إلى السحابة، أو استخدم تصدير Excel كنسخة احتياطية.</div>
+        <div class="guide-note"><i class="fas fa-pen-nib"></i> إعداد وتصميم: <b>م. أحمد الزن</b> — نظام إدارة بلاغات الطوارئ 2025-2026.</div>
       </div>
     </div>
   </div>
@@ -2152,7 +2253,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.7';
+    const APP_VERSION = '2026.10.09.8';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2493,6 +2594,13 @@
           '<span class="dir-short">العرض المركزي</span>'+
           '<span class="dir-code">CEN</span>'+
           '<span class="dir-long">مركز مراقبة موحّد: بلاغات وإحصاءات وخريطة جميع المحافظات</span>'+
+        '</button>'+
+        '<button type="button" class="dir-card dir-card-guide" onclick="openGuide()">'+
+          '<span class="dir-lock"><i class="fas fa-circle-info"></i></span>'+
+          '<span class="dir-ico"><i class="fas fa-book-open"></i></span>'+
+          '<span class="dir-short">دليل الاستخدام</span>'+
+          '<span class="dir-code">GUIDE</span>'+
+          '<span class="dir-long">شرح البرمجية وطريقة الاستخدام خطوة بخطوة</span>'+
         '</button>';
       const cont=document.getElementById('homeContinue');
       const lk=DIRECTORATES.find(x=>x.key===localStorage.getItem(DIR_STORAGE));
@@ -2553,6 +2661,8 @@
     let CENTRAL_UNLOCKED=false;
     function enterDirectorate(key){ const p=getPass(key); if(p){ openPass('enter',key); }else{ openPass('set',key); } }
     function openCentralPass(){ openPass('enter','central'); }
+    function openGuide(){ const b=document.getElementById('guideModal'); if(b) b.style.display='flex'; }
+    function closeGuide(){ const b=document.getElementById('guideModal'); if(b) b.style.display='none'; }
     const ADMIN_PW_KEY='opendirAdminPw';
     let ADMIN_UNLOCKED=false, ADMIN_REWRITE=false;
     function adminGetPw(){ try{ return localStorage.getItem(ADMIN_PW_KEY)||''; }catch(e){ return ''; } }
