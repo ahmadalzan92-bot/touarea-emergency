@@ -1063,6 +1063,9 @@
     .home-foot{text-align:center;color:#8fb3d6;font-size:.85rem;margin-top:30px}
     .dir-card{position:relative}
     .dir-lock{position:absolute;top:11px;left:13px;color:#ffd75a;font-size:.9rem;opacity:.95}
+    .dir-card-central{background:linear-gradient(160deg,#0b2f22,#117864);border:2px solid rgba(255,215,90,.55)}
+    .dir-card-central:hover{border-color:#ffd75a;box-shadow:0 12px 30px rgba(17,120,100,.45)}
+    .dir-card-central .dir-long{color:#cfe8e3}
     .def-pass-hint{display:inline-block;direction:ltr;background:#eef;color:#0b57d0;border:1px dashed #90b4e8;border-radius:6px;padding:1px 8px;font-family:monospace;font-weight:700}
     #passModal{display:none;position:fixed;inset:0;z-index:4000;align-items:center;justify-content:center;direction:rtl}
     .pass-backdrop{position:fixed;inset:0;background:rgba(6,20,40,.6);backdrop-filter:blur(3px)}
@@ -1136,7 +1139,7 @@
       </div>
       <div class="home-continue" id="homeContinue"></div>
       <div class="home-central-btn">
-        <button type="button" class="btn btn-lg btn-primary px-5 fw-bold shadow-sm" onclick="openCentral()"><i class="fas fa-layer-group"></i> العرض المركزي: جميع بلاغات المحافظات</button>
+        <button type="button" class="btn btn-lg btn-primary px-5 fw-bold shadow-sm" onclick="openCentralPass()"><i class="fas fa-layer-group"></i> العرض المركزي: جميع بلاغات المحافظات</button>
         <div class="small text-muted mt-2">مراقبة مجمعة لكل الغرف: البلاغات والإحصاءات والخريطة التفاعلية من كل المديريات</div>
       </div>
       <div class="home-grid" id="homeGrid"></div>
@@ -2385,7 +2388,14 @@
           '<span class="dir-short">'+d.short+'</span>'+
           '<span class="dir-code">'+d.code+'</span>'+
           '<span class="dir-long">'+d.long+'</span>'+
-        '</button>').join('');
+        '</button>').join('')+
+        '<button type="button" class="dir-card dir-card-central" onclick="openCentralPass()">'+
+          '<span class="dir-lock">'+((getPass('central'))?'<i class="fas fa-lock"></i>':'<i class="fas fa-lock-open"></i>')+'</span>'+
+          '<span class="dir-ico"><i class="fas fa-layer-group"></i></span>'+
+          '<span class="dir-short">العرض المركزي</span>'+
+          '<span class="dir-code">CEN</span>'+
+          '<span class="dir-long">مركز مراقبة موحّد: بلاغات وإحصاءات وخريطة جميع المحافظات</span>'+
+        '</button>';
       const cont=document.getElementById('homeContinue');
       const lk=DIRECTORATES.find(x=>x.key===localStorage.getItem(DIR_STORAGE));
       if(cont) cont.innerHTML=lk?
@@ -2399,7 +2409,7 @@
     const DEFAULT_PW_SUFFIX='@123456789';
     function defaultDirPass(d){ return ((d&&d.code)||'').toUpperCase() + DEFAULT_PW_SUFFIX; }
     function getCustomPass(key){ try{ return ((JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}'))[key]||''); }catch(e){ return ''; } }
-    function getPass(key){ const c=getCustomPass(key); if(c) return c; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
+    function getPass(key){ const c=getCustomPass(key); if(c) return c; if(key==='central') return 'CEN'+DEFAULT_PW_SUFFIX; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
     function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
     function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
     let PASS_MODE='enter',PASS_DIR='madaba';
@@ -2407,21 +2417,23 @@
       PASS_MODE=mode; PASS_DIR=key;
       const box=document.getElementById('passModal'),title=document.getElementById('passTitle'),msg=document.getElementById('passMsg'),inp=document.getElementById('passInput'),label=document.getElementById('passOkLabel');
       if(!box) return;
-      const d=DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
+      const isCentral=(key==='central');
+      const d=isCentral?{long:'العرض المركزي لجميع بلاغات المحافظات'}:DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
       title.textContent=d.long;
       if(mode==='enter'){
-        msg.textContent='هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة مرور المديرية للوصول إليها.';
+        msg.textContent=isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة مرور العرض المركزي للوصول إليها.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة مرور المديرية للوصول إليها.';
         label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value='';
       }
-      else if(mode==='set'){ msg.textContent='هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المنفصلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
-      else { msg.textContent='أدخل كلمة مرور جديدة لهذه المديرية لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
+      else if(mode==='set'){ msg.textContent=isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المجمعة.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المنفصلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
+      else { msg.textContent=isCentral?'أدخل كلمة مرور جديدة للعرض المركزي لاستبدالها (3 أحرف فأكثر).':'أدخل كلمة مرور جديدة لهذه المديرية لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
       box.style.display='flex';
       setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
     function closePass(){ const box=document.getElementById('passModal'); if(box) box.style.display='none'; }
     function passOk(){
       const inp=document.getElementById('passInput'),val=(inp?inp.value.trim():'');
-      const d=DIRECTORATES.find(x=>x.key===PASS_DIR)||DIRECTORATES[2];
+      const isCentral=(PASS_DIR==='central');
+      const d=isCentral?{short:'العرض المركزي',key:'central'}:DIRECTORATES.find(x=>x.key===PASS_DIR)||DIRECTORATES[2];
       if(PASS_MODE==='manage'){
         if(!val){ showAlert('أدخل كلمة مرور جديدة لاستبدال الحالية.','warning'); return; }
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
@@ -2430,13 +2442,18 @@
       if(!val) return showAlert('أدخل كلمة المرور.','warning');
       if(PASS_MODE==='set'){
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
-        savePass(PASS_DIR,val); showAlert('تم إنشاء كلمة مرور للمديرية، وتم الدخول إليها.','success'); closePass(); selectDirectorate(PASS_DIR);
+        savePass(PASS_DIR,val); showAlert('تم إنشاء كلمة مرور، وتم الدخول إليها.','success'); closePass();
+        if(isCentral){ showCentral(); return; }
+        selectDirectorate(PASS_DIR);
       }else{
         if(getPass(PASS_DIR)&&val!==getPass(PASS_DIR)){ showAlert('كلمة المرور غير صحيحة، حاول مجدداً.','danger'); if(inp){inp.value='';inp.focus();} return; }
-        closePass(); selectDirectorate(PASS_DIR);
+        closePass();
+        if(isCentral){ showCentral(); return; }
+        selectDirectorate(PASS_DIR);
       }
     }
     function enterDirectorate(key){ const p=getPass(key); if(p){ openPass('enter',key); }else{ openPass('set',key); } }
+    function openCentralPass(){ openPass('enter','central'); }
     const ADMIN_PW_KEY='opendirAdminPw';
     let ADMIN_UNLOCKED=false, ADMIN_REWRITE=false;
     function adminGetPw(){ try{ return localStorage.getItem(ADMIN_PW_KEY)||''; }catch(e){ return ''; } }
@@ -2489,7 +2506,15 @@
             '<button type="button" class="btn btn-sm btn-outline-info" onclick="adminDefaultDir(\''+d.key+'\')"><i class="fa-solid fa-rotate-left"></i> الافتراضية</button>'+
             '<button type="button" class="btn btn-sm btn-outline-danger" '+(has?'':'disabled')+' onclick="adminDelDir(\''+d.key+'\')"><i class="fas fa-trash"></i> إزالة</button>'+
           '</span></div>';
-      }).join('');
+      }).join('')+
+      '<div class="admin-row central-admin-row" data-dk="central">'+
+        '<span class="admin-row-name"><i class="fas fa-layer-group"></i> العرض المركزي لجميع المحافظات <small class="text-muted">(CEN)</small></span>'+
+        '<span class="admin-row-status'+(getCustomPass('central')?' is-protected':'')+'">'+((getCustomPass('central'))?'<i class="fas fa-lock"></i> كلمة مرور مخصصة':'<i class="fa-solid fa-key"></i> كلمة افتراضية')+'</span>'+
+        '<span class="admin-row-actions">'+
+          '<button type="button" class="btn btn-sm btn-outline-primary" onclick="adminSetDir(\'central\')"><i class="fas fa-key"></i> تعيين</button>'+
+          '<button type="button" class="btn btn-sm btn-outline-info" onclick="adminDefaultDir(\'central\')"><i class="fa-solid fa-rotate-left"></i> الافتراضية</button>'+
+          '<button type="button" class="btn btn-sm btn-outline-danger" '+(getCustomPass('central')?'':'disabled')+' onclick="adminDelDir(\'central\')"><i class="fas fa-trash"></i> إزالة</button>'+
+        '</span></div>';
     }
     function adminSetDir(key){
       window.__adminSetKey=key;
@@ -2517,12 +2542,14 @@
       savePass(key,val); showAlert('تم تعيين كلمة مرور للمديرية.','success'); adminRenderPanel();
     }
     function adminDefaultDir(key){
+      if(key==='central'){ savePass(key,'CEN@123456789'); showAlert('تم تعيين كلمة مرور العرض المركزي إلى الافتراضية: CEN@123456789','success'); adminRenderPanel(); return; }
       const d=DIRECTORATES.find(x=>x.key===key);
       savePass(key,d.code+'@123456789');
       showAlert('تم تعيين كلمة مرور '+(d?d.short:'')+' إلى الافتراضية: '+d.code+'@123456789','success');
       adminRenderPanel();
     }
     function adminDelDir(key){
+      if(key==='central'){ if(!confirm('سيتم حذف كلمة المرور المخصصة للعرض المركزي وتُستعاد الافتراضية. هل أنت متأكد؟')) return; delPass(key); showAlert('تم حذف الكلمة المخصصة للعرض المركزي واستُعيدت الافتراضية.','info'); adminRenderPanel(); return; }
       const d=DIRECTORATES.find(x=>x.key===key);
       if(!confirm('سيتم حذف كلمة المرور المخصصة لمديرية «'+d.short+'» وتُستعاد الافتراضية. هل أنت متأكد؟')) return;
       delPass(key); showAlert('تم حذف الكلمة المخصصة لمديرية '+(d?d.short:'')+' واستُعيدت الافتراضية.','info'); adminRenderPanel();
@@ -4277,18 +4304,20 @@ function newReportAt(lon,lat){
   bootstrap.Tab.getOrCreateInstance(document.getElementById('report-tab')).show();
   showAlert('تم نقل الإحداثيات إلى نموذج البلاغ الجديد.');
 }
-function reportAttachChips(r){
+function reportAttachChips(r,dirKey){
   const list=r.attachments||[];
   if(!list.length) return '';
+  const dk=dirKey||((ACTIVE_DIR&&ACTIVE_DIR.key)||'madaba');
   const chip=a=>{
     const k=attachmentKind(a);
-    if(k==='image') return `<button type="button" class="att-chip" title="${esc(a.name||'')}"><img src="${a.data}" alt="" onclick="viewAttachment(${r.id},${list.indexOf(a)})"></button>`;
-    return `<button type="button" class="att-chip att-chip-file" title="${esc(a.name||'')}" onclick="viewAttachment(${r.id},${list.indexOf(a)})"><i class="${attachmentIcon(k)}"></i>${esc(String(a.name||'ملف').replace(/\.[^.]+$/,'').slice(-6))}</button>`;
+    if(k==='image') return `<button type="button" class="att-chip" title="${esc(a.name||'')}"><img src="${a.data}" alt="" onclick="viewAttachmentFor('${dk}',${r.id},${list.indexOf(a)})"></button>`;
+    return `<button type="button" class="att-chip att-chip-file" title="${esc(a.name||'')}" onclick="viewAttachmentFor('${dk}',${r.id},${list.indexOf(a)})"><i class="${attachmentIcon(k)}"></i>${esc(String(a.name||'ملف').replace(/\.[^.]+$/,'').slice(-6))}</button>`;
   };
   return `<div class="mt-2"><label class="small d-block"><i class="fas fa-paperclip"></i> المرفقات (${list.length})</label><div class="att-tiles">${list.map(chip).join('')}</div></div>`;
 }
-function viewAttachment(id,idx){
-  const r=getLS(LS_KEYS.reports,[]).find(x=>x.id===id);if(!r)return;
+function viewAttachment(id,idx){ return viewAttachmentFor((ACTIVE_DIR&&ACTIVE_DIR.key)||'madaba',id,idx); }
+function viewAttachmentFor(dirKey,id,idx){
+  const r=getLSFor(dirKey,LS_KEYS.reports,[]).find(x=>x.id===id);if(!r)return;
   const list=r.attachments||[];if(!list.length)return;
   if(idx<0)idx=list.length-1; if(idx>=list.length)idx=0;
   const a=list[idx];
@@ -4302,8 +4331,8 @@ function viewAttachment(id,idx){
   nof.textContent=(idx+1)+' / '+list.length+' — '+esc(String(r.reportNumber||''))+' · '+esc(String(r.missionType||''));
   prev.style.visibility=list.length>1?'visible':'hidden';
   next.style.visibility=list.length>1?'visible':'hidden';
-  prev.onclick=()=>viewAttachment(id,idx-1);
-  next.onclick=()=>viewAttachment(id,idx+1);
+  prev.onclick=()=>viewAttachmentFor(dirKey,id,idx-1);
+  next.onclick=()=>viewAttachmentFor(dirKey,id,idx+1);
   const dn=document.getElementById('attachDownload');
   dn.href=a.data||'#';
   dn.setAttribute('download',a.name||'ملف');
@@ -5220,19 +5249,37 @@ function renderCentralList(){
   }).join('')||'<tr><td colspan="7" class="text-center text-muted">لا توجد بلاغات مطابقة</td></tr>';
 }
 function centralExport(){
-  const rows=document.getElementById('centralListRows');
-  if(!rows || !rows.rows.length){ showAlert('لا توجد بلاغات للتصدير.','warning'); return; }
-  const aoa=[['رقم البلاغ','المحافظة','التاريخ','نوع المهمة','الموقع','الفريق','الحالة']];
-  Array.prototype.forEach.call(rows.rows,function(tr){
-    const c=tr.cells; if(!c || c.length<7) return;
-    aoa.push([c[0].innerText,c[1].innerText,c[2].innerText,c[3].innerText,c[4].innerText,c[5].innerText,c[6].innerText]);
+  const q=normalizeArabic((document.getElementById('centralSearch')||{}).value||'');
+  const st=(document.getElementById('centralListStatus')||{}).value||'';
+  const flat=centralFlat();
+  const hits=flat.filter(function(o){
+    if(st && (o.r.status||'منجز')!==st) return false;
+    if(!q) return true;
+    const hay=normalizeArabic([o.r.reportNumber,o.d.short,o.r.missionType,o.r.location,o.r.reporter,(o.r.staff||[]).map(staffNameNo).join(' '),reportVehicles(o.r).map(function(v){return v.type+' '+v.number;}).join(' '),o.r.actionsTaken].join(' '));
+    return hay.indexOf(q)!==-1;
+  });
+  if(!hits.length){ showAlert('لا توجد بلاغات للتصدير.','warning'); return; }
+  const aoa=[['رقم البلاغ','المحافظة','التاريخ','نوع المهمة','الموقع','الفريق','رقم الفرقة','الإجراءات المتخذة','الحالة']];
+  hits.forEach(function(o){
+    const r=o.r;
+    aoa.push([
+      String(r.reportNumber||''),
+      o.d.short,
+      String(r.reportDate||''),
+      String(r.missionType||''),
+      String(r.location||''),
+      (r.staff||[]).map(staffNameNo).join('، '),
+      String(r.teamNo||''),
+      String(r.actionsTaken||''),
+      String(r.status||'منجز')
+    ]);
   });
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']=[16,12,12,26,40,40,12].map(function(w){ return {wch:w}; });
+  ws['!cols']=[16,14,12,26,36,36,12,44,12].map(function(w){ return {wch:w}; });
   XLSX.utils.book_append_sheet(wb,ws,'بلاغات كل المحافظات');
   XLSX.writeFile(wb,'بلاغات_كل_المحافظات_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  showAlert('تم تصدير '+aoa.length+' صف.');
+  showAlert('تم تصدير '+hits.length+' صف.');
 }
 function centralInitMap(){
   if(CMAP) return;
@@ -5261,13 +5308,27 @@ function centralMapRender(fit){
       const m=L.marker(ll,{icon,title:(o.d.short)+' — '+(r.missionType||'')}).addTo(CM_LAYER);
       CMARK[o.d.key+'_'+id]=m;
       m.bindPopup(function(){
-        return '<div style="min-width:230px;direction:rtl;text-align:right">'+
-          '<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(o.d.short)+'</span> '+esc(r.reportNumber)+'</div>'+
-          '<div class="small text-muted mb-1">'+esc(r.reportDate)+' · '+esc(r.missionType)+'</div>'+
+        const opts=Object.keys(STATUSES).map(function(k){return '<option '+(k===(r.status||'منجز')?'selected':'')+'>'+k+'</option>';}).join('');
+        const staff=(r.staff||[]).length?r.staff.map(function(s){return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):'');}).join('<br>'):'لا يوجد';
+        const veh=reportVehicles(r).length?reportVehicles(r).map(function(v){return esc(v.type)+(v.number?' — '+esc(v.number):'');}).join('<br>'):'لا يوجد';
+        return '<div dir="rtl" style="min-width:250px">'+
+          '<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(o.d.short)+'</span> بلاغ '+esc(r.reportNumber||'ــــ')+'</div>'+
+          '<div class="small text-muted mb-1">'+esc(r.reportDate)+' · '+esc(dayName(r.reportDate))+'</div>'+
+          '<div class="mb-1"><i class="fas fa-bullhorn"></i> '+esc(r.missionType)+'</div>'+
           '<div class="small mb-1"><i class="fas fa-location-dot"></i> '+esc(r.location)+'</div>'+
-          '<div class="small"><span class="badge" style="background:'+color+'">'+esc(s)+'</span> '+esc(r.reporter||'')+'</div>'+
+          '<div class="small mb-1"><i class="fas fa-user"></i> '+esc(r.reporter||'')+'</div>'+
+          '<label class="small">الإجراءات المتخذة</label><textarea id="cAct" class="form-control form-control-sm mb-1" rows="3">'+esc(r.actionsTaken)+'</textarea>'+
+          '<button class="btn btn-sm btn-outline-primary mb-2" onclick="centralMapSaveAction(\''+o.d.key+'\','+id+')">حفظ الإجراء</button>'+
+          '<label class="small">الحالة</label><select class="form-select form-select-sm mb-2" onchange="centralMapSetStatus(\''+o.d.key+'\','+id+',this.value)">'+opts+'</select>'+
+          '<div class="row g-1 mb-2"><div class="col-6"><input id="cLon" class="form-control form-control-sm" value="'+esc(r.longitude)+'" title="خط الطول"></div><div class="col-6"><input id="cLat" class="form-control form-control-sm" value="'+esc(r.latitude)+'" title="خط العرض"></div></div>'+
+          '<button class="btn btn-sm btn-primary" onclick="centralMapSaveCoords(\''+o.d.key+'\','+id+')">حفظ الإحداثيات</button>'+
+          '<div class="small mt-2 mb-1"><i class="fas fa-people-group"></i> الفرقة: '+esc(r.teamNo||'')+'</div>'+
+          '<div class="small mb-1"><i class="fas fa-id-card"></i> '+staff+'</div>'+
+          '<div class="small mb-1"><i class="fas fa-truck"></i> '+veh+'</div>'+
+          reportAttachChips(r,o.d.key)+
+          '<a class="small d-inline-flex align-items-center gap-1 mt-2 text-decoration-none" href="#" onclick="centralOpenAttach(\''+o.d.key+'\','+id+',0);return false"><i class="fas fa-expand"></i> عرض المرفقات كاملة</a>'+
         '</div>';
-      },{minWidth:260,maxWidth:330});
+      },{minWidth:280,maxWidth:360});
     });
   });
   const note=document.getElementById('centralMapNote');
@@ -5279,6 +5340,38 @@ function centralMapRender(fit){
 }
 function tCentReports(){ const d=centralReadAll(); let n=0; d.forEach(function(o){n+=o.reports.length;}); return n; }
 function centralMapFit(){ if(CMAP) centralMapRender(true); }
+function centralMapSaveAction(dirKey,id){
+  const v=document.getElementById('cAct').value.trim();
+  const rs=getLSFor(dirKey,LS_KEYS.reports,[])||[];
+  const r=rs.find(function(x){ return String(x.id)===String(id); });
+  if(!r) return showAlert('البلاغ غير موجود.','warning');
+  r.actionsTaken=v;
+  setLSFor(dirKey,LS_KEYS.reports,rs);
+  renderCentralList(); if(CMAP&&CM_LAYER) centralMapRender(false);
+  showAlert('تم حفظ الإجراءات المتخذة.');
+}
+function centralMapSetStatus(dirKey,id,v){
+  const rs=getLSFor(dirKey,LS_KEYS.reports,[])||[];
+  const r=rs.find(function(x){ return String(x.id)===String(id); });
+  if(!r) return showAlert('البلاغ غير موجود.','warning');
+  r.status=v;
+  setLSFor(dirKey,LS_KEYS.reports,rs);
+  renderCentralList(); if(CMAP&&CM_LAYER) centralMapRender(false);
+  showAlert('تم تحديث حالة البلاغ.');
+}
+function centralMapSaveCoords(dirKey,id){
+  const lon=document.getElementById('cLon').value.trim(),lat=document.getElementById('cLat').value.trim();
+  if(!coordOk(lon,lat)) return showAlert('إحداثيات غير صحيحة أو خارج نطاق الأردن.','warning');
+  const rs=getLSFor(dirKey,LS_KEYS.reports,[])||[];
+  const r=rs.find(function(x){ return String(x.id)===String(id); });
+  if(!r) return showAlert('البلاغ غير موجود.','warning');
+  r.longitude=String(Math.round(parseFloat(lon)*1e7)/1e7);
+  r.latitude=String(Math.round(parseFloat(lat)*1e7)/1e7);
+  setLSFor(dirKey,LS_KEYS.reports,rs);
+  renderCentralList(); if(CMAP&&CM_LAYER) centralMapRender(false);
+  showAlert('تم حفظ الإحداثيات.');
+}
+function centralOpenAttach(dirKey,id,idx){ viewAttachmentFor(dirKey,id,idx); }
 function refreshCentral(){
   if(cloudAvailable()){ cloudPullAll().then(function(){ renderCentral(); }).catch(function(){ renderCentral(); }); }
   else renderCentral();
