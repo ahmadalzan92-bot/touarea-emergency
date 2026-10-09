@@ -1063,6 +1063,7 @@
     .home-foot{text-align:center;color:#8fb3d6;font-size:.85rem;margin-top:30px}
     .dir-card{position:relative}
     .dir-lock{position:absolute;top:11px;left:13px;color:#ffd75a;font-size:.9rem;opacity:.95}
+    .def-pass-hint{display:inline-block;direction:ltr;background:#eef;color:#0b57d0;border:1px dashed #90b4e8;border-radius:6px;padding:1px 8px;font-family:monospace;font-weight:700}
     #passModal{display:none;position:fixed;inset:0;z-index:4000;align-items:center;justify-content:center;direction:rtl}
     .pass-backdrop{position:fixed;inset:0;background:rgba(6,20,40,.6);backdrop-filter:blur(3px)}
     .pass-box{position:relative;z-index:1;width:min(420px,92vw);background:linear-gradient(180deg,#f7fafd,#fff);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45);border-top:4px solid #e7a30c}
@@ -2025,6 +2026,7 @@
       return fullKey.slice(i+2);
     }
     function cloudSyncableKey(fullKey){
+      if(fullKey==='opendirPasswords'||fullKey==='opendirAdminPw') return true;
       const raw = cloudRawKeyOf(fullKey);
       if(!raw) return false;
       return Object.values(LS_KEYS).indexOf(raw) > -1 || fullKey === 'opendirKey';
@@ -2097,6 +2099,14 @@
             await cloudPushNow(fullKey, localRaw);
           }
         }
+        [ADMIN_PW_KEY, 'opendirPasswords'].forEach(fullKey=>{
+          if(existing[fullKey]) return;
+          const localRaw = localStorage.getItem(fullKey);
+          if(localRaw === null || localRaw === '') return;
+          const localTs = meta[fullKey] || 0;
+          if(localTs > 0) return;
+          try{ cloudPushNow(fullKey, localRaw); }catch(e){}
+        });
         cloudMetaSet(meta);
         cloudSetOnline(true);
         if(changed){
@@ -2249,9 +2259,12 @@
       buildHomeGrid();
       const hs=document.getElementById('homeScreen'); if(hs) hs.style.display='block';
     }
-    function getPass(key){ try{ return ((JSON.parse(localStorage.getItem('opendirPasswords')||'{}'))[key]||''); }catch(e){ return ''; } }
-    function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswords')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswords',JSON.stringify(o)); }
-    function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswords')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswords',JSON.stringify(o)); }
+    const DEFAULT_PW_SUFFIX='@123456789';
+    function defaultDirPass(d){ return ((d&&d.code)||'').toUpperCase() + DEFAULT_PW_SUFFIX; }
+    function getCustomPass(key){ try{ return ((JSON.parse(localStorage.getItem('opendirPasswords')||'{}'))[key]||''); }catch(e){ return ''; } }
+    function getPass(key){ const c=getCustomPass(key); if(c) return c; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
+    function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswords')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswords',JSON.stringify(o)); cloudPush('opendirPasswords', o); }
+    function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswords')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswords',JSON.stringify(o)); cloudPush('opendirPasswords', o); }
     let PASS_MODE='enter',PASS_DIR='madaba';
     function openPass(mode,key){
       PASS_MODE=mode; PASS_DIR=key;
@@ -2259,9 +2272,15 @@
       if(!box) return;
       const d=DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
       title.textContent=d.long;
-      if(mode==='enter'){ msg.textContent='هذه المديرية محمية بكلمة مرور. أدخل كلمة المرور للوصول إلى بياناتها المستقلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
-      else if(mode==='set'){ msg.textContent='لا توجد كلمة مرور لهذه المديرية بعد. أنشئ كلمة مرور لحماية بياناتها المنفصلة (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ والبدء'; inp.value=''; }
-      else { msg.textContent='أدخل كلمة مرور جديدة لاستبدال كلمة المرور الحالية.'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
+      if(mode==='enter'){
+        const custom=getCustomPass(key);
+        msg.innerHTML = custom
+          ? 'هذه المديرية محمية بكلمة مرور. أدخل كلمة المرور للوصول إلى بياناتها المستقلة.'
+          : 'كلمة المرور الافتراضية لهذه المديرية هي: <b class="def-pass-hint">'+escapeHtml(defaultDirPass(d))+'</b>. أدخلها للدخول (يمكنك تغييرها لاحقاً من زر «كلمة المرور» داخل الصفحة أو من التحكم الرئيسي).';
+        label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value='';
+      }
+      else if(mode==='set'){ msg.textContent='هذه المديرية محمية بكلمة مرور افتراضية: '+defaultDirPass(d)+'. أدخل كلمة المرور للوصول (يمكن تغييرها لاحقاً).'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
+      else { msg.innerHTML='كلمة المرور الحالية: <b>'+escapeHtml(getPass(key))+'</b><br>أدخل كلمة مرور جديدة لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
       box.style.display='flex';
       setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
@@ -2287,7 +2306,7 @@
     const ADMIN_PW_KEY='opendirAdminPw';
     let ADMIN_UNLOCKED=false, ADMIN_REWRITE=false;
     function adminGetPw(){ try{ return localStorage.getItem(ADMIN_PW_KEY)||''; }catch(e){ return ''; } }
-    function adminSetPw(p){ try{ localStorage.setItem(ADMIN_PW_KEY,p); }catch(e){} }
+    function adminSetPw(p){ try{ localStorage.setItem(ADMIN_PW_KEY,p); }catch(e){} cloudPush(ADMIN_PW_KEY, p); }
     function openAdmin(){
       ADMIN_UNLOCKED=false; ADMIN_REWRITE=false;
       const box=document.getElementById('adminModal'); if(!box) return;
@@ -2326,12 +2345,14 @@
       document.getElementById('adminPanel').style.display='';
       const list=document.getElementById('adminDirList');
       list.innerHTML=DIRECTORATES.map(d=>{
-        const has=getPass(d.key);
+        const custom=getCustomPass(d.key), def=defaultDirPass(d);
+        const has=!!custom;
         return '<div class="admin-row" data-dk="'+d.key+'">'+
           '<span class="admin-row-name"><i class="fas '+d.icon+'"></i> '+d.short+' <small class="text-muted">('+d.code+')</small></span>'+
-          '<span class="admin-row-status'+(has?' is-protected':'')+'">'+((has)?'<i class="fas fa-lock"></i> محمية':'<i class="fas fa-lock-open"></i> غير محمية')+'</span>'+
+          '<span class="admin-row-status'+(has?' is-protected':'')+'">'+((has)?'<i class="fas fa-lock"></i> مخصصة':'<i class="fa-solid fa-key"></i> افتراضية: '+d.code+'@123456789')+'</span>'+
           '<span class="admin-row-actions">'+
             '<button type="button" class="btn btn-sm btn-outline-primary" onclick="adminSetDir(\''+d.key+'\')"><i class="fas fa-key"></i> تعيين</button>'+
+            '<button type="button" class="btn btn-sm btn-outline-info" onclick="adminDefaultDir(\''+d.key+'\')"><i class="fa-solid fa-rotate-left"></i> الافتراضية</button>'+
             '<button type="button" class="btn btn-sm btn-outline-danger" '+(has?'':'disabled')+' onclick="adminDelDir(\''+d.key+'\')"><i class="fas fa-trash"></i> إزالة</button>'+
           '</span></div>';
       }).join('');
@@ -2361,10 +2382,16 @@
       if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
       savePass(key,val); showAlert('تم تعيين كلمة مرور للمديرية.','success'); adminRenderPanel();
     }
+    function adminDefaultDir(key){
+      const d=DIRECTORATES.find(x=>x.key===key);
+      savePass(key,d.code+'@123456789');
+      showAlert('تم تعيين كلمة مرور '+(d?d.short:'')+' إلى الافتراضية: '+d.code+'@123456789','success');
+      adminRenderPanel();
+    }
     function adminDelDir(key){
       const d=DIRECTORATES.find(x=>x.key===key);
-      if(!confirm('سيتم إزالة كلمة مرور مديرية «'+d.short+'». هل أنت متأكد؟')) return;
-      delPass(key); showAlert('تمت إزالة كلمة مرور '+(d?d.short:'')+'.','info'); adminRenderPanel();
+      if(!confirm('سيتم حذف كلمة المرور المخصصة لمديرية «'+d.short+'» وتُستعاد الافتراضية. هل أنت متأكد؟')) return;
+      delPass(key); showAlert('تم حذف الكلمة المخصصة لمديرية '+(d?d.short:'')+' واستُعيدت الافتراضية.','info'); adminRenderPanel();
     }
     function adminSetMasterPw(){
       ADMIN_UNLOCKED=false; ADMIN_REWRITE=true;
