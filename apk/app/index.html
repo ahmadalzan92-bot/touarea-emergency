@@ -2443,15 +2443,16 @@
       if(PASS_MODE==='set'){
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
         savePass(PASS_DIR,val); showAlert('تم إنشاء كلمة مرور، وتم الدخول إليها.','success'); closePass();
-        if(isCentral){ showCentral(); return; }
+        if(isCentral){ CENTRAL_UNLOCKED=true; showCentral(); return; }
         selectDirectorate(PASS_DIR);
       }else{
         if(getPass(PASS_DIR)&&val!==getPass(PASS_DIR)){ showAlert('كلمة المرور غير صحيحة، حاول مجدداً.','danger'); if(inp){inp.value='';inp.focus();} return; }
         closePass();
-        if(isCentral){ showCentral(); return; }
+        if(isCentral){ CENTRAL_UNLOCKED=true; showCentral(); return; }
         selectDirectorate(PASS_DIR);
       }
     }
+    let CENTRAL_UNLOCKED=false;
     function enterDirectorate(key){ const p=getPass(key); if(p){ openPass('enter',key); }else{ openPass('set',key); } }
     function openCentralPass(){ openPass('enter','central'); }
     const ADMIN_PW_KEY='opendirAdminPw';
@@ -5248,6 +5249,100 @@ function renderCentralList(){
     '</tr>';
   }).join('')||'<tr><td colspan="7" class="text-center text-muted">لا توجد بلاغات مطابقة</td></tr>';
 }
+function centralBuildWS(hits){
+  const N=13,aoa=[],merges=[],heights={};
+  const blank=()=>Array(N).fill('');
+  const put=(r,c,v)=>{while(aoa.length<=r)aoa.push(blank());aoa[r][c]=v;};
+  const ds=[...new Set(hits.map(o=>o.r.reportDate).filter(Boolean))].sort();
+  const range=ds.length?(fmtDMY(ds[0])+(ds.length>1?' — '+fmtDMY(ds[ds.length-1]):'')):'جميع الفترات';
+  const provs=[...new Set(hits.map(o=>o.d.short))];
+  put(0,0,'وزارة الأشغال العامة والإسكان');put(1,0,'مديرية الطوارئ');put(2,0,'تقرير بلاغات جميع المحافظات (العرض المركزي الموحد)');
+  put(3,0,'عدد البلاغات');put(3,2,hits.length);put(3,5,'الفترة');put(3,6,range);put(3,9,'عدد المحافظات');put(3,10,provs.length);
+  ['الرقم','المحافظة','نوع البلاغ','رقم البلاغ','الإجراء المتخذ','الإحداثيات (الطول / العرض)','رقم الفرقة','أسماء العاملين في الفرقة مع بيان الوظيفة','','الآليات المستخدمة','مدة العمل خارج أوقات الدوام الرسمي','اليوم والتاريخ','حالة البلاغ'].forEach((t,c)=>put(4,c,t));
+  put(6,8,'نوع');put(6,9,'رقم');
+  for(let r=0;r<3;r++)merges.push({s:{r,c:0},e:{r,c:N-1}});
+  [0,1,2,3,4,5,6,7,10,11,12].forEach(c=>merges.push({s:{r:4,c},e:{r:6,c}}));
+  merges.push({s:{r:4,c:8},e:{r:5,c:9}});
+  let r0=7,seq=0;
+  DIRECTORATES.forEach(d=>{
+    const g=hits.filter(o=>o.d.key===d.key);
+    if(!g.length) return;
+    const gStart=r0;
+    g.forEach((o,i)=>{
+      const r=o.r;
+      const veh=reportVehicles(r),h=Math.max(4,veh.length),mode=r.workMode||'ميداني';
+      const staffTxt=(r.staff||[]).map(s=>`${staffNameNo(s)}/${s.role||''}`).join('\n');
+      put(r0+h-1,0,'');
+      put(r0,0,++seq);put(r0,1,d.short);put(r0,2,r.missionType);put(r0,3,numOrStr(r.reportNumber)||'ــــ');put(r0,4,r.actionsTaken);
+      put(r0+1,5,numOrStr(r.longitude));put(r0+2,5,numOrStr(r.latitude));
+      put(r0,6,numOrStr(r.teamNo));put(r0,7,staffTxt);
+      veh.forEach((v,k)=>{put(r0+k,8,v.type);put(r0+k,9,numOrStr(v.number));});
+      put(r0,10,`${mode}\n${fmtH(hoursOf(r))}\nساعات`);put(r0,11,dayName(r.reportDate)+(r.reportDate?'\n'+fmtDMY(r.reportDate):''));put(r0,12,r.status||'منجز');
+      [0,1,2,3,4,6,7,10,11,12].forEach(c=>merges.push({s:{r:r0,c},e:{r:r0+h-1,c}}));
+      const lines=Math.max((r.staff||[]).length,Math.ceil(String(r.actionsTaken||'').length/40),3);
+      for(let k=0;k<h;k++)heights[r0+k]=Math.max(20,Math.ceil(lines*16/h)+2);
+      r0+=h;
+    });
+    const totH=g.reduce((a,o)=>a+hoursOf(o.r),0);
+    put(r0,0,`إجمالي محافظة ${d.short}`);put(r0,2,`عدد البلاغات: ${g.length}`);put(r0,5,`الساعات: ${fmtH(totH)}`);
+    merges.push({s:{r:r0,c:0},e:{r:r0,c:N-1}});heights[r0]=22;r0+=1;
+  });
+  const grandT=hits.reduce((a,o)=>a+hoursOf(o.r),0);
+  put(r0,0,'الإجمالي العام');put(r0,4,`${hits.length} بلاغ`);put(r0,7,`الساعات: ${fmtH(grandT)}`);
+  merges.push({s:{r:r0,c:0},e:{r:r0,c:N-1}});heights[r0]=24;r0+=1;
+  const bodyEnd=r0;r0+=1;
+  put(r0,0,'مدير مديرية الأشغال');put(r0,8,'مدير مديرية الطوارئ');put(r0+1,0,frSettings().mgr1);put(r0+1,8,frSettings().mgr2);
+  [r0,r0+1].forEach(r=>{merges.push({s:{r,c:0},e:{r,c:5}});merges.push({s:{r,c:8},e:{r,c:12}});});
+  put(r0+3,0,'إعداد وتصميم المهندس أحمد الزن');merges.push({s:{r:r0+3,c:0},e:{r:r0+3,c:12}});
+  put(r0+4,0,'صدر هذا التقرير آلياً من نظام طوارئ الأشغال');merges.push({s:{r:r0+4,c:0},e:{r:r0+4,c:12}});
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const thin={style:'thin',color:{rgb:'000000'}},bd={top:thin,bottom:thin,left:thin,right:thin};
+  for(let R=0;R<aoa.length;R++)for(let C=0;C<N;C++){
+    const a=XLSX.utils.encode_cell({r:R,c:C});if(!ws[a])ws[a]={t:'s',v:''};
+    const hdr=R>=4&&R<7,top=R<3,sig=R>=bodyEnd;
+    const st={alignment:{wrapText:true,vertical:'center',horizontal:'right',readingOrder:2},font:{name:'Arial',sz:top?14:11,bold:hdr||top||R===3||sig}};
+    if(hdr)st.fill={fgColor:{rgb:'D9E1F2'}};
+    if(R>=3&&!sig)st.border=bd;
+    ws[a].s=st;
+  }
+  ws['!cols']=[6,12,20,14,40,14,12,42,12,12,16,14,14].map(w=>({wch:w}));
+  ws['!rows']=aoa.map((_,R)=>heights[R]?{hpt:heights[R]}:(R>=4&&R<7?{hpt:24}:{}));
+  ws['!merges']=merges;
+  return {ws,count:hits.length,provs:provs.length,range};
+}
+function centralBuildSummarySheet(provs){
+  const by=[];
+  provs.forEach(p=>{
+    const g=centralFlat().filter(o=>o.d.key===p.key);
+    const re=g.filter(x=>x.r.workMode!=='مكتبي'),off=g.filter(x=>x.r.workMode==='مكتبي');
+    by.push({d:p,total:g.length,field:re.reduce((a,x)=>a+hoursOf(x.r),0),office:off.reduce((a,x)=>a+hoursOf(x.r),0)});
+  });
+  const N=6,aoa=[],merges=[];
+  const blank=()=>Array(N).fill('');
+  const put=(r,c,v)=>{while(aoa.length<=r)aoa.push(blank());aoa[r][c]=v;};
+  put(0,0,'وزارة الأشغال العامة والإسكان');put(1,0,'مديرية الطوارئ');put(2,0,'الملخص الإحصائي — بلاغات جميع المحافظات');
+  for(let r=0;r<3;r++)merges.push({s:{r,c:0},e:{r,c:5}});
+  ['المحافظة','عدد البلاغات','ساعات ميدانية','ساعات مكتبية','إجمالي الساعات','نسبة البلاغات'].forEach((t,c)=>put(3,c,t));
+  const tot=by.reduce((a,x)=>a+x.total,0);
+  by.forEach((x,i)=>{
+    const r0=4+i;
+    put(r0,0,x.d.short);put(r0,1,x.total);put(r0,2,numOrStr(fmtH(x.field)));put(r0,3,numOrStr(fmtH(x.office)));put(r0,4,numOrStr(fmtH(x.field+x.office)));put(r0,5,(tot?Math.round(x.total/tot*100):0)+'%');
+  });
+  const tr=4+by.length;
+  put(tr,0,'الإجمالي');put(tr,1,tot);put(tr,2,numOrStr(fmtH(by.reduce((a,x)=>a+x.field,0))));put(tr,3,numOrStr(fmtH(by.reduce((a,x)=>a+x.office,0))));put(tr,4,numOrStr(fmtH(by.reduce((a,x)=>a+x.field+x.office,0))));put(tr,5,'100%');
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[22,14,16,16,16,14].map(w=>({wch:w}));
+  ws['!merges']=merges;
+  for(let R=0;R<aoa.length;R++)for(let C=0;C<N;C++){
+    const a=XLSX.utils.encode_cell({r:R,c:C});if(!ws[a])ws[a]={t:'s',v:''};
+    const hdr=R===3,top=R<3,sig=R===tr;
+    const st={alignment:{wrapText:true,vertical:'center',horizontal:'right',readingOrder:2},font:{name:'Arial',sz:top?14:11,bold:hdr||top||sig}};
+    if(hdr)st.fill={fgColor:{rgb:'FCE4D6'}};
+    if(R>=3)st.border={top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}};
+    ws[a].s=st;
+  }
+  return ws;
+}
 function centralExport(){
   const q=normalizeArabic((document.getElementById('centralSearch')||{}).value||'');
   const st=(document.getElementById('centralListStatus')||{}).value||'';
@@ -5259,27 +5354,12 @@ function centralExport(){
     return hay.indexOf(q)!==-1;
   });
   if(!hits.length){ showAlert('لا توجد بلاغات للتصدير.','warning'); return; }
-  const aoa=[['رقم البلاغ','المحافظة','التاريخ','نوع المهمة','الموقع','الفريق','رقم الفرقة','الإجراءات المتخذة','الحالة']];
-  hits.forEach(function(o){
-    const r=o.r;
-    aoa.push([
-      String(r.reportNumber||''),
-      o.d.short,
-      String(r.reportDate||''),
-      String(r.missionType||''),
-      String(r.location||''),
-      (r.staff||[]).map(staffNameNo).join('، '),
-      String(r.teamNo||''),
-      String(r.actionsTaken||''),
-      String(r.status||'منجز')
-    ]);
-  });
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols']=[16,14,12,26,36,36,12,44,12].map(function(w){ return {wch:w}; });
-  XLSX.utils.book_append_sheet(wb,ws,'بلاغات كل المحافظات');
-  XLSX.writeFile(wb,'بلاغات_كل_المحافظات_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  showAlert('تم تصدير '+hits.length+' صف.');
+  const b=centralBuildWS(hits);
+  const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,b.ws,'تقرير بلاغات المحافظات');
+  XLSX.utils.book_append_sheet(wb,centralBuildSummarySheet(DIRECTORATES),'ملخص إحصائي');
+  XLSX.writeFile(wb,'العرض_المركزي_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير التقرير بالتنسيق الرسمي ('+b.count+' بلاغاً من '+b.provs+' محافظة).');
 }
 function centralInitMap(){
   if(CMAP) return;
@@ -5308,26 +5388,35 @@ function centralMapRender(fit){
       const m=L.marker(ll,{icon,title:(o.d.short)+' — '+(r.missionType||'')}).addTo(CM_LAYER);
       CMARK[o.d.key+'_'+id]=m;
       m.bindPopup(function(){
-        const opts=Object.keys(STATUSES).map(function(k){return '<option '+(k===(r.status||'منجز')?'selected':'')+'>'+k+'</option>';}).join('');
-        const staff=(r.staff||[]).length?r.staff.map(function(s){return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):'');}).join('<br>'):'لا يوجد';
-        const veh=reportVehicles(r).length?reportVehicles(r).map(function(v){return esc(v.type)+(v.number?' — '+esc(v.number):'');}).join('<br>'):'لا يوجد';
-        return '<div dir="rtl" style="min-width:250px">'+
-          '<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(o.d.short)+'</span> بلاغ '+esc(r.reportNumber||'ــــ')+'</div>'+
-          '<div class="small text-muted mb-1">'+esc(r.reportDate)+' · '+esc(dayName(r.reportDate))+'</div>'+
-          '<div class="mb-1"><i class="fas fa-bullhorn"></i> '+esc(r.missionType)+'</div>'+
-          '<div class="small mb-1"><i class="fas fa-location-dot"></i> '+esc(r.location)+'</div>'+
-          '<div class="small mb-1"><i class="fas fa-user"></i> '+esc(r.reporter||'')+'</div>'+
-          '<label class="small">الإجراءات المتخذة</label><textarea id="cAct" class="form-control form-control-sm mb-1" rows="3">'+esc(r.actionsTaken)+'</textarea>'+
-          '<button class="btn btn-sm btn-outline-primary mb-2" onclick="centralMapSaveAction(\''+o.d.key+'\','+id+')">حفظ الإجراء</button>'+
-          '<label class="small">الحالة</label><select class="form-select form-select-sm mb-2" onchange="centralMapSetStatus(\''+o.d.key+'\','+id+',this.value)">'+opts+'</select>'+
-          '<div class="row g-1 mb-2"><div class="col-6"><input id="cLon" class="form-control form-control-sm" value="'+esc(r.longitude)+'" title="خط الطول"></div><div class="col-6"><input id="cLat" class="form-control form-control-sm" value="'+esc(r.latitude)+'" title="خط العرض"></div></div>'+
-          '<button class="btn btn-sm btn-primary" onclick="centralMapSaveCoords(\''+o.d.key+'\','+id+')">حفظ الإحداثيات</button>'+
-          '<div class="small mt-2 mb-1"><i class="fas fa-people-group"></i> الفرقة: '+esc(r.teamNo||'')+'</div>'+
-          '<div class="small mb-1"><i class="fas fa-id-card"></i> '+staff+'</div>'+
-          '<div class="small mb-1"><i class="fas fa-truck"></i> '+veh+'</div>'+
-          reportAttachChips(r,o.d.key)+
-          '<a class="small d-inline-flex align-items-center gap-1 mt-2 text-decoration-none" href="#" onclick="centralOpenAttach(\''+o.d.key+'\','+id+',0);return false"><i class="fas fa-expand"></i> عرض المرفقات كاملة</a>'+
-        '</div>';
+        try{
+          const opts=Object.keys(STATUSES).map(function(k){return '<option '+(k===(r.status||'منجز')?'selected':'')+'>'+k+'</option>';}).join('');
+          const staff=(r.staff||[]).length?r.staff.map(function(s){return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):'');}).join('<br>'):'لا يوجد';
+          const veh=reportVehicles(r).length?reportVehicles(r).map(function(v){return esc(v.type)+(v.number?' — '+esc(v.number):'');}).join('<br>'):'لا يوجد';
+          return '<div dir="rtl" style="min-width:250px">'+
+            '<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(o.d.short)+'</span> بلاغ '+esc(r.reportNumber||'ــــ')+'</div>'+
+            '<div class="small text-muted mb-1">'+esc(r.reportDate)+' · '+esc(dayName(r.reportDate))+'</div>'+
+            '<div class="mb-1"><i class="fas fa-bullhorn"></i> '+esc(r.missionType)+'</div>'+
+            '<div class="small mb-1"><i class="fas fa-location-dot"></i> '+esc(r.location)+'</div>'+
+            '<div class="small mb-1"><i class="fas fa-user"></i> '+esc(r.reporter||'')+'</div>'+
+            '<label class="small fw-bold">الإجراءات المتخذة</label>'+
+            '<div class="small border rounded p-1 mb-1 bg-light">'+(r.actionsTaken?escBr(r.actionsTaken):'لا يوجد')+'</div>'+
+            '<textarea id="cAct" class="form-control form-control-sm mb-1" rows="2">'+esc(r.actionsTaken)+'</textarea>'+
+            '<button class="btn btn-sm btn-outline-primary mb-2" onclick="centralMapSaveAction(\''+o.d.key+'\','+id+')">حفظ الإجراء</button>'+
+            '<label class="small">الحالة</label><select class="form-select form-select-sm mb-2" onchange="centralMapSetStatus(\''+o.d.key+'\','+id+',this.value)">'+opts+'</select>'+
+            '<div class="row g-1 mb-2"><div class="col-6"><input id="cLon" class="form-control form-control-sm" value="'+esc(r.longitude)+'" title="خط الطول"></div><div class="col-6"><input id="cLat" class="form-control form-control-sm" value="'+esc(r.latitude)+'" title="خط العرض"></div></div>'+
+            '<button class="btn btn-sm btn-primary" onclick="centralMapSaveCoords(\''+o.d.key+'\','+id+')">حفظ الإحداثيات</button>'+
+            '<div class="small mt-2 mb-1"><i class="fas fa-people-group"></i> الفرقة: '+esc(r.teamNo||'')+'</div>'+
+            '<div class="small mb-1"><i class="fas fa-id-card"></i> '+staff+'</div>'+
+            '<div class="small mb-1"><i class="fas fa-truck"></i> '+veh+'</div>'+
+            reportAttachChips(r,o.d.key)+
+            '<a class="small d-inline-flex align-items-center gap-1 mt-2 text-decoration-none" href="#" onclick="centralOpenAttach(\''+o.d.key+'\','+id+',0);return false"><i class="fas fa-expand"></i> عرض المرفقات كاملة</a>'+
+          '</div>';
+        }catch(err){
+          return '<div dir="rtl" style="min-width:240px"><b>'+esc(o.d.short)+' — بلاغ '+esc(r.reportNumber||'')+'</b>'+
+            '<div class="small mb-1">'+esc(r.missionType||'')+'</div>'+
+            '<label class="small fw-bold">الإجراءات المتخذة</label>'+
+            '<div class="small border rounded p-1 bg-light">'+(r.actionsTaken?escBr(r.actionsTaken):'لا يوجد')+'</div></div>';
+        }
       },{minWidth:280,maxWidth:360});
     });
   });
@@ -5377,6 +5466,7 @@ function refreshCentral(){
   else renderCentral();
 }
 function showCentral(){
+  if(!CENTRAL_UNLOCKED){ openCentralPass(); return; }
   const p=document.getElementById('centralScreen'); if(!p) return;
   const hs=document.getElementById('homeScreen'); if(hs) hs.style.display='none';
   p.style.display='block';
