@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>نظام إدارة بلاغات الحوادث - محافظة مأدبا</title>
 
+  <!-- تطبيق ويب / تحديث سحابي -->
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <meta name="theme-color" content="#2c3e50"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="طوارئ 2026"/>
+  <link rel="apple-touch-icon" href="logo-web.png"/>
+
   <!-- Bootstrap RTL + Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
@@ -1126,6 +1134,18 @@
       .section-title{border-right-color:#2c3e50}
       body{background:#fff!important}
     }
+
+    /* بانر التحديث السحابي */
+    #appUpdateBanner{position:fixed;left:0;right:0;bottom:0;z-index:1080;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:12px 16px;background:linear-gradient(135deg,#2c3e50,#1a2530);color:#fff;box-shadow:0 -6px 20px rgba(0,0,0,.25);border-top:3px solid #3498db;font-family:'Segoe UI',Tahoma,sans-serif}
+    #appUpdateBanner .aub-text{font-size:.95rem;line-height:1.5}
+    #appUpdateBanner .aub-ver{background:#3498db;color:#fff;border-radius:6px;padding:1px 8px;font-size:.8rem;margin-inline-start:6px}
+    #appUpdateBanner .aub-sub{font-size:.78rem;opacity:.85}
+    #appUpdateBanner .aub-actions{display:flex;gap:8px;align-items:center}
+    #appUpdateBanner .aub-btn{border:0;border-radius:8px;padding:8px 16px;font-weight:700;cursor:pointer}
+    #appUpdateBanner .aub-now{background:#28a745;color:#fff}
+    #appUpdateBanner .aub-now:hover{background:#218838}
+    #appUpdateBanner .aub-later{background:rgba(255,255,255,.15);color:#fff;font-size:1.2rem;line-height:1;padding:6px 12px}
+    @media(max-width:576px){#appUpdateBanner .aub-text{font-size:.9rem}#appUpdateBanner .aub-actions{width:100%;justify-content:flex-end}}
   </style>
 </head>
 <body>
@@ -2131,6 +2151,80 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // ======================== التحديث السحابي والعمل دون اتصال ========================
+    const APP_VERSION = '2026.10.09.1';
+
+    // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
+    (function migrateNativeData(){
+      try{
+        const raw = window.name || '';
+        const MARK = 'NITRON_MIGRATE:';
+        if(raw.indexOf(MARK) !== 0) return;
+        window.name = '';
+        const data = JSON.parse(raw.slice(MARK.length));
+        let n = 0;
+        Object.keys(data || {}).forEach(function(k){
+          try{ if(localStorage.getItem(k) === null){ localStorage.setItem(k, data[k]); n++; } }catch(e){}
+        });
+      }catch(e){ try{ window.name = ''; }catch(_){} }
+    })();
+
+    function showAppUpdateBanner(version){
+      if(!document.body || document.getElementById('appUpdateBanner')) return;
+      const el = document.createElement('div');
+      el.id = 'appUpdateBanner';
+      el.setAttribute('dir','rtl');
+      el.innerHTML =
+        '<div class="aub-text"><i class="fas fa-cloud-arrow-down"></i> '+
+        '<b>يتوفر تحديث للنظام</b>'+(version?' <span class="aub-ver">'+version+'</span>':'')+
+        '<div class="aub-sub">حدّث الآن للحصول على أحدث التعديلات.</div></div>'+
+        '<div class="aub-actions">'+
+        '<button type="button" class="aub-btn aub-now" id="aubNow">تحديث الآن</button>'+
+        '<button type="button" class="aub-btn aub-later" id="aubLater" title="لاحقاً">&times;</button>'+
+        '</div>';
+      document.body.appendChild(el);
+      document.getElementById('aubNow').addEventListener('click', applyAppUpdate);
+      document.getElementById('aubLater').addEventListener('click', function(){ el.remove(); });
+    }
+    function applyAppUpdate(){
+      if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+        navigator.serviceWorker.getRegistration().then(function(reg){
+          if(reg && reg.waiting){ reg.waiting.postMessage({ type:'SKIP_WAITING' }); }
+          else { window.location.reload(); }
+        }).catch(function(){ window.location.reload(); });
+      } else {
+        window.location.reload();
+      }
+    }
+    function checkCloudVersion(){
+      if(typeof fetch !== 'function') return;
+      fetch('./version.json?ts=' + Date.now(), { cache:'no-store' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(j){
+          if(j && j.version && j.version !== APP_VERSION){ showAppUpdateBanner(j.version); }
+        }).catch(function(){});
+    }
+    if('serviceWorker' in navigator && location.protocol === 'https:'){
+      let _swRefreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function(){
+        if(_swRefreshing) return; _swRefreshing = true; window.location.reload();
+      });
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('sw.js').then(function(reg){
+          reg.addEventListener('updatefound', function(){
+            const nw = reg.installing;
+            if(!nw) return;
+            nw.addEventListener('statechange', function(){
+              if(nw.state === 'installed' && navigator.serviceWorker.controller){ showAppUpdateBanner(); }
+            });
+          });
+          setInterval(function(){ reg.update().catch(function(){}); }, 60*60*1000);
+        }).catch(function(){});
+      });
+    }
+    window.addEventListener('load', checkCloudVersion);
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') checkCloudVersion(); });
+
     // ======================== بيانات وتخزين ========================
     let selectedStaffForMission = [];
     const LS_KEYS = {
