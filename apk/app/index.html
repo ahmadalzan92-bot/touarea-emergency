@@ -2272,14 +2272,11 @@
       const d=DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
       title.textContent=d.long;
       if(mode==='enter'){
-        const custom=getCustomPass(key);
-        msg.innerHTML = custom
-          ? 'هذه المديرية محمية بكلمة مرور. أدخل كلمة المرور للوصول إلى بياناتها المستقلة.'
-          : 'كلمة المرور الافتراضية لهذه المديرية هي: <b class="def-pass-hint">'+escapeHtml(defaultDirPass(d))+'</b>. أدخلها للدخول (يمكنك تغييرها لاحقاً من زر «كلمة المرور» داخل الصفحة أو من التحكم الرئيسي).';
+        msg.textContent='هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة مرور المديرية للوصول إليها.';
         label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value='';
       }
-      else if(mode==='set'){ msg.textContent='هذه المديرية محمية بكلمة مرور افتراضية: '+defaultDirPass(d)+'. أدخل كلمة المرور للوصول (يمكن تغييرها لاحقاً).'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
-      else { msg.innerHTML='كلمة المرور الحالية: <b>'+escapeHtml(getPass(key))+'</b><br>أدخل كلمة مرور جديدة لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
+      else if(mode==='set'){ msg.textContent='هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المنفصلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
+      else { msg.textContent='أدخل كلمة مرور جديدة لهذه المديرية لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
       box.style.display='flex';
       setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
@@ -2348,7 +2345,7 @@
         const has=!!custom;
         return '<div class="admin-row" data-dk="'+d.key+'">'+
           '<span class="admin-row-name"><i class="fas '+d.icon+'"></i> '+d.short+' <small class="text-muted">('+d.code+')</small></span>'+
-          '<span class="admin-row-status'+(has?' is-protected':'')+'">'+((has)?'<i class="fas fa-lock"></i> مخصصة':'<i class="fa-solid fa-key"></i> افتراضية: '+d.code+'@123456789')+'</span>'+
+          '<span class="admin-row-status'+(has?' is-protected':'')+'">'+((has)?'<i class="fas fa-lock"></i> كلمة مرور مخصصة':'<i class="fa-solid fa-key"></i> كلمة افتراضية')+'</span>'+
           '<span class="admin-row-actions">'+
             '<button type="button" class="btn btn-sm btn-outline-primary" onclick="adminSetDir(\''+d.key+'\')"><i class="fas fa-key"></i> تعيين</button>'+
             '<button type="button" class="btn btn-sm btn-outline-info" onclick="adminDefaultDir(\''+d.key+'\')"><i class="fa-solid fa-rotate-left"></i> الافتراضية</button>'+
