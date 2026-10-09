@@ -4884,7 +4884,7 @@ function staffHoursData(){
         reportNumber:item.reportNumber,missionType:item.missionType,dayKind:r.dayKind||''});
     });
   });
-  const rows=[...summary.values()].map(e=>{
+  const rows=[...summary.values()].filter(e=>(e.field+e.office)>0).map(e=>{
     const rep=shRepName(e.nameCnt);
     const dates=e.reports.map(x=>x.date).filter(Boolean).sort();
     const field=roundH(e.field), office=roundH(e.office), total=roundH(field+office);
@@ -4897,8 +4897,9 @@ function staffHoursData(){
   });
   rows.sort((a,b)=>cmpNum(a.number,b.number)||String(a.name).localeCompare(String(b.name),'ar'));
   const byKey={}; rows.forEach(r=>byKey[r.key]=r);
-  daily.forEach(d=>{ const rw=byKey[d.key]; if(rw){ d.name=rw.name||d.name; d.role=d.role||rw.role; } delete d.key; });
-  daily.sort((a,b)=>a.date.localeCompare(b.date)||cmpNum(a.number,b.number));
+  const dailyVisible=daily.filter(d=>byKey[d.key]);
+  dailyVisible.forEach(d=>{ const rw=byKey[d.key]; d.name=rw.name||d.name; d.role=d.role||rw.role; delete d.key; });
+  dailyVisible.sort((a,b)=>a.date.localeCompare(b.date)||cmpNum(a.number,b.number));
   const holidaysArr=getLS(LS_KEYS.holidays,[])||[];
   const dayMap=new Map();
   reports.forEach(r=>{
@@ -4929,7 +4930,7 @@ function staffHoursData(){
       reports:g?g.reports:0,field:g?g.field:0,office:g?g.office:0,total:g?g.total:0,inH:g?g.inH:0,outH:g?g.outH:0});
   });
   days.sort((a,b)=>a.date.localeCompare(b.date));
-  return {rows,daily,days,from,to,reportCount:reports.length};
+  return {rows,daily:dailyVisible,days,from,to,reportCount:reports.length};
 }
   function shPeriodLabel(from,to){
   return (from||to)?`من ${from?fmtDMY(from):'…'} إلى ${to?fmtDMY(to):'…'}`:'كل الفترات';
@@ -5067,7 +5068,7 @@ const SH_XL=[['C9DCF2','E9F1FB'],['C8EAE3','E4F5F7'],['D4ECDB','E7F6EC'],['F7E4B
   ['F7D6D2','FBE9E7'],['E3D8FA','EFE9FD'],['FBDFC4','FDEEDD'],['CDE7F8','E5F2FC']];
 function renderStaffDetail(D){
   const box=document.getElementById('staffDetail');if(!box)return;
-  const withR=D.rows.filter(e=>e.reports.length), empty=D.rows.filter(e=>!e.reports.length);
+  const withR=D.rows.filter(e=>e.reports.length);
   box.innerHTML=withR.map((e,i)=>{
     const p=SH_PALETTE[i%SH_PALETTE.length];
     return `
@@ -5089,8 +5090,7 @@ function renderStaffDetail(D){
         </table></div>
       </div>
     </div>`;
-  }).join('')+
-    (empty.length?`<div class="alert alert-secondary py-2 small mb-0">كوادر بلا بلاغات ضمن الفترة: ${empty.map(e=>`${esc(e.number||'—')} — ${esc(e.name)}`).join(' ، ')}</div>`:'');
+  }).join('');
 }
 function styleAOA(ws,aoa,boldRows,headerRow,rowFills){
   const N=Math.max(1,...aoa.map(r=>r.length));
