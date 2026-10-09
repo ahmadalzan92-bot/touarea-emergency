@@ -1072,18 +1072,19 @@
     .pass-msg{color:#4a5a6e;font-size:.9rem;line-height:1.6}
     .pass-del{color:#dc3545;font-size:.85rem;font-weight:600}
     .home-central-btn{text-align:center;margin:14px 0 4px}
-    #centralModal{display:none;position:fixed;inset:0;z-index:4010;align-items:center;justify-content:center;direction:rtl}
-    .central-box{position:relative;z-index:1;width:min(1180px,96vw);max-height:92vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#f7fafd,#fff);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);border-top:4px solid #117864;overflow:hidden}
-    .central-head{background:linear-gradient(120deg,#083a34,#117864);color:#fff;padding:13px 18px;font-weight:800;font-size:1.05rem;text-align:center;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .central-body{padding:16px 18px;overflow-y:auto;overscroll-behavior:contain}
-    .central-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+    #centralScreen{position:fixed;inset:0;z-index:3100;overflow:auto;background:#f8f9fa;display:none}
+    #centralScreen .central-credit{background:var(--primary-soft,#0a2140);color:#fff}
+    #centralScreen .app-logo{width:78px;height:78px;background:#fff;border-radius:50%}
+    .central-title-bar{background:linear-gradient(120deg,#083a34,#117864);color:#fff;padding:16px 20px;border-radius:14px;margin:16px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    .central-title-bar h2{margin:0;font-size:1.15rem;font-weight:800}
+    .central-title-bar .small{color:#cfe8e3}
+    .central-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
     .central-kpi{border:1px solid #d9e4ef;border-radius:14px;padding:13px 14px;background:#fff;text-align:center;box-shadow:0 4px 12px -6px rgba(10,52,60,.18)}
     .central-kpi b{display:block;font-size:1.55rem;color:#083a34}
     .central-kpi span{font-size:.82rem;color:#4a5a6e;font-weight:600}
-    .central-map{height:430px;border:1px solid #cfe0f2;border-radius:14px;z-index:0;background:#eef3f8}
+    .central-map{height:470px;border:1px solid #cfe0f2;border-radius:14px;background:#eef3f8;position:relative}
     #centralMapBox{height:100%;width:100%;border-radius:14px;z-index:1}
-    #centralModal .central-box{z-index:2}
-    #centralModal .pass-backdrop{z-index:0}
+    #centralScreen .nav-tabs{position:sticky;top:0;z-index:400}
     #adminModal{display:none;position:fixed;inset:0;z-index:4002;align-items:center;justify-content:center;direction:rtl}
     .admin-box{position:relative;z-index:1;width:min(680px,94vw);max-height:88vh;overflow-y:auto;background:linear-gradient(180deg,#f7fafd,#fff);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.45);border-top:4px solid #0f4c81}
     .admin-head{background:linear-gradient(120deg,#0a2140,#0f4c81);color:#fff;padding:14px 18px;font-weight:800;font-size:1.02rem;text-align:center}
@@ -1194,63 +1195,125 @@
       </div>
     </div>
   </div>
-  <div id="centralModal">
-    <div class="pass-backdrop" onclick="closeCentral()"></div>
-    <div class="central-box">
-      <div class="central-head">
-        <span><i class="fas fa-layer-group"></i> العرض المركزي لجميع بلاغات المحافظات</span>
-        <span class="small opacity-75" id="centralUpdated"></span>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-light" onclick="refreshCentral()"><i class="fas fa-rotate"></i> تحديث</button>
-          <button type="button" class="btn btn-sm btn-danger" onclick="closeCentral()"><i class="fas fa-xmark"></i> إغلاق</button>
+  <div id="centralScreen">
+    <div class="top-credit central-credit">
+      <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span class="credit-brand"><i class="fas fa-pen-nib"></i> إعداد وتصميم <b>م. أحمد الزن</b></span>
+        <span class="credit-note"><i class="fas fa-shield-halved"></i> العرض المركزي لجميع بلاغات المحافظات — <i class="fas fa-calendar"></i> 2025-2026</span>
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+          <button type="button" class="btn btn-sm btn-light fw-bold" onclick="refreshCentral()"><i class="fas fa-rotate"></i> تحديث</button>
+          <button type="button" class="btn btn-sm btn-warning fw-bold" onclick="closeCentral()"><i class="fas fa-right-left"></i> العودة للرئيسية</button>
         </div>
-      </div>
-      <div class="central-body">
-        <div class="central-kpis" id="centralKpis"></div>
-        <div class="row g-3 mb-3">
-          <div class="col-lg-5">
-            <div class="card h-100">
-              <div class="card-header card-header-green"><i class="fas fa-list-check"></i> إحصاءات المديريات</div>
-              <div class="card-body p-0" style="max-height:420px;overflow-y:auto">
-                <table class="table table-sm table-hover align-middle mb-0">
-                  <thead class="table-light"><tr><th>المحافظة</th><th>بلاغات</th><th>ميدانية</th><th>مكتبية</th><th>جديد/قيد</th><th>منجز</th><th>الكوادر</th></tr></thead>
-                  <tbody id="centralDirRows"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-7">
-            <div class="card h-100">
-              <div class="card-header card-header-green"><i class="fas fa-bell"></i> أحدث البلاغات من كل المحافظات</div>
-              <div class="card-body p-0" style="max-height:420px;overflow-y:auto">
-                <table class="table table-sm table-hover align-middle mb-0">
-                  <thead class="table-light"><tr><th>الرقم</th><th>المحافظة</th><th>التاريخ</th><th>نوع المهمة</th><th>الموقع</th><th>الحالة</th></tr></thead>
-                  <tbody id="centralRecentRows"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-          <strong><i class="fas fa-map-location-dot"></i> خريطة جميع البلاغات الميدانية</strong>
-          <div class="d-flex align-items-center gap-2 flex-wrap">
-            <label class="small fw-bold">فلترة حسب الحالة:</label>
-            <select class="form-select form-select-sm w-auto" id="centralStatusFilter" onchange="centralMapRender(true)">
-              <option value="">جميع الحالات</option>
-              <option>جديد</option>
-              <option>قيد التنفيذ</option>
-              <option>منجز</option>
-              <option>مؤجل</option>
-            </select>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="centralMapFit()"><i class="fas fa-expand"></i> ملاءمة الخريطة</button>
-          </div>
-        </div>
-        <div class="central-map">
-          <div id="centralMapBox"></div>
-        </div>
-        <div class="mt-2" id="centralMapNote"></div>
       </div>
     </div>
+
+    <div class="header text-center">
+      <div class="container">
+        <img src="logo-web.png" class="app-logo" alt="شعار وزارة الأشغال العامة والإسكان">
+        <div class="ministry">المملكة الأردنية الهاشمية — وزارة الأشغال العامة والإسكان — مديرية الطوارئ</div>
+        <h1><i class="fas fa-layer-group"></i> <span id="centralAppTitle">العرض المركزي لجميع بلاغات المحافظات</span></h1>
+        <p>مراقبة مجمعة لكل غرف الطوارئ — البلاغات والإحصاءات والخريطة التفاعلية</p>
+      </div>
+    </div>
+
+    <div class="container main-container">
+      <ul class="nav nav-tabs" id="centralTab" role="tablist">
+        <li class="nav-item" role="presentation"><button class="nav-link active" id="cov-tab" data-bs-toggle="tab" data-bs-target="#centralOverview" type="button" role="tab"><i class="fas fa-chart-pie"></i> نظرة عامة</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" id="clist-tab" data-bs-toggle="tab" data-bs-target="#centralReportList" type="button" role="tab"><i class="fas fa-clock-rotate-left"></i> سجل بلاغات المحافظات</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" id="cmap-tab" data-bs-toggle="tab" data-bs-target="#centralMapPane" type="button" role="tab"><i class="fas fa-map-location-dot"></i> الخريطة التفاعلية</button></li>
+      </ul>
+
+      <div class="tab-content" id="centralTabContent">
+        <div class="tab-pane fade show active" id="centralOverview" role="tabpanel">
+          <div class="central-title-bar">
+            <h2><i class="fas fa-gauge-high"></i> مؤشرات مجمعة لجميع المحافظات</h2>
+            <span class="small" id="centralUpdated"></span>
+          </div>
+          <div class="central-kpis" id="centralKpis"></div>
+          <div class="row g-3">
+            <div class="col-lg-5">
+              <div class="card h-100">
+                <div class="card-header"><span>إحصاءات المديريات</span></div>
+                <div class="card-body p-0" style="max-height:430px;overflow-y:auto">
+                  <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>المحافظة</th><th>بلاغات</th><th>ميدانية</th><th>مكتبية</th><th>جديد/قيد</th><th>منجز</th><th>الكوادر</th></tr></thead>
+                    <tbody id="centralDirRows"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-7">
+              <div class="card h-100">
+                <div class="card-header"><span>أحدث البلاغات من كل المحافظات</span></div>
+                <div class="card-body p-0" style="max-height:430px;overflow-y:auto">
+                  <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>الرقم</th><th>المحافظة</th><th>التاريخ</th><th>نوع المهمة</th><th>الموقع</th><th>الحالة</th></tr></thead>
+                    <tbody id="centralRecentRows"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="centralReportList" role="tabpanel">
+          <div class="card mt-4">
+            <div class="card-header"><span>سجل بلاغات جميع المحافظات</span></div>
+            <div class="card-body p-0">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 border-bottom">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <input type="search" id="centralSearch" class="form-control form-control-sm w-auto" placeholder="ابحث: الرقم، النوع، الموقع، المحافظة...">
+                  <label class="small fw-bold">الحالة:</label>
+                  <select class="form-select form-select-sm w-auto" id="centralListStatus" onchange="renderCentralList()">
+                    <option value="">جميع الحالات</option>
+                    <option>جديد</option>
+                    <option>قيد التنفيذ</option>
+                    <option>منجز</option>
+                    <option>مؤجل</option>
+                  </select>
+                  <button type="button" class="btn btn-sm btn-outline-success" onclick="centralExport()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+                </div>
+              </div>
+              <div style="max-height:560px;overflow-y:auto">
+                <table class="table table-hover align-middle mb-0" id="centralListTable">
+                  <thead class="table-light"><tr><th>الرقم</th><th>المحافظة</th><th>التاريخ</th><th>نوع المهمة</th><th>الموقع</th><th>الفريق</th><th>الحالة</th></tr></thead>
+                  <tbody id="centralListRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="centralMapPane" role="tabpanel">
+          <div class="card mt-4">
+            <div class="card-header"><span>خريطة جميع البلاغات الميدانية</span></div>
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <label class="small fw-bold">فلترة حسب الحالة:</label>
+                  <select class="form-select form-select-sm w-auto" id="centralStatusFilter" onchange="centralMapRender(true)">
+                    <option value="">جميع الحالات</option>
+                    <option>جديد</option>
+                    <option>قيد التنفيذ</option>
+                    <option>منجز</option>
+                    <option>مؤجل</option>
+                  </select>
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="centralMapFit()"><i class="fas fa-expand"></i> ملاءمة الخريطة</button>
+                </div>
+              </div>
+              <div class="central-map">
+                <div id="centralMapBox"></div>
+              </div>
+              <div class="mt-2" id="centralMapNote"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="text-center py-3 mt-5">
+      <p><span>العرض المركزي لجميع بلاغات المحافظات © 2025-2026 — إعداد وتصميم م. أحمد الزن</span></p>
+    </footer>
   </div>
   <div id="attachOverlay" class="attach-overlay" style="display:none" onclick="if(event.target===this)closeAttachViewer()">
     <div class="attach-viewer">
@@ -5123,7 +5186,53 @@ function renderCentral(){
   }
   const up=document.getElementById('centralUpdated');
   if(up) up.textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-JO',{hour:'2-digit',minute:'2-digit'});
+  renderCentralList();
   centralMapRender(true);
+}
+function centralFlat(){
+  const flat=[];
+  centralReadAll().forEach(function(o){ o.reports.forEach(function(r){ flat.push({r,d:o.d}); }); });
+  flat.sort(function(a,b){ return String(b.r.reportDate).localeCompare(String(a.r.reportDate)) || String(b.r.createdAt||'').localeCompare(String(a.r.createdAt||'')); });
+  return flat;
+}
+function renderCentralList(){
+  const rows=document.getElementById('centralListRows'); if(!rows) return;
+  const q=normalizeArabic((document.getElementById('centralSearch')||{}).value||'');
+  const st=(document.getElementById('centralListStatus')||{}).value||'';
+  const flat=centralFlat();
+  const hits=flat.filter(function(o){
+    if(st && (o.r.status||'منجز')!==st) return false;
+    if(!q) return true;
+    const hay=normalizeArabic([o.r.reportNumber,o.d.short,o.r.missionType,o.r.location,o.r.reporter,(o.staff||[]).map(staffNameNo).join(' '),reportVehicles(o.r).map(function(v){return v.type+' '+v.number;}).join(' ')].join(' '));
+    return hay.indexOf(q)!==-1;
+  });
+  rows.innerHTML=hits.map(function(o){
+    const s=o.r.status||'منجز';
+    return '<tr>'+
+      '<td><b>'+esc(o.r.reportNumber)+'</b></td>'+
+      '<td><span class="badge" style="background:'+centralStatusColor(s)+'">'+esc(o.d.short)+'</span></td>'+
+      '<td>'+esc(o.r.reportDate)+'</td>'+
+      '<td>'+esc(o.r.missionType)+'</td>'+
+      '<td class="small">'+esc(o.r.location)+'</td>'+
+      '<td class="small">'+(o.r.teamNo?esc(o.r.teamNo):'')+((o.r.staff&&o.r.staff.length)?' — '+esc(o.r.staff.map(staffNameNo).join('، ')):'')+'</td>'+
+      '<td><span class="badge" style="background:'+centralStatusColor(s)+'">'+esc(s)+'</span></td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="7" class="text-center text-muted">لا توجد بلاغات مطابقة</td></tr>';
+}
+function centralExport(){
+  const rows=document.getElementById('centralListRows');
+  if(!rows || !rows.rows.length){ showAlert('لا توجد بلاغات للتصدير.','warning'); return; }
+  const aoa=[['رقم البلاغ','المحافظة','التاريخ','نوع المهمة','الموقع','الفريق','الحالة']];
+  Array.prototype.forEach.call(rows.rows,function(tr){
+    const c=tr.cells; if(!c || c.length<7) return;
+    aoa.push([c[0].innerText,c[1].innerText,c[2].innerText,c[3].innerText,c[4].innerText,c[5].innerText,c[6].innerText]);
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[16,12,12,26,40,40,12].map(function(w){ return {wch:w}; });
+  XLSX.utils.book_append_sheet(wb,ws,'بلاغات كل المحافظات');
+  XLSX.writeFile(wb,'بلاغات_كل_المحافظات_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير '+aoa.length+' صف.');
 }
 function centralInitMap(){
   if(CMAP) return;
@@ -5174,23 +5283,33 @@ function refreshCentral(){
   if(cloudAvailable()){ cloudPullAll().then(function(){ renderCentral(); }).catch(function(){ renderCentral(); }); }
   else renderCentral();
 }
-function openCentral(){
-  const m=document.getElementById('centralModal'); if(!m) return;
-  m.style.display='flex';
+function showCentral(){
+  const p=document.getElementById('centralScreen'); if(!p) return;
+  const hs=document.getElementById('homeScreen'); if(hs) hs.style.display='none';
+  p.style.display='block';
   refreshCentral();
-  if(CMAP) setTimeout(function(){ CMAP.invalidateSize(); },50);
+  setTimeout(function(){ if(CMAP) CMAP.invalidateSize(); if(typeof centralMapRender==='function') centralMapRender(true); },80);
+  window.scrollTo(0,0);
 }
+function openCentral(){ showCentral(); }
 function closeCentral(){
-  const m=document.getElementById('centralModal'); if(!m) return;
-  m.style.display='none';
+  const p=document.getElementById('centralScreen'); if(!p) return;
+  p.style.display='none';
+  openHome();
+  setTimeout(function(){ try{ document.getElementById('cov-tab').click(); }catch(e){} },10);
 }
-document.addEventListener('keydown',function(ev){
-  if(ev.key==='Escape'){
-    const c=document.getElementById('centralModal');
-    if(c && c.style.display!=='none'){ closeCentral(); }
-  }
-});
-document.addEventListener('DOMContentLoaded',function(){ centralInitMap(); });
+(function(){
+  const cmapTab=document.getElementById('cmap-tab');
+  if(cmapTab) cmapTab.addEventListener('shown.bs.tab',function(){
+    centralInitMap();
+    if(CMAP){ try{ CMAP.invalidateSize(); }catch(e){} }
+    setTimeout(function(){ centralMapRender(true); },60);
+  });
+  const srch=document.getElementById('centralSearch');
+  if(srch) srch.addEventListener('input',function(){ renderCentralList(); });
+  const stSel=document.getElementById('centralListStatus');
+  if(stSel) stSel.addEventListener('change',function(){ renderCentralList(); });
+})();
 </script>
 </body>
 </html>
