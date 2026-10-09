@@ -1280,7 +1280,6 @@
       <span class="credit-brand"><i class="fas fa-pen-nib"></i> إعداد وتصميم <b>م. أحمد الزن</b></span>
       <span class="credit-note"><i class="fas fa-shield-halved"></i> غرفة عمليات إدارة بلاغات الطوارئ — <i class="fas fa-calendar"></i> 2025 - 2026</span>
       <button type="button" class="btn btn-sm btn-outline-warning fw-bold" id="passDirBtn" onclick="openPass('manage', ACTIVE_DIR.key)"><i class="fas fa-key"></i> كلمة المرور</button>
-      <button type="button" class="btn btn-sm btn-outline-light fw-bold" onclick="openAdmin()"><i class="fas fa-user-shield"></i> التحكم الرئيسي</button>
       <button type="button" class="btn btn-sm btn-warning fw-bold" id="changeDirBtn" onclick="openHome()"><i class="fas fa-right-left"></i> تغيير المديرية</button>
       <span class="cloud-badge offline" id="cloudBadge" title="حالة المزامنة السحابية"><span>☁️</span><span>غير متصل ⚠️</span></span>
     </div>
@@ -2004,11 +2003,11 @@
     };
 
     function rawLSKey(key){
-      return (key==='opendirKey'||key==='opendirPasswords') ? key : (ACTIVE_DIR&&ACTIVE_DIR.key||'madaba')+'__'+key;
+      return (key==='opendirKey'||key==='opendirPasswordsV2') ? key : (ACTIVE_DIR&&ACTIVE_DIR.key||'madaba')+'__'+key;
     }
     function getLS(key, fallback){ try{ return JSON.parse(localStorage.getItem(rawLSKey(key)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
     function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); }
-    function lsKeyFor(key, dirKey){ return (key==='opendirKey'||key==='opendirPasswords') ? key : dirKey+'__'+key; }
+    function lsKeyFor(key, dirKey){ return (key==='opendirKey'||key==='opendirPasswordsV2') ? key : dirKey+'__'+key; }
     function getLSFor(dirKey, key, fallback){ try{ return JSON.parse(localStorage.getItem(lsKeyFor(key,dirKey)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
     function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); }
 
@@ -2026,7 +2025,7 @@
       return fullKey.slice(i+2);
     }
     function cloudSyncableKey(fullKey){
-      if(fullKey==='opendirPasswords'||fullKey==='opendirAdminPw') return true;
+      if(fullKey==='opendirPasswordsV2'||fullKey==='opendirAdminPw') return true;
       const raw = cloudRawKeyOf(fullKey);
       if(!raw) return false;
       return Object.values(LS_KEYS).indexOf(raw) > -1 || fullKey === 'opendirKey';
@@ -2099,7 +2098,7 @@
             await cloudPushNow(fullKey, localRaw);
           }
         }
-        [ADMIN_PW_KEY, 'opendirPasswords'].forEach(fullKey=>{
+        [ADMIN_PW_KEY, 'opendirPasswordsV2'].forEach(fullKey=>{
           if(existing[fullKey]) return;
           const localRaw = localStorage.getItem(fullKey);
           if(localRaw === null || localRaw === '') return;
@@ -2261,10 +2260,10 @@
     }
     const DEFAULT_PW_SUFFIX='@123456789';
     function defaultDirPass(d){ return ((d&&d.code)||'').toUpperCase() + DEFAULT_PW_SUFFIX; }
-    function getCustomPass(key){ try{ return ((JSON.parse(localStorage.getItem('opendirPasswords')||'{}'))[key]||''); }catch(e){ return ''; } }
+    function getCustomPass(key){ try{ return ((JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}'))[key]||''); }catch(e){ return ''; } }
     function getPass(key){ const c=getCustomPass(key); if(c) return c; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
-    function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswords')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswords',JSON.stringify(o)); cloudPush('opendirPasswords', o); }
-    function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswords')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswords',JSON.stringify(o)); cloudPush('opendirPasswords', o); }
+    function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
+    function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
     let PASS_MODE='enter',PASS_DIR='madaba';
     function openPass(mode,key){
       PASS_MODE=mode; PASS_DIR=key;
@@ -2463,6 +2462,7 @@
 
     // ======================== تحميل أولي ========================
     document.addEventListener('DOMContentLoaded', ()=>{
+      try{ localStorage.removeItem('opendirPasswords'); }catch(e){}
       applyDirectorate();
       openHome();
       showAlert('تم تهيئة النظام وقراءة البيانات المحلية.', 'success');
