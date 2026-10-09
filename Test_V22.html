@@ -1099,6 +1099,12 @@
     .pass-head{background:linear-gradient(120deg,#0a2140,#0f4c81);color:#fff;padding:14px 18px;font-weight:800;font-size:1.02rem;text-align:center}
     .pass-body{padding:18px}
     .pass-msg{color:#4a5a6e;font-size:.9rem;line-height:1.6}
+    .pw-field{position:relative}
+    .pw-field .form-control{padding-inline-end:42px}
+    .pw-toggle{position:absolute;top:50%;inset-inline-end:8px;transform:translateY(-50%);background:transparent;border:0;color:#5a6b80;cursor:pointer;font-size:1rem;padding:4px 6px;line-height:1}
+    .pw-toggle:hover{color:#0a2140}
+    .pw-remember{display:flex;align-items:center;gap:8px;font-size:.9rem;color:#33475e;font-weight:600;cursor:pointer;user-select:none}
+    .pw-remember input{width:16px;height:16px;margin:0;cursor:pointer;flex:0 0 auto}
     .pass-del{color:#dc3545;font-size:.85rem;font-weight:600}
     .home-central-btn{text-align:center;margin:14px 0 4px}
     #centralScreen{position:fixed;inset:0;z-index:3100;overflow:auto;background:#f8f9fa;display:none}
@@ -1193,8 +1199,12 @@
         <div class="pass-msg mb-3" id="passMsg"></div>
         <div class="mb-3">
           <label class="form-label fw-bold">كلمة المرور</label>
-          <input type="password" class="form-control" id="passInput" placeholder="أدخل كلمة المرور">
+          <div class="pw-field">
+            <input type="password" class="form-control" id="passInput" placeholder="أدخل كلمة المرور">
+            <button type="button" class="pw-toggle" onclick="togglePw('passInput',this)" tabindex="-1" aria-label="إظهار/إخفاء كلمة المرور"><i class="fas fa-eye"></i></button>
+          </div>
         </div>
+        <label class="pw-remember mb-3"><input type="checkbox" id="passRemember"> تذكّر معلومات الدخول للمرات القادمة</label>
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-secondary" onclick="closePass()">إلغاء</button>
@@ -1213,8 +1223,12 @@
           <div class="pass-msg mb-3" id="adminMsg">أدخل كلمة المرور الرئيسية للوصول إلى إدارة كلمات مرور المديريات.</div>
           <div class="mb-3">
             <label class="form-label fw-bold" id="adminPwLabel">كلمة المرور الرئيسية</label>
-            <input type="password" class="form-control" id="adminInput" placeholder="أدخل كلمة المرور الرئيسية">
+            <div class="pw-field">
+              <input type="password" class="form-control" id="adminInput" placeholder="أدخل كلمة المرور الرئيسية">
+              <button type="button" class="pw-toggle" onclick="togglePw('adminInput',this)" tabindex="-1" aria-label="إظهار/إخفاء كلمة المرور"><i class="fas fa-eye"></i></button>
+            </div>
           </div>
+          <label class="pw-remember mb-3"><input type="checkbox" id="adminRemember"> تذكّر كلمة المرور الرئيسية</label>
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adminInitPw()" id="adminFirstBtn"><i class="fas fa-key"></i> <span id="adminFirstLabel">إنشاء كلمة المرور الرئيسية</span></button>
             <div class="d-flex gap-2">
@@ -1257,6 +1271,7 @@
           <li>كل مديرية محمية <b>بكلمة مرور معتمدة مسبقاً</b> (مستقلة لكل مديرية)؛ أدخلها للدخول.</li>
           <li>لتغيير كلمة المرور أو إعادة ضبطها إلى الافتراضية، استخدم <b>التحكم الرئيسي</b> أسفل الصفحة.</li>
           <li>أيقونة <i class="fas fa-lock"></i> على البطاقة تعني أن المديرية محمية بكلمة مرور.</li>
+          <li>يمكنك <b>إظهار/إخفاء</b> كلمة المرور بأيقونة العين، واختيار <b>«تذكّر معلومات الدخول»</b> لتُعبّأ تلقائياً في المرات القادمة.</li>
         </ul>
 
         <h3><i class="fas fa-file-circle-plus"></i> 2) إنشاء بلاغ جديد</h3>
@@ -2253,7 +2268,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.10';
+    const APP_VERSION = '2026.10.09.11';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2618,42 +2633,51 @@
     function getPass(key){ const c=getCustomPass(key); if(c) return c; if(key==='central') return 'CEN'+DEFAULT_PW_SUFFIX; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
     function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
     function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
+    const SAVED_LOGIN_KEY='opendirSavedLoginV1';
+    function getSavedLogins(){ try{ const o=JSON.parse(localStorage.getItem(SAVED_LOGIN_KEY)||'{}'); return (o&&typeof o==='object')?o:{}; }catch(e){ return {}; } }
+    function setSavedLogin(key,pw){ const o=getSavedLogins(); if(pw){ o[key]=pw; }else{ delete o[key]; } try{ localStorage.setItem(SAVED_LOGIN_KEY,JSON.stringify(o)); }catch(e){} }
+    function togglePw(id,btn){ const inp=document.getElementById(id); if(!inp) return; const show=inp.type==='password'; inp.type=show?'text':'password'; const i=btn&&btn.querySelector('i'); if(i) i.className=show?'fas fa-eye-slash':'fas fa-eye'; if(inp.focus){try{inp.focus();}catch(e){}} }
     let PASS_MODE='enter',PASS_DIR='madaba';
     function openPass(mode,key){
       PASS_MODE=mode; PASS_DIR=key;
-      const box=document.getElementById('passModal'),title=document.getElementById('passTitle'),msg=document.getElementById('passMsg'),inp=document.getElementById('passInput'),label=document.getElementById('passOkLabel');
+      const box=document.getElementById('passModal'),title=document.getElementById('passTitle'),msg=document.getElementById('passMsg'),inp=document.getElementById('passInput'),label=document.getElementById('passOkLabel'),rem=document.getElementById('passRemember');
       if(!box) return;
       const isCentral=(key==='central');
       const d=isCentral?{long:'العرض المركزي لجميع بلاغات المحافظات'}:DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
       title.textContent=d.long;
+      inp.type='password'; const eye=box.querySelector('.pw-toggle i'); if(eye) eye.className='fas fa-eye';
       if(mode==='enter'){
         msg.textContent=isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة مرور العرض المركزي للوصول إليها.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة مرور المديرية للوصول إليها.';
-        label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value='';
+        label.innerHTML='<i class="fas fa-key"></i> دخول';
+        const saved=getSavedLogins()[key]||''; inp.value=saved; if(rem) rem.checked=!!saved;
       }
-      else if(mode==='set'){ msg.textContent=isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المجمعة.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المنفصلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; }
-      else { msg.textContent=isCentral?'أدخل كلمة مرور جديدة للعرض المركزي لاستبدالها (3 أحرف فأكثر).':'أدخل كلمة مرور جديدة لهذه المديرية لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; }
+      else if(mode==='set'){ msg.textContent=isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المجمعة.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة المرور للوصول إلى بياناتها المنفصلة.'; label.innerHTML='<i class="fas fa-key"></i> دخول'; inp.value=''; if(rem) rem.checked=false; }
+      else { msg.textContent=isCentral?'أدخل كلمة مرور جديدة للعرض المركزي لاستبدالها (3 أحرف فأكثر).':'أدخل كلمة مرور جديدة لهذه المديرية لاستبدالها (3 أحرف فأكثر).'; label.innerHTML='<i class="fas fa-save"></i> حفظ'; inp.value=''; if(rem) rem.checked=false; }
       box.style.display='flex';
       setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
     function closePass(){ const box=document.getElementById('passModal'); if(box) box.style.display='none'; }
     function passOk(){
       const inp=document.getElementById('passInput'),val=(inp?inp.value.trim():'');
+      const rem=document.getElementById('passRemember');
       const isCentral=(PASS_DIR==='central');
       const d=isCentral?{short:'العرض المركزي',key:'central'}:DIRECTORATES.find(x=>x.key===PASS_DIR)||DIRECTORATES[2];
       if(PASS_MODE==='manage'){
         if(!val){ showAlert('أدخل كلمة مرور جديدة لاستبدال الحالية.','warning'); return; }
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
-        savePass(PASS_DIR,val); showAlert('تم تحديث كلمة مرور '+d.short+'.','success'); closePass(); return;
+        savePass(PASS_DIR,val); setSavedLogin(PASS_DIR,''); showAlert('تم تحديث كلمة مرور '+d.short+'.','success'); closePass(); return;
       }
       if(!val) return showAlert('أدخل كلمة المرور.','warning');
       if(PASS_MODE==='set'){
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
         savePass(PASS_DIR,val); showAlert('تم إنشاء كلمة مرور، وتم الدخول إليها.','success'); closePass();
+        setSavedLogin(PASS_DIR,(rem&&rem.checked)?val:'');
         if(isCentral){ CENTRAL_UNLOCKED=true; showCentral(); return; }
         selectDirectorate(PASS_DIR);
       }else{
         if(getPass(PASS_DIR)&&val!==getPass(PASS_DIR)){ showAlert('كلمة المرور غير صحيحة، حاول مجدداً.','danger'); if(inp){inp.value='';inp.focus();} return; }
         closePass();
+        setSavedLogin(PASS_DIR,(rem&&rem.checked)?val:'');
         if(isCentral){ CENTRAL_UNLOCKED=true; showCentral(); return; }
         selectDirectorate(PASS_DIR);
       }
@@ -2673,7 +2697,9 @@
       document.getElementById('adminUnlock').style.display='';
       document.getElementById('adminPanel').style.display='none';
       const has=adminGetPw(),msg=document.getElementById('adminMsg'),inp=document.getElementById('adminInput'),lbl=document.getElementById('adminPwLabel'),fb=document.getElementById('adminFirstBtn'),fl=document.getElementById('adminFirstLabel');
-      inp.value='';
+      const rem=document.getElementById('adminRemember');
+      inp.type='password'; const eye=box.querySelector('.pw-toggle i'); if(eye) eye.className='fas fa-eye';
+      inp.value=has?(getSavedLogins()['admin']||''):''; if(rem) rem.checked=!!(has&&inp.value);
       if(has){ msg.textContent='أدخل كلمة المرور الرئيسية للوصول إلى إدارة كلمات مرور المديريات.'; lbl.textContent='كلمة المرور الرئيسية'; fb.style.display='none'; }
       else { msg.textContent='لا توجد كلمة مرور رئيسية بعد. أنشئها الآن لإدارة كلمات مرور المديريات (3 أحرف فأكثر).'; lbl.textContent='كلمة المرور الرئيسية الجديدة'; fb.style.display='inline-flex'; fl.textContent='إنشاء كلمة المرور الرئيسية'; }
       box.style.display='flex';
@@ -2684,10 +2710,11 @@
       if(typeof pw!=='string') pw='';
       if(pw.length<3) return showAlert('كلمة المرور الرئيسية قصيرة (3 أحرف فأكثر).','warning');
       adminSetPw(pw); ADMIN_UNLOCKED=true; adminRenderPanel(); showAlert('تم إنشاء كلمة المرور الرئيسية.','success');
+      const rem=document.getElementById('adminRemember'); setSavedLogin('admin',(rem&&rem.checked)?pw:'');
     }
     function adminInitPw(){
       const inp=document.getElementById('adminInput'),val=inp?inp.value.trim():'';
-      if(ADMIN_REWRITE){ if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning'); adminSetPw(val); ADMIN_UNLOCKED=true; adminRenderPanel(); showAlert('تم تحديث كلمة المرور الرئيسية.','success'); return; }
+      if(ADMIN_REWRITE){ if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning'); adminSetPw(val); ADMIN_UNLOCKED=true; adminRenderPanel(); showAlert('تم تحديث كلمة المرور الرئيسية.','success'); const rem=document.getElementById('adminRemember'); setSavedLogin('admin',(rem&&rem.checked)?val:''); return; }
       adminUnlock(val);
     }
     function adminOk(){
@@ -2698,6 +2725,7 @@
       if(!val) return showAlert('أدخل كلمة المرور الرئيسية.','warning');
       if(val!==adminGetPw()){ showAlert('كلمة المرور الرئيسية غير صحيحة.','danger'); inp.value=''; inp.focus(); return; }
       ADMIN_UNLOCKED=true; adminRenderPanel();
+      const rem=document.getElementById('adminRemember'); setSavedLogin('admin',(rem&&rem.checked)?val:'');
     }
     function adminRenderPanel(){
       const box=document.getElementById('adminModal'); if(!box) return;
