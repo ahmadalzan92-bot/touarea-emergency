@@ -2187,6 +2187,7 @@
       document.getElementById('aubLater').addEventListener('click', function(){ el.remove(); });
     }
     function applyAppUpdate(){
+      window.__appUpdating = true;
       if('serviceWorker' in navigator && navigator.serviceWorker.controller){
         navigator.serviceWorker.getRegistration().then(function(reg){
           if(reg && reg.waiting){ reg.waiting.postMessage({ type:'SKIP_WAITING' }); }
@@ -2205,9 +2206,8 @@
         }).catch(function(){});
     }
     if('serviceWorker' in navigator && location.protocol === 'https:'){
-      let _swRefreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', function(){
-        if(_swRefreshing) return; _swRefreshing = true; window.location.reload();
+        if(window.__appUpdating){ window.location.reload(); }
       });
       window.addEventListener('load', function(){
         navigator.serviceWorker.register('sw.js').then(function(reg){
