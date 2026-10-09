@@ -1,6 +1,6 @@
 /* خدمة العمل دون اتصال + التحديث السحابي — طوارئ 2026
    لتفعيل تحديث جديد: غيّر CACHE_VERSION وversion.json وAPP_VERSION داخل Test_V22.html */
-const CACHE_VERSION = 'touarea-2026.10.09.1';
+const CACHE_VERSION = 'touarea-2026.10.09.2';
 const RUNTIME = CACHE_VERSION + '-runtime';
 
 const CORE_ASSETS = [
@@ -39,8 +39,9 @@ self.addEventListener('install', (event) => {
         if (res) await cache.put(url, res.clone());
       } catch (e) { /* تجاهل */ }
     }));
+    /* عند وجود نسخة عاملة سابقة (تحديث) نُفعّل الجديدة فوراً بعد اكتمال التخزين */
+    if (self.registration && self.registration.active) { await self.skipWaiting(); }
   })());
-  /* لا نستدعي skipWaiting تلقائياً حتى نُظهر للمستخدم مطالبة التحديث */
 });
 
 self.addEventListener('activate', (event) => {
@@ -80,7 +81,7 @@ self.addEventListener('fetch', (event) => {
     /* الصفحات: الشبكة أولاً (لجلب أحدث نسخة) مع الرجوع للكاش عند عدم الاتصال */
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(new Request(req, { cache: 'no-store' }));
         if (fresh && fresh.ok) {
           const cache = await caches.open(CACHE_VERSION);
           cache.put(req, fresh.clone()).catch(() => {});
