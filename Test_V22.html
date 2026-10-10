@@ -1307,7 +1307,7 @@
         <ul>
           <li>حدّد <b>الفترة الزمنية</b> ثم استعرض الإحصاءات (عدد البلاغات الميدانية/المكتبية، الحالات، الكوادر).</li>
           <li><b>التقرير النهائي المجمّع</b>: يضم ملخصاً وكشوفاً للفترة المحددة، مع إمكانية الطباعة والتصدير إلى Excel.</li>
-          <li>تبويب <b>«التقرير الرسمي»</b> (بعد تحليل البيانات): تقرير مستقل بترويسة رسمية وشعار — تصدير <b>Excel</b> و<b>Word</b> و<b>طباعة/PDF</b>، مع نطاق تاريخ، وخيارات إظهار، وإمكانية <b>إدراج صورة الختم والتوقيع</b>.</li>
+          <li>تبويب <b>«التقرير الرسمي»</b> (بعد تحليل البيانات): تقرير مستقل بترويسة رسمية وشعار — تصدير <b>Excel</b> و<b>Word</b> (يُضمِّن الشعار وصور الختم والتوقيع فعلياً داخل الملف) و<b>طباعة/PDF</b>، مع نطاق تاريخ، وخيارات إظهار، وإمكانية <b>إدراج صورة الختم وتوقيع اختياري لمعدّي التقرير ومدير الأشغال ومدير الطوارئ</b>.</li>
         </ul>
 
         <h3><i class="fas fa-clock"></i> 6) تقرير ساعات العمل</h3>
@@ -2270,13 +2270,25 @@
                 </div>
                 <div class="col-md-6">
                   <div class="orf-upload h-100">
-                    <label class="form-label mb-1" for="orfSignFile"><i class="fas fa-signature"></i> صورة التوقيع</label>
+                    <label class="form-label mb-1" for="orfSignAuthFile"><i class="fas fa-signature"></i> توقيع معدّي التقرير (اختياري)</label>
+                    <input type="file" id="orfSignAuthFile" class="form-control form-control-sm" accept="image/*" onchange="orfPickImage(this,'signAuth')">
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                      <img id="orfSignAuthPrev" class="orf-img-prev" alt="معاينة توقيع معدّي التقرير" style="display:none">
+                      <button type="button" class="btn btn-sm btn-outline-danger" id="orfSignAuthClear" style="display:none" onclick="orfClearImage('signAuth')"><i class="fas fa-trash"></i> إزالة</button>
+                    </div>
+                    <label class="form-label mb-1 mt-2" for="orfSignMgr1File"><i class="fas fa-signature"></i> توقيع مدير مديرية الأشغال (اختياري)</label>
+                    <input type="file" id="orfSignMgr1File" class="form-control form-control-sm" accept="image/*" onchange="orfPickImage(this,'signMgr1')">
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                      <img id="orfSignMgr1Prev" class="orf-img-prev" alt="معاينة توقيع مدير الأشغال" style="display:none">
+                      <button type="button" class="btn btn-sm btn-outline-danger" id="orfSignMgr1Clear" style="display:none" onclick="orfClearImage('signMgr1')"><i class="fas fa-trash"></i> إزالة</button>
+                    </div>
+                    <label class="form-label mb-1 mt-2" for="orfSignFile"><i class="fas fa-signature"></i> توقيع مدير مديرية الطوارئ (اختياري)</label>
                     <input type="file" id="orfSignFile" class="form-control form-control-sm" accept="image/*" onchange="orfPickImage(this,'sign')">
                     <div class="d-flex align-items-center gap-2 mt-2">
                       <img id="orfSignPrev" class="orf-img-prev" alt="معاينة التوقيع" style="display:none">
                       <button type="button" class="btn btn-sm btn-outline-danger" id="orfSignClear" style="display:none" onclick="orfClearImage('sign')"><i class="fas fa-trash"></i> إزالة</button>
                     </div>
-                    <div class="form-text">يظهر في خانة مدير مديرية الطوارئ فوق خط التوقيع.</div>
+                    <div class="form-text">تظهر كل صورة توقيع فوق خط التوقيع في خانتها عند تفعيلها.</div>
                   </div>
                 </div>
               </div>
@@ -2360,7 +2372,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.15';
+    const APP_VERSION = '2026.10.09.16';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5843,7 +5855,10 @@ function closeCentral(){
 <script>
 // ======================== التقرير الرسمي المستقل (Excel / Word / PDF) ========================
 var ORF_KEY='orfSettingsV1';
-var _orfStampImg='', _orfSignImg='';
+var _orfStampImg='', _orfSignImg='', _orfSignAuthImg='', _orfSignMgr1Img='';
+function _orfImgGet(kind){ return kind==='stamp'?_orfStampImg : kind==='signAuth'?_orfSignAuthImg : kind==='signMgr1'?_orfSignMgr1Img : _orfSignImg; }
+function _orfImgSet(kind,url){ if(kind==='stamp')_orfStampImg=url; else if(kind==='signAuth')_orfSignAuthImg=url; else if(kind==='signMgr1')_orfSignMgr1Img=url; else _orfSignImg=url; }
+function _orfImgIds(kind){ var s=kind==='stamp'?'Stamp':kind==='signAuth'?'SignAuth':kind==='signMgr1'?'SignMgr1':'Sign'; return {file:'orf'+s+'File',prev:'orf'+s+'Prev',clear:'orf'+s+'Clear'}; }
 function _orfVal(id){var el=document.getElementById(id);return el?String(el.value||'').trim():'';}
 function _orfChk(id){var el=document.getElementById(id);return !!(el&&el.checked);}
 function orfAddAuthor(val){
@@ -5873,9 +5888,8 @@ function openOfficialReport(){
   var sl=document.getElementById('orfStampLabel'); if(sl) sl.value=saved.stampLabel||'';
   if(saved.prov&&prov) prov.value=saved.prov;
   _orfStampImg=saved.stamp||''; _orfSignImg=saved.sign||'';
-  var sf=document.getElementById('orfStampFile'); if(sf) sf.value='';
-  var gf=document.getElementById('orfSignFile'); if(gf) gf.value='';
-  orfRenderImagePreview('stamp'); orfRenderImagePreview('sign');
+  _orfSignAuthImg=saved.signAuth||''; _orfSignMgr1Img=saved.signMgr1||'';
+  ['stamp','signAuth','signMgr1','sign'].forEach(function(k){ var el=document.getElementById(_orfImgIds(k).file); if(el) el.value=''; orfRenderImagePreview(k); });
   var list=document.getElementById('orfAuthorsList');
   if(list){ list.innerHTML=''; var authors=(saved.authors&&saved.authors.length)?saved.authors:['م. أحمد الزن']; authors.forEach(orfAddAuthor); }
   orfUpdateInfo();
@@ -5884,9 +5898,8 @@ function openOfficialReport(){
   if(tabBtn){ if(window.bootstrap&&bootstrap.Tab) bootstrap.Tab.getOrCreateInstance(tabBtn).show(); else tabBtn.click(); }
 }
 function orfRenderImagePreview(kind){
-  var img=document.getElementById(kind==='stamp'?'orfStampPrev':'orfSignPrev');
-  var clr=document.getElementById(kind==='stamp'?'orfStampClear':'orfSignClear');
-  var val=kind==='stamp'?_orfStampImg:_orfSignImg;
+  var ids=_orfImgIds(kind);
+  var img=document.getElementById(ids.prev), clr=document.getElementById(ids.clear), val=_orfImgGet(kind);
   if(img){ if(val){img.src=val; img.style.display='inline-block';} else {img.removeAttribute('src'); img.style.display='none';} }
   if(clr) clr.style.display=val?'inline-block':'none';
 }
@@ -5895,17 +5908,17 @@ function orfPickImage(input,kind){
   if(!/^image\//.test(f.type)){ showAlert('الرجاء اختيار ملف صورة صالح.','warning'); input.value=''; return; }
   if(f.size>1572864){ showAlert('حجم الصورة كبير (يزيد عن 1.5MB) — يُفضَّل صورة أصغر.','warning'); }
   var fr=new FileReader();
-  fr.onload=function(){ var url=String(fr.result||''); if(kind==='stamp') _orfStampImg=url; else _orfSignImg=url; orfRenderImagePreview(kind); orfSaveSettings(); };
+  fr.onload=function(){ _orfImgSet(kind,String(fr.result||'')); orfRenderImagePreview(kind); orfSaveSettings(); };
   fr.onerror=function(){ showAlert('تعذّر قراءة الصورة.','danger'); };
   fr.readAsDataURL(f);
 }
 function orfClearImage(kind){
-  if(kind==='stamp'){ _orfStampImg=''; var a=document.getElementById('orfStampFile'); if(a) a.value=''; }
-  else { _orfSignImg=''; var b=document.getElementById('orfSignFile'); if(b) b.value=''; }
+  _orfImgSet(kind,'');
+  var el=document.getElementById(_orfImgIds(kind).file); if(el) el.value='';
   orfRenderImagePreview(kind); orfSaveSettings();
 }
 function orfSaveSettings(){
-  try{ setLS(ORF_KEY,{dept:_orfVal('orfDept'),prov:_orfVal('orfProv'),authors:orfAuthors(),stamp:_orfStampImg,sign:_orfSignImg,stampLabel:_orfVal('orfStampLabel')}); }catch(e){}
+  try{ setLS(ORF_KEY,{dept:_orfVal('orfDept'),prov:_orfVal('orfProv'),authors:orfAuthors(),stamp:_orfStampImg,sign:_orfSignImg,signAuth:_orfSignAuthImg,signMgr1:_orfSignMgr1Img,stampLabel:_orfVal('orfStampLabel')}); }catch(e){}
 }
 var _orfLogoData='', _orfLogoPromise=null;
 function orfLogoDataURL(){
@@ -5965,17 +5978,18 @@ function collectOfficialReport(){
   if(!rs.length){showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');return null;}
   var meta={prov:_orfVal('orfProv')||ACTIVE_DIR.short,dept:_orfVal('orfDept'),number:_orfVal('orfNumber'),
     mgr1:_orfVal('orfMgr1'),mgr2:_orfVal('orfMgr2'),authors:orfAuthors(),all:all,from:from,to:to,
-    stampImg:_orfStampImg||'',signImg:_orfSignImg||'',stampLabel:_orfVal('orfStampLabel'),
+    stampImg:_orfStampImg||'',signImg:_orfSignImg||'',signAuthImg:_orfSignAuthImg||'',signMgr1Img:_orfSignMgr1Img||'',stampLabel:_orfVal('orfStampLabel'),
     opts:{coords:_orfChk('orfOptCoords'),staff:_orfChk('orfOptStaff'),vehicles:_orfChk('orfOptVehicles'),speed:_orfChk('orfOptSpeed'),stamp:_orfChk('orfOptStamp'),mgr1:_orfChk('orfOptMgr1'),mgr2:_orfChk('orfOptMgr2')}};
   orfSaveSettings();
   return {rs:rs,meta:meta};
 }
 function orfSignatureBlocks(meta,O,stamp){
   var nl=(meta.authors&&meta.authors.length)?meta.authors.map(function(a){return esc(a);}).join('<br>'):'ــــــ';
-  var s='<div class="orf-sign-block"><div class="orf-sign-title">معدّو التقرير</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+nl+'</div></div>';
-  if(O.mgr1) s+='<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الأشغال</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr1||'')+'</div></div>';
-  s+=stamp;
-  if(O.mgr2) s+='<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الطوارئ</div>'+((O.stamp&&meta.signImg)?('<img class="orf-sign-img" src="'+meta.signImg+'" alt="التوقيع">'):'')+'<div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr2||'')+'</div></div>';
+  var authSign=meta.signAuthImg?('<div><img class="orf-sign-img" src="'+meta.signAuthImg+'" alt="توقيع معدّي التقرير"></div>'):'';
+  var s='<div class="orf-sign-block"><div class="orf-sign-title">معدّو التقرير</div>'+authSign+'<div class="orf-sign-line"></div><div class="orf-sign-name">'+nl+'</div></div>';
+  if(O.mgr1){ var m1Sign=meta.signMgr1Img?('<div><img class="orf-sign-img" src="'+meta.signMgr1Img+'" alt="توقيع مدير الأشغال"></div>'):''; s+='<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الأشغال</div>'+m1Sign+'<div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr1||'')+'</div></div>'; }
+  if(O.stamp) s+=stamp;
+  if(O.mgr2){ var m2Sign=meta.signImg?('<div><img class="orf-sign-img" src="'+meta.signImg+'" alt="توقيع مدير الطوارئ"></div>'):''; s+='<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الطوارئ</div>'+m2Sign+'<div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr2||'')+'</div></div>'; }
   return s;
 }
 function buildOfficialReportHTML(rs,meta,forPrint){
@@ -6131,16 +6145,19 @@ function buildOfficialReportWordHTML(rs,meta){
   var stampLabel=(meta.stampLabel||'').trim()||'ختم رسمي';
   var stampCell=meta.stampImg?('<img src="'+meta.stampImg+'" style="height:80pt" alt="الختم">'):('<div style="width:80pt;height:80pt;border:2px dashed #b3261e;color:#b3261e;margin:0 auto;text-align:center;font-weight:bold;padding:6pt 0;font-size:8pt"><div>'+E(stampLabel)+'</div><div style="font-size:11pt;border-top:1px solid;border-bottom:1px solid;margin:4pt 10pt;padding:1pt 0">مُصدَّق</div><div>'+E(prov)+'</div></div>');
   var signImg=meta.signImg?('<div><img src="'+meta.signImg+'" style="height:42pt" alt="التوقيع"></div>'):'';
+  var authSign=meta.signAuthImg?('<div><img src="'+meta.signAuthImg+'" style="height:42pt" alt="توقيع معدّي التقرير"></div>'):'';
+  var m1Sign=meta.signMgr1Img?('<div><img src="'+meta.signMgr1Img+'" style="height:42pt" alt="توقيع مدير الأشغال"></div>'):'';
   var bCount=1+(O.mgr1?1:0)+(O.stamp?1:0)+(O.mgr2?1:0);
   var colW=Math.floor(100/bCount)+'%';
   var sTD=function(inner,mid){return '<td width="'+colW+'" style="text-align:center;vertical-align:'+(mid?'middle':'top')+'">'+inner+'</td>';};
   var sTitle=function(t){return '<div style="font-weight:bold;color:#1a3a6b">'+t+'</div>';};
-  var sLine='<div style="border-bottom:1px solid #999;margin:16pt 18pt 4pt"></div>';
+  var sLine=function(hasImg){return '<div style="border-bottom:1px solid #999;margin:'+(hasImg?'4pt':'16pt')+' 18pt 4pt"></div>';};
+  var sName=function(t){return '<div style="font-size:8pt;color:#555">'+t+'</div>';};
   var cells='';
-  cells+=sTD(sTitle('معدّو التقرير')+sLine+'<div style="font-size:8pt;color:#555">'+((meta.authors&&meta.authors.length)?meta.authors.map(E).join('<br>'):'')+'</div>');
-  if(O.mgr1) cells+=sTD(sTitle('مدير مديرية الأشغال')+sLine+'<div style="font-size:8pt;color:#555">'+E(meta.mgr1||'')+'</div>');
+  cells+=sTD(sTitle('معدّو التقرير')+authSign+sLine(!!meta.signAuthImg)+sName(meta.authors&&meta.authors.length?meta.authors.map(E).join('<br>'):''));
+  if(O.mgr1) cells+=sTD(sTitle('مدير مديرية الأشغال')+m1Sign+sLine(!!meta.signMgr1Img)+sName(E(meta.mgr1||'')));
   if(O.stamp) cells+=sTD(stampCell,true);
-  if(O.mgr2) cells+=sTD(sTitle('مدير مديرية الطوارئ')+signImg+'<div style="border-bottom:1px solid #999;margin:'+(meta.signImg?'4pt':'16pt')+' 18pt 4pt"></div><div style="font-size:8pt;color:#555">'+E(meta.mgr2||'')+'</div>');
+  if(O.mgr2) cells+=sTD(sTitle('مدير مديرية الطوارئ')+signImg+sLine(!!meta.signImg)+sName(E(meta.mgr2||'')));
   var sigBlock='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18pt"><tr>'+cells+'</tr></table>';
   return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
     +'<head><meta charset="utf-8"><title>تقرير رسمي — '+E(prov)+'</title>'
@@ -6163,12 +6180,77 @@ function buildOfficialReportWordHTML(rs,meta){
     +'<div style="text-align:center;font-size:8pt;color:#777;margin-top:16pt;border-top:1px solid #ccc;padding-top:6pt">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال — '+E(new Date().toLocaleString('ar-JO'))+'</div>'
     +'</body></html>';
 }
+function orfQpEncode(str){
+  var bytes=unescape(encodeURIComponent(String(str||'')));
+  var out='', line='';
+  function push(t){
+    if(line.length+t.length>75){
+      var last=line.charCodeAt(line.length-1);
+      if(last===32) line=line.slice(0,-1)+'=20';
+      else if(last===9) line=line.slice(0,-1)+'=09';
+      out+=line+'=\r\n'; line='';
+    }
+    line+=t;
+  }
+  for(var i=0;i<bytes.length;i++){
+    var c=bytes.charCodeAt(i);
+    if(c===13){ if(bytes.charCodeAt(i+1)===10) i++; out+=line+'\r\n'; line=''; continue; }
+    if(c===10){ out+=line+'\r\n'; line=''; continue; }
+    var t;
+    if(c>=33&&c<=126&&c!==61) t=String.fromCharCode(c);
+    else t='='+(c<16?'0':'')+c.toString(16).toUpperCase();
+    push(t);
+  }
+  out+=line;
+  return out;
+}
+function orfBase64Lines(b64){
+  b64=String(b64||'').replace(/[\r\n]/g,'');
+  var out=[];
+  for(var i=0;i<b64.length;i+=76) out.push(b64.slice(i,i+76));
+  return out.join('\r\n');
+}
+function orfWrapMHTML(html){
+  var images=[], idx=0;
+  html=html.replace(/src="data:(image\/[a-zA-Z0-9.+-]+);base64,([^"]+)"/g,function(m,mime,b64){
+    idx++;
+    var ext=(mime.split('/')[1]||'png').toLowerCase().replace('jpeg','jpg').replace('svg+xml','svg');
+    var name='image'+idx+'.'+ext;
+    images.push({name:name,mime:mime,b64:b64});
+    return 'src="'+name+'"';
+  });
+  var b='----=_NextPart_ORF_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+  var base='file:///C:/ORF/';
+  var out='MIME-Version: 1.0\r\n';
+  out+='Content-Type: multipart/related; boundary="'+b+'"; type="text/html"\r\n';
+  out+='\r\n';
+  out+='--'+b+'\r\n';
+  out+='Content-Location: '+base+'report.htm\r\n';
+  out+='Content-Type: text/html; charset="utf-8"\r\n';
+  out+='Content-Transfer-Encoding: quoted-printable\r\n';
+  out+='\r\n';
+  out+=orfQpEncode(html)+'\r\n';
+  images.forEach(function(im){
+    out+='--'+b+'\r\n';
+    out+='Content-Location: '+base+im.name+'\r\n';
+    out+='Content-Type: '+im.mime+'\r\n';
+    out+='Content-Transfer-Encoding: base64\r\n';
+    out+='\r\n';
+    out+=orfBase64Lines(im.b64)+'\r\n';
+  });
+  out+='--'+b+'--\r\n';
+  return out;
+}
+function buildOfficialReportWordDoc(){
+  var d=collectOfficialReport(); if(!d) return null;
+  return orfWrapMHTML(buildOfficialReportWordHTML(d.rs,d.meta));
+}
 function officialReportWord(){
   var d=collectOfficialReport(); if(!d) return;
   var go=function(){
-    var html=buildOfficialReportWordHTML(d.rs,d.meta);
+    var doc=orfWrapMHTML(buildOfficialReportWordHTML(d.rs,d.meta));
     try{
-      var blob=new Blob(['\ufeff'+html],{type:'application/msword;charset=utf-8'});
+      var blob=new Blob([doc],{type:'application/msword'});
       var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
       a.download='تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
       document.body.appendChild(a); a.click(); a.remove();
