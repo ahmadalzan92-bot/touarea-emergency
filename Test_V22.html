@@ -977,7 +977,7 @@
 
     .template-download{display:block;margin-top:10px;text-decoration:none}
 
-    .alert-container{position:fixed;top:20px;left:20px;z-index:1050;max-width:450px}
+    .alert-container{position:fixed;top:20px;left:20px;z-index:4300;max-width:450px}
     .alert-container .alert{
       border:none;border-right:5px solid rgba(13,36,64,.25);border-radius:14px;
       font-weight:600;padding:14px 16px;
@@ -1130,6 +1130,26 @@
     .guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:8px 0}
     .guide-cell{background:#f2f6fb;border:1px solid #dde7f2;border-radius:12px;padding:12px 14px}
     .guide-cell b{color:#0a2140}
+    /* ===== دليل التبويب الجانبي (قسم طولي على الجهة اليسرى) ===== */
+    .tab-guide{position:fixed;top:0;left:0;height:100vh;width:340px;max-width:88vw;transform:translateX(-100%);transition:transform .28s ease;z-index:3200;display:none;flex-direction:column;background:linear-gradient(180deg,#ffffff,#f3f8fd);border-right:1px solid #d7e3f0;box-shadow:6px 0 26px rgba(10,33,64,.18);direction:rtl}
+    body.tg-show .tab-guide{display:flex}
+    body.tg-open .tab-guide{transform:translateX(0)}
+    .tab-guide-toggle{position:absolute;right:-44px;top:40%;width:44px;display:flex;flex-direction:column;align-items:center;gap:9px;padding:14px 6px;background:linear-gradient(160deg,#0f4c81,#0a2140);color:#fff;border:1px solid #0a2140;border-right:0;border-radius:0 13px 13px 0;cursor:pointer;font-weight:800;font-size:.85rem;box-shadow:4px 0 14px rgba(10,33,64,.30)}
+    .tab-guide-toggle:hover{filter:brightness(1.1)}
+    .tab-guide-toggle i{font-size:1.1rem}
+    .tab-guide-toggle .tg-vtext{writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;line-height:1.1}
+    .tg-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:linear-gradient(120deg,#0a2140,#0f4c81);color:#fff;padding:12px 14px;font-weight:800;font-size:1rem}
+    .tg-head .tg-x{margin-inline-start:auto;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:8px;padding:2px 9px;cursor:pointer;line-height:1.4}
+    .tg-body{flex:1 1 auto;overflow:auto;padding:14px 16px 22px;color:#20304a;line-height:1.9;font-size:.92rem}
+    .tg-body h4{font-size:.95rem;color:#0a2140;border-right:4px solid #e7a30c;padding-right:8px;margin:14px 0 6px}
+    .tg-body h4:first-child{margin-top:2px}
+    .tg-body ul,.tg-body ol{padding-right:20px;margin:0 0 6px}
+    .tg-body li{margin:3px 0}
+    .tg-body .tg-note{background:#fff7e0;border:1px solid #f0dca0;border-radius:10px;padding:8px 10px;margin:8px 0}
+    .tg-body .tg-chip{display:inline-block;background:#0f4c81;color:#fff;border-radius:999px;padding:0 9px;font-size:.76rem;margin:0 2px}
+    .tg-foot{flex:0 0 auto;border-top:1px solid #e2ebf5;padding:8px 14px;font-size:.76rem;color:#6b7c90;text-align:center}
+    @media (max-width:991px){.tab-guide{width:min(340px,90vw)}}
+    @media print{.tab-guide{display:none!important}}
     .def-pass-hint{display:inline-block;direction:ltr;background:#eef;color:#0b57d0;border:1px dashed #90b4e8;border-radius:6px;padding:1px 8px;font-family:monospace;font-weight:700}
     #passModal{display:none;position:fixed;inset:0;z-index:4000;align-items:center;justify-content:center;direction:rtl}
     .pass-backdrop{position:fixed;inset:0;background:rgba(6,20,40,.6);backdrop-filter:blur(3px)}
@@ -1608,6 +1628,16 @@
     </div>
   </div>
   <div class="alert-container" id="alertContainer"></div>
+
+  <!-- ===== الدليل الإرشادي الجانبي (قسم طولي على اليسار) ===== -->
+  <div class="tab-guide" id="tabGuide" aria-hidden="false">
+    <button type="button" class="tab-guide-toggle" id="tabGuideToggle" onclick="tabGuideToggle()" title="إظهار / إخفاء الدليل الإرشادي">
+      <i class="fas fa-book-open"></i><span class="tg-vtext">الدليل الإرشادي</span>
+    </button>
+    <div class="tg-head"><i class="fas fa-circle-info"></i><span id="tgTitle">الدليل الإرشادي</span><button type="button" class="tg-x" onclick="tabGuideClose()" aria-label="إغلاق"><i class="fas fa-xmark"></i></button></div>
+    <div class="tg-body" id="tgBody"></div>
+    <div class="tg-foot">نظام إدارة بلاغات الطوارئ — م. أحمد الزن</div>
+  </div>
 
   <div class="top-credit">
     <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -2625,7 +2655,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.34';
+    const APP_VERSION = '2026.10.09.35';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -7325,6 +7355,156 @@ if(document.readyState!=='loading'){ try{ dateFieldMark(); }catch(e){} }
 else document.addEventListener('DOMContentLoaded', function(){ try{ dateFieldMark(); }catch(e){} });
 if(document.readyState!=='loading'){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} try{ bonusPopulateGroups(); }catch(e){} try{ bonusRender(); }catch(e){} }
 else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} try{ bonusPopulateGroups(); }catch(e){} });
+</script>
+<script>
+// ======================== الدليل الإرشادي الجانبي لكل تبويب ========================
+(function(){
+  const TAB_GUIDES={
+    report:{t:'<i class="fas fa-file-pen"></i> نموذج البلاغ',h:`
+      <h4>إنشاء بلاغ جديد</h4>
+      <ol>
+        <li>عبّئ البيانات: رقم البلاغ، التاريخ، نوع المهمة، والجهة/المحافظة.</li>
+        <li>حدّد الموقع بالضغط على <b>الخريطة</b> أو بزر <b>«موقعي الحالي»</b>.</li>
+        <li>أضف أرقام المركبات والكوادر المشاركة (يمكن إضافة صفوف متعددة)، وحدّد لكل كادر <b>نوع عمله</b> (ميداني / مكتبي).</li>
+        <li>اكتب الإجراءات المتخذة، وأرفق الصور/المستندات عند الحاجة.</li>
+        <li>اضغط <b>حفظ</b> ليُضاف البلاغ إلى السجل.</li>
+      </ol>
+      <div class="tg-note"><i class="fas fa-flask"></i> زر «بيانات نموذجية» يملأ الحقول للتجربة، و«تفريغ» يمسح النموذج.</div>`},
+    staff:{t:'<i class="fas fa-users-gear"></i> إدارة الكوادر',h:`
+      <h4>إضافة وتعديل الكوادر</h4>
+      <ul>
+        <li>أضف الكادر باسمه ومسمّاه الوظيفي ورقمه الوظيفي.</li>
+        <li>يدعم <b>الاستيراد من Excel</b> (كشف العاملين أو القالب) و<b>التصدير إلى Excel</b>.</li>
+        <li>من الجدول: تعديل أو حذف أي كادر، وزر <b>«حذف الكل»</b> لتفريغ القائمة.</li>
+      </ul>`},
+    vehicles:{t:'<i class="fas fa-truck"></i> إدارة المركبات',h:`
+      <h4>إضافة وتعديل المركبات</h4>
+      <ul>
+        <li>أضف رقم المركبة ونوعها والموقع/المبيت والوصف.</li>
+        <li>يدعم <b>الاستيراد من Excel</b> و<b>التصدير</b>؛ ويتعرّف على المديرية من عمود «المديرية/الرمز».</li>
+      </ul>`},
+    history:{t:'<i class="fas fa-clock-rotate-left"></i> سجل البلاغات',h:`
+      <h4>سجل البلاغات</h4>
+      <ul>
+        <li>استخدم <b>البحث والفلترة</b> (الفترة / الحالة / النوع) للوصول السريع لأي بلاغ.</li>
+        <li>لكل بلاغ: <b>عرض</b> التفاصيل، <b>تعديل</b>، <b>طباعة</b> تقرير منسّق، و<b>حذف</b>.</li>
+        <li>يمكن <b>تصدير السجل إلى Excel</b> من الأزرار أعلى الجدول.</li>
+      </ul>`},
+    mapPane:{t:'<i class="fas fa-map-location-dot"></i> الخريطة',h:`
+      <h4>الخريطة التفاعلية</h4>
+      <ul>
+        <li>النقر على الدبوس يعرض تفاصيل البلاغ وحالته.</li>
+        <li>للتعديل (سحب الدبوس، تغيير الحالة/الإحداثيات/الإجراءات، وإنشاء بلاغ جديد بالنقر بزر الفأرة الأيمن) اضغط أولاً <b>«تمكين التعديل»</b> أعلى الخريطة.</li>
+        <li>البلاغات بلا إحداثيات تظهر في قائمة «بلاغات بلا إحداثيات صحيحة» مع زر لتحديد موقعها على الخريطة.</li>
+      </ul>`},
+    final:{t:'<i class="fas fa-file-contract"></i> التقرير النهائي',h:`
+      <h4>التقرير النهائي المجمّع</h4>
+      <ul>
+        <li>حدّد <b>من/إلى تاريخ</b> وبيانات المحافظة والمديرين.</li>
+        <li>أزرار: <b>تحديث</b>، <b>من تاريخ إلى تاريخ</b> (تجميع اختياري)، <b>تصدير Excel</b>، <b>طباعة / PDF</b>.</li>
+        <li>يمكن <b>استيراد بلاغات</b> من تقرير رسمي سابق بصيغة Excel.</li>
+      </ul>`},
+    analysis:{t:'<i class="fas fa-chart-pie"></i> تحليل البيانات',h:`
+      <h4>الإحصاءات وساعات العمل</h4>
+      <ul>
+        <li>إحصاءات الموظفين والمركبات والبلاغات حسب التاريخ.</li>
+        <li>قسم <b>ساعات العمل حسب الرقم الوظيفي</b>: حدّد الفترة ثم تصدير <b>Excel</b> أو <b>Word</b>.</li>
+        <li>يحسب النظام الساعات <b>ميداني/مكتبي</b> و<b>ضمن/خارج الدوام</b>، مع إمكانية اعتماد أيام عطلة رسمية إضافية.</li>
+      </ul>`},
+    officialReport:{t:'<i class="fas fa-file-signature"></i> التقرير الرسمي',h:`
+      <h4>التقرير الرسمي المستقل</h4>
+      <ul>
+        <li>حدّد نطاق التاريخ أو «تضمين جميع البلاغات»، وبيانات الرقم/القسم/المحافظة/المدراء/المعدّين.</li>
+        <li>خيارات إظهار العناصر (الإحداثيات، الكادر، الآليات، سرعة الاستجابة، الختم/التوقيع).</li>
+        <li>أدرج صور <b>الختم</b> و<b>التوقيع</b>، ثم صدّر <b>Excel</b> أو <b>Word</b> أو <b>معاينة/طباعة PDF</b>.</li>
+      </ul>`},
+    groups:{t:'<i class="fas fa-layer-group"></i> مجموعات البلاغات',h:`
+      <h4>مجموعات البلاغات (منخفضات / أحداث)</h4>
+      <ul>
+        <li>أنشئ مجموعة باسمها وفترتها (مثال: «منخفض 2026-10-09»).</li>
+        <li>أضف إليها البلاغات <b>يدوياً</b> أو بزر <b>«إضافة كل بلاغات الفترة»</b>.</li>
+        <li>أصدر لها <b>تقريراً رسمياً</b> و<b>تقريراً نهائياً</b> (Excel/Word/PDF). تُحفظ وتُزامَن سحابياً وتظهر في العرض المركزي.</li>
+      </ul>`},
+    grpReports:{t:'<i class="fas fa-file-invoice"></i> تقارير المجموعات المفصلة',h:`
+      <h4>تقرير مفصّل لمجموعة</h4>
+      <ul>
+        <li>اختر المجموعة (وفترة فرعية اختيارية أو <b>«فترة المجموعة»</b>).</li>
+        <li>يُصدر: كشف مفصل لكل موظف + الإجمالي حسب الرقم الوظيفي + التفصيل اليومي + أيام العطل + ورقة تفاصيل بلاغات المجموعة.</li>
+        <li>أزرار: <b>تصدير Excel</b> و<b>معاينة / طباعة PDF</b>.</li>
+      </ul>`},
+    bonus:{t:'<i class="fas fa-award"></i> احتساب مكافآت الطوارئ',h:`
+      <h4>كشف مكافآت الطوارئ</h4>
+      <ul>
+        <li>حدّد الفترة أو <b>«كامل الفترة»</b>، والمجموعة (اختياري)، ونوع الساعات (ميداني / مكتبي / كليهما).</li>
+        <li>الأعمدة: الاسم · الوظيفة الفعلية · ساعات خارج الدوام · ساعات الجولات التفقدية · التقييم المستحق.</li>
+        <li>سلم التقييم: A≥30، B≥20، C≥10، D≥0 ساعة.</li>
+        <li>أزرار: <b>تصدير Excel بالمعادلات</b> و<b>طباعة / PDF</b>.</li>
+      </ul>`},
+    centralOverview:{t:'<i class="fas fa-chart-pie"></i> نظرة عامة',h:`
+      <h4>مؤشرات مجمعة لجميع المحافظات</h4>
+      <ul>
+        <li>بطاقات مؤشرات لحظية لكل المحافظات.</li>
+        <li>جدول إحصاءات المديريات + أحدث البلاغات المجمّعة.</li>
+      </ul>`},
+    centralReportList:{t:'<i class="fas fa-clock-rotate-left"></i> سجل بلاغات المحافظات',h:`
+      <h4>سجل البلاغات المجمّع</h4>
+      <ul>
+        <li>ابحث بالرقم/النوع/الموقع/المحافظة، وفلترة حسب الحالة.</li>
+        <li><b>تصدير Excel</b> للبلاغات المعروضة.</li>
+      </ul>`},
+    centralMapPane:{t:'<i class="fas fa-map-location-dot"></i> الخريطة المركزية',h:`
+      <h4>خريطة كل البلاغات الميدانية</h4>
+      <ul>
+        <li>فلترة حسب الحالة، وزر <b>«ملاءمة الخريطة»</b> لعرض كل الدبابيس.</li>
+        <li>الدبابيس هنا للعرض فقط (للقراءة) ولا يمكن تعديل البلاغات منها.</li>
+      </ul>`},
+    centralGroups:{t:'<i class="fas fa-layer-group"></i> مجموعات المحافظات',h:`
+      <h4>مجموعات البلاغات لكل محافظة</h4>
+      <ul>
+        <li>يعرض المجموعات المُنشأة في كل مديرية (الاسم، الفترة، عدد البلاغات).</li>
+        <li>يسهّل المتابعة والإشراف المركزي.</li>
+      </ul>`}
+  };
+  function vis(el){ return !!el && getComputedStyle(el).display!=='none'; }
+  function activePaneId(){
+    const central=vis(document.getElementById('centralScreen'));
+    const list=document.getElementById(central?'centralTab':'myTab');
+    const act=list?list.querySelector('.nav-link.active'):null;
+    const t=act?act.getAttribute('data-bs-target'):'';
+    return t?t.replace('#',''):(central?'centralOverview':'report');
+  }
+  function setGuide(id){
+    const g=TAB_GUIDES[id]; if(!g) return;
+    const t=document.getElementById('tgTitle'), b=document.getElementById('tgBody');
+    if(t) t.innerHTML=g.t; if(b) b.innerHTML=g.h;
+  }
+  window.tabGuideSet=setGuide;
+  window.tabGuideToggle=function(force){
+    const open=(force===undefined)?!document.body.classList.contains('tg-open'):!!force;
+    document.body.classList.toggle('tg-open',open);
+    try{ localStorage.setItem('tabGuideOpenV1',open?'1':'0'); }catch(e){}
+  };
+  window.tabGuideClose=function(){ window.tabGuideToggle(false); };
+  function sync(){
+    const homeVisible=vis(document.getElementById('homeScreen'));
+    document.body.classList.toggle('tg-show',!homeVisible);
+    if(!homeVisible) setGuide(activePaneId());
+  }
+  window.tabGuideSync=sync;
+  try{ const s=localStorage.getItem('tabGuideOpenV1'); document.body.classList.toggle('tg-open', s==null?(window.innerWidth>=1200):s==='1'); }catch(e){}
+  ['myTab','centralTab'].forEach(function(id){
+    const list=document.getElementById(id); if(!list) return;
+    list.addEventListener('shown.bs.tab',function(e){
+      const tg=e.target.getAttribute('data-bs-target'); if(tg) setGuide(tg.replace('#',''));
+      sync();
+    });
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') window.tabGuideClose(); });
+  [document.getElementById('homeScreen'),document.getElementById('centralScreen')].forEach(function(el){
+    if(el && window.MutationObserver) new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['style']});
+  });
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',sync); else sync();
+})();
 </script>
 </body>
 </html>
