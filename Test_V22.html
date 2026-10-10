@@ -944,9 +944,9 @@
     .staff-badge .staff-mode{width:auto;padding:.15rem 1.5rem .15rem .4rem;font-size:.78rem;min-width:78px}
     .staff-badge .staff-mode.is-office{background:#fdeedd;border-color:#d99406;font-weight:700}
 
-    #bonusPreview table{width:100%;table-layout:fixed;word-break:break-word}
-    #bonusPreview th,#bonusPreview td{vertical-align:middle;text-align:center;font-size:.84rem;padding:.4rem .3rem;line-height:1.3}
-    #bonusPreview thead th{font-size:.8rem}
+    #bonusPreview table{width:100%;table-layout:fixed;word-break:break-word;overflow-wrap:anywhere}
+    #bonusPreview th,#bonusPreview td{vertical-align:middle;text-align:center;font-size:.84rem;padding:.4rem .3rem;line-height:1.35;white-space:normal!important;overflow-wrap:anywhere;word-break:break-word}
+    #bonusPreview thead th{font-size:.76rem;line-height:1.25;padding:.45rem .25rem;text-align:center!important}
     #bonusPreview th:first-child,#bonusPreview td:first-child{text-align:right}
     #bonusPreview tfoot td{font-size:.9rem}
 
@@ -2601,7 +2601,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.25';
+    const APP_VERSION = '2026.10.09.26';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
