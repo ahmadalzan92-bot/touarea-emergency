@@ -2174,7 +2174,14 @@
             <div id="mapLegend" class="mb-2"></div>
             <div id="mapResults" class="list-group mb-2"></div>
             <div class="row g-3">
-              <div class="col-lg-9"><div id="mapBox"></div><div class="form-text">اسحب أي دبوس لتعديل موقعه، انقر عليه لتغيير الحالة أو الإحداثيات، وانقر بزر الفأرة الأيمن (أو اضغط مطولاً) على الخريطة لإنشاء بلاغ جديد.</div></div>
+              <div class="col-lg-9">
+                <div class="d-flex gap-2 align-items-center flex-wrap mb-2">
+                  <button type="button" class="btn btn-sm btn-outline-warning" id="mapEditToggleBtn" onclick="mapToggleEdit()"><i class="fas fa-lock"></i> تمكين التعديل</button>
+                  <span class="small text-muted" id="mapEditHint">التعديل مقفل — لن تتغيّر مواقع البلاغات.</span>
+                </div>
+                <div id="mapBox"></div>
+                <div class="form-text">انقر على الدبوس لعرض تفاصيل البلاغ. لسحب الدبوس أو تعديل البلاغ أو إنشاء بلاغ جديد على الخريطة، فعّل «تمكين التعديل» أولاً.</div>
+              </div>
               <div class="col-lg-3"><h6 class="section-title">بلاغات بلا إحداثيات صحيحة</h6><div id="mapPending"></div></div>
             </div>
           </div>
@@ -2618,7 +2625,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.33';
+    const APP_VERSION = '2026.10.09.34';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -4868,6 +4875,16 @@ document.getElementById('final-tab').addEventListener('shown.bs.tab',renderFinal
 // ======================== الخريطة التفاعلية ========================
 const STATUSES={'جديد':'#dc3545','قيد التنفيذ':'#f0ad4e','منجز':'#198754','مؤجل':'#6c757d'};
 let MAP=null,MLAYER=null,placingId=null;
+let MAP_EDIT=false;
+function mapEditGuard(){ if(MAP_EDIT) return true; showAlert('فعّل «تمكين التعديل» أولاً للسماح بتعديل البلاغات.','warning'); return false; }
+function mapToggleEdit(){
+  MAP_EDIT=!MAP_EDIT;
+  var b=document.getElementById('mapEditToggleBtn'),h=document.getElementById('mapEditHint');
+  if(b){ b.className='btn btn-sm '+(MAP_EDIT?'btn-warning':'btn-outline-warning'); b.innerHTML=MAP_EDIT?'<i class="fas fa-lock-open"></i> إقفال التعديل':'<i class="fas fa-lock"></i> تمكين التعديل'; }
+  if(h) h.textContent=MAP_EDIT?'وضع التعديل مُفعّل — يمكنك سحب الدبابيس وتعديل البلاغات.':'التعديل مقفل — لن تتغيّر مواقع البلاغات.';
+  placingId=null;
+  if(MAP) renderMap(false);
+}
 function initMap(){
   if(MAP)return;
   const osm=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
@@ -4875,22 +4892,25 @@ function initMap(){
   MAP=L.map('mapBox',{layers:[osm]}).setView([31.7165,35.7932],10);
   L.control.layers({'خريطة':osm,'أقمار صناعية':sat}).addTo(MAP);
   MLAYER=L.layerGroup().addTo(MAP);
-  MAP.on('click',e=>{if(placingId==null)return;const id=placingId;placingId=null;setCoords(id,e.latlng.lng,e.latlng.lat);showAlert('تم تحديد موقع البلاغ.');});
-  MAP.on('contextmenu',e=>{L.popup().setLatLng(e.latlng).setContent(`<button class="btn btn-sm btn-primary" onclick="newReportAt(${e.latlng.lng},${e.latlng.lat})"><i class="fas fa-plus"></i> إنشاء بلاغ هنا</button>`).openOn(MAP);});
+  MAP.on('click',e=>{if(!MAP_EDIT||placingId==null)return;const id=placingId;placingId=null;setCoords(id,e.latlng.lng,e.latlng.lat);showAlert('تم تحديد موقع البلاغ.');});
+  MAP.on('contextmenu',e=>{if(!MAP_EDIT)return;L.popup().setLatLng(e.latlng).setContent(`<button class="btn btn-sm btn-primary" onclick="newReportAt(${e.latlng.lng},${e.latlng.lat})"><i class="fas fa-plus"></i> إنشاء بلاغ هنا</button>`).openOn(MAP);});
 }
 function updateReport(id,fn){const rs=getLS(LS_KEYS.reports,[]);const r=rs.find(x=>x.id===id);if(!r)return;fn(r);setLS(LS_KEYS.reports,rs);}
 function setCoords(id,lon,lat){
+  if(!MAP_EDIT) return;
   const f=v=>String(Math.round(v*1e7)/1e7);
   updateReport(id,r=>{r.longitude=f(lon);r.latitude=f(lat);});
   renderMap(false);if(document.getElementById('finalPreview').innerHTML)renderFinalReport();
 }
-function mapSetStatus(id,v){updateReport(id,r=>{r.status=v;});renderMap(false);showAlert('تم تحديث حالة البلاغ.');}
+function mapSetStatus(id,v){if(!mapEditGuard())return;updateReport(id,r=>{r.status=v;});renderMap(false);showAlert('تم تحديث حالة البلاغ.');}
 function mapSaveCoords(id){
+  if(!mapEditGuard())return;
   const lon=document.getElementById('pLon').value.trim(),lat=document.getElementById('pLat').value.trim();
   if(!coordOk(lon,lat))return showAlert('إحداثيات غير صحيحة أو خارج نطاق الأردن.','warning');
   setCoords(id,parseFloat(lon),parseFloat(lat));showAlert('تم حفظ الإحداثيات.');
 }
 function mapSaveAction(id){
+  if(!mapEditGuard())return;
   const v=document.getElementById('pAct').value.trim();
   updateReport(id,r=>{r.actionsTaken=v;});
   if(document.getElementById('finalPreview').innerHTML)renderFinalReport();
@@ -4926,7 +4946,7 @@ function mapGoto(id){
   document.getElementById('mapResults').innerHTML='';
   MAP.setView(m.getLatLng(),15);m.openPopup();
 }
-function mapPlace(id){placingId=id;showAlert('انقر على الخريطة لتحديد موقع البلاغ.','info');}
+function mapPlace(id){if(!mapEditGuard())return;placingId=id;showAlert('انقر على الخريطة لتحديد موقع البلاغ.','info');}
 function newReportAt(lon,lat){
   MAP.closePopup();
   document.getElementById('longitude').value=(Math.round(lon*1e7)/1e7);
@@ -4982,15 +5002,24 @@ function closeAttachViewer(){
 }
 function popupHTML(id,n){
   const r=getLS(LS_KEYS.reports,[]).find(x=>x.id===id);if(!r)return '';
+  const head=`<div dir="rtl" style="min-width:230px"><b>#${n} — بلاغ ${esc(r.reportNumber||'ــــ')}</b>
+<div class="small text-muted mb-1">${esc(r.reportDate)} · ${esc(dayName(r.reportDate))}</div><div class="mb-2">${esc(r.missionType)}</div>`;
+  const attach=`${reportAttachChips(r)}
+<a class="small d-inline-flex align-items-center gap-1 mt-2 text-decoration-none" href="#" onclick="viewAttachment(${id},0);return false"><i class="fas fa-expand"></i> عرض المرفقات كاملة</a></div>`;
+  if(!MAP_EDIT){
+    return head+
+      `<label class="small fw-bold">الإجراءات المتخذة</label><div class="small border rounded p-1 mb-2 bg-light">${r.actionsTaken?escBr(r.actionsTaken):'لا يوجد'}</div>`+
+      `<div class="small mb-1"><b>الحالة:</b> ${esc(r.status||'منجز')}</div>`+
+      `<div class="small mb-2"><b>الإحداثيات:</b> ${esc(r.longitude||'')} , ${esc(r.latitude||'')}</div>`+
+      `<div class="small text-muted mb-1"><i class="fas fa-lock"></i> فعّل «تمكين التعديل» أعلى الخريطة للتعديل.</div>`+
+      attach;
+  }
   const opts=Object.keys(STATUSES).map(k=>`<option ${k===(r.status||'منجز')?'selected':''}>${k}</option>`).join('');
-  return `<div dir="rtl" style="min-width:230px"><b>#${n} — بلاغ ${esc(r.reportNumber||'ــــ')}</b>
-<div class="small text-muted mb-1">${esc(r.reportDate)} · ${esc(dayName(r.reportDate))}</div><div class="mb-2">${esc(r.missionType)}</div>
-<label class="small">الإجراءات المتخذة</label><textarea id="pAct" class="form-control form-control-sm mb-1" rows="3">${esc(r.actionsTaken)}</textarea><button class="btn btn-sm btn-outline-primary mb-2" onclick="mapSaveAction(${id})">حفظ الإجراء</button>
+  return head+`<label class="small">الإجراءات المتخذة</label><textarea id="pAct" class="form-control form-control-sm mb-1" rows="3">${esc(r.actionsTaken)}</textarea><button class="btn btn-sm btn-outline-primary mb-2" onclick="mapSaveAction(${id})">حفظ الإجراء</button>
 <label class="small">الحالة</label><select class="form-select form-select-sm mb-2" onchange="mapSetStatus(${id},this.value)">${opts}</select>
 <div class="row g-1 mb-2"><div class="col-6"><input id="pLon" class="form-control form-control-sm" value="${esc(r.longitude)}" title="خط الطول"></div><div class="col-6"><input id="pLat" class="form-control form-control-sm" value="${esc(r.latitude)}" title="خط العرض"></div></div>
 <button class="btn btn-sm btn-primary" onclick="mapSaveCoords(${id})">حفظ الإحداثيات</button> <small class="text-muted">أو اسحب الدبوس</small>
-${reportAttachChips(r)}
-<a class="small d-inline-flex align-items-center gap-1 mt-2 text-decoration-none" href="#" onclick="viewAttachment(${id},0);return false"><i class="fas fa-expand"></i> عرض المرفقات كاملة</a></div>`;
+`+attach;
 }
 function renderMap(fit){
   if(!MAP)return;
@@ -5002,9 +5031,9 @@ function renderMap(fit){
     if(!coordOk(r.longitude,r.latitude)){if(reportWorkMode(r)!=='مكتبي')pending.push({r,n:i+1});return;}
     const ll=[parseFloat(r.latitude),parseFloat(r.longitude)];pts.push(ll);
     const icon=L.divIcon({className:'',html:`<div class="pin" style="background:${STATUSES[s]||'#1f6fb2'}">${i+1}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]});
-    const m=L.marker(ll,{draggable:true,icon,title:r.missionType}).addTo(MLAYER);
+    const m=L.marker(ll,{draggable:!!MAP_EDIT,icon,title:r.missionType}).addTo(MLAYER);
     MK[r.id]=m;m.bindPopup(()=>popupHTML(r.id,i+1),{minWidth:270,maxWidth:340});
-    m.on('dragend',()=>{const p=m.getLatLng();setCoords(r.id,p.lng,p.lat);showAlert('تم تعديل موقع البلاغ.');});
+    m.on('dragend',()=>{if(!MAP_EDIT)return;const p=m.getLatLng();setCoords(r.id,p.lng,p.lat);showAlert('تم تعديل موقع البلاغ.');});
   });
   document.getElementById('mapLegend').innerHTML=Object.keys(STATUSES).map(k=>`<span class="me-3"><i class="fas fa-circle" style="color:${STATUSES[k]}"></i> ${k} (${counts[k]||0})</span>`).join('');
   document.getElementById('mapPending').innerHTML=pending.length?`<div class="list-group">${pending.map(({r,n})=>`<div class="list-group-item small"><b>#${n}</b> ${esc(String(r.missionType||'').slice(0,45))}<br><button class="btn btn-sm btn-outline-primary mt-1" onclick="mapPlace(${r.id})"><i class="fas fa-location-crosshairs"></i> حدّد على الخريطة</button></div>`).join('')}</div>`:'<p class="text-muted small">كل البلاغات الميدانية لها إحداثيات صحيحة.</p>';
