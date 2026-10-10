@@ -1,6 +1,6 @@
 /* خدمة العمل دون اتصال + التحديث السحابي — طوارئ 2026
    لتفعيل تحديث جديد: غيّر CACHE_VERSION وversion.json وAPP_VERSION داخل Test_V22.html */
-const CACHE_VERSION = 'touarea-2026.10.09.30';
+const CACHE_VERSION = 'touarea-2026.10.09.31';
 const RUNTIME = CACHE_VERSION + '-runtime';
 
 const CORE_ASSETS = [
