@@ -1320,6 +1320,7 @@
           <li><b>التقرير النهائي المجمّع</b>: يضم ملخصاً وكشوفاً للفترة المحددة، مع إمكانية الطباعة والتصدير إلى Excel.</li>
           <li>تبويب <b>«التقرير الرسمي»</b> (بعد تحليل البيانات): تقرير مستقل بترويسة رسمية وشعار — تصدير <b>Excel</b> و<b>Word</b> (يُضمِّن الشعار وصور الختم والتوقيع فعلياً داخل الملف) و<b>طباعة/PDF</b>، مع نطاق تاريخ، وخيارات إظهار، وإمكانية <b>إدراج صورة الختم وتوقيع اختياري لمعدّي التقرير ومدير الأشغال ومدير الطوارئ</b>.</li>
           <li>تبويب <b>«المجموعات»</b>: أنشئ <b>بكجاً مسمّى</b> (مثل «منخفض + تاريخ») وأضف إليه البلاغات <b>يدوياً</b> أو بزر <b>«إضافة كل بلاغات الفترة»</b>، ثم أصدر <b>تقريراً رسمياً</b> و<b>تقريراً نهائياً</b> لكل مجموعة (Excel/Word/PDF). زر <b>«تقرير رسمي مخصص»</b> يفتح <b>كل خيارات التقرير الرسمي</b> (المحافظة/القسم/الرقم/المدراء/المعدّون/الختم/التوقيعات/عناصر التقرير) ويصدره على بلاغات المجموعة المحددة فقط. المجموعات تُحفظ وتُزامَن سحابياً.</li>
+          <li>تبويب <b>«تقارير المجموعات المفصلة»</b>: اختر مجموعة (وحدّد فترة فرعية اختيارياً) ثم أصدر <b>تقريراً مفصلاً</b> على نمط تقرير ساعات العمل: <b>كشف مفصل لكل موظف + الإجمالي حسب الرقم الوظيفي + التفصيل اليومي + أيام العطل + ورقة تفاصيل بلاغات المجموعة</b>، بصيغة Excel، مع <b>معاينة/طباعة PDF</b>.</li>
         </ul>
 
         <h3><i class="fas fa-clock"></i> 6) تقرير ساعات العمل</h3>
@@ -1616,6 +1617,7 @@
       <li class="nav-item" role="presentation"><button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis" type="button" role="tab"><i class="fas fa-chart-pie"></i> تحليل البيانات</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="official-tab" data-bs-toggle="tab" data-bs-target="#officialReport" type="button" role="tab"><i class="fas fa-file-signature"></i> التقرير الرسمي</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab" onclick="grpRender()"><i class="fas fa-layer-group"></i> مجموعات البلاغات</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="grpRep-tab" data-bs-toggle="tab" data-bs-target="#grpReports" type="button" role="tab" onclick="grpRepOnShow()"><i class="fas fa-file-invoice"></i> تقارير المجموعات المفصلة</button></li>
     </ul>
 
     <div class="tab-content" id="myTabContent">
@@ -2365,6 +2367,42 @@
           </div>
         </div>
       </div>
+
+      <div class="tab-pane fade" id="grpReports" role="tabpanel">
+        <div class="card mt-4">
+          <div class="card-header">
+            <span><i class="fas fa-file-invoice"></i> تقرير مفصل لمجموعة بلاغات (ساعات الكادر التراكمي + البلاغات)</span>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-secondary py-2 small mb-3">
+              <i class="fas fa-circle-info"></i> اختر مجموعة بلاغات لإصدار تقرير <b>مفصل</b> لها على نمط تقرير ساعات العمل في تبويب «تحليل البيانات»: كشف مفصل لكل موظف + الإجمالي حسب الرقم الوظيفي + التفصيل اليومي + أيام العطل، بالإضافة إلى ورقة تفاصيل بلاغات المجموعة كاملة. يمكن تحديد فترة زمنية فرعية داخل المجموعة.
+            </div>
+            <div class="row g-3 align-items-end mb-3">
+              <div class="col-md-4">
+                <label class="form-label mb-1">المجموعة</label>
+                <select id="grpRepSelect" class="form-select form-select-sm" onchange="grpRepRender()"></select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">من تاريخ</label>
+                <input type="date" id="grpRepFrom" class="form-control form-control-sm" onchange="grpRepRender()">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">إلى تاريخ</label>
+                <input type="date" id="grpRepTo" class="form-control form-control-sm" onchange="grpRepRender()">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="grpRepFillPeriod()" title="استخدام فترة المجموعة المحددة"><i class="fas fa-calendar-range"></i> فترة المجموعة</button>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button type="button" class="btn btn-success btn-sm" onclick="grpRepExportDetailed()"><i class="fas fa-file-excel"></i> تصدير تقرير مفصل Excel</button>
+              <button type="button" class="btn btn-outline-info btn-sm" onclick="grpRepPrint()"><i class="fas fa-print"></i> معاينة / طباعة PDF</button>
+            </div>
+            <div class="small text-muted mb-2" id="grpRepMeta"></div>
+            <div id="grpRepPreview"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2494,7 +2532,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.20';
+    const APP_VERSION = '2026.10.09.21';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5229,10 +5267,11 @@ function shRepName(nameCnt){
   es.sort((a,b)=>b[1]-a[1]||String(a[0]).length-String(b[0]).length||String(a[0]).localeCompare(String(b[0]),'ar'));
   return {main:es[0][0],aliases:es.slice(1).map(x=>x[0])};
 }
-function staffHoursData(){
-  const from=(document.getElementById('shFrom')||{}).value||'';
-  const to=(document.getElementById('shTo')||{}).value||'';
-  const reports=getLS(LS_KEYS.reports,[])
+function staffHoursData(opts){
+  opts=opts||{};
+  const from=(opts.from!==undefined)?opts.from:((document.getElementById('shFrom')||{}).value||'');
+  const to=(opts.to!==undefined)?opts.to:((document.getElementById('shTo')||{}).value||'');
+  const reports=((opts.reports!==undefined)?opts.reports:getLS(LS_KEYS.reports,[]))
     .filter(r=>(!from||r.reportDate>=from)&&(!to||r.reportDate<=to))
     .sort((a,b)=>(a.reportDate||'').localeCompare(b.reportDate||'')||a.id-b.id);
   const summary=new Map();
@@ -5493,11 +5532,10 @@ function styleAOA(ws,aoa,boldRows,headerRow,rowFills){
     ws[a].s=st;
   }
 }
-function exportStaffHoursExcel(){
-  const D=staffHoursData();
-  if(!D.rows.length)return showAlert('لا توجد كوادر لإنشاء الإحصائية.','warning');
-  if(!D.reportCount)return showAlert('لا توجد بلاغات ضمن الفترة المحددة.','warning');
-  const today=new Date().toISOString().slice(0,10),period=shPeriodLabel(D.from,D.to);
+function buildStaffHoursWB(opts){
+  opts=opts||{};
+  const D=staffHoursData(opts);
+  const today=new Date().toISOString().slice(0,10),period=opts.periodLabel||shPeriodLabel(D.from,D.to);
   const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
 
   // ===== ورقة 1: الكشف المفصل لكل موظف (مجمّع ومرتّب حسب الرقم الوظيفي) =====
@@ -5594,8 +5632,15 @@ function exportStaffHoursExcel(){
   XLSX.utils.book_append_sheet(wb,wsH,'الجمعة والسبت والعطل');
 
   wb.SheetNames.forEach(n=>addExcelFooter(wb.Sheets[n]));
-  XLSX.writeFile(wb,`إحصائية_ساعات_العمل_${today}.xlsx`);
-  showAlert(`تم تصدير التقرير المستقل: كشف مفصل لـ ${emps} موظف، ${D.daily.length} سجل يومي — ضمن الدوام ${fmtH(tin)} ساعة / خارج الدوام ${fmtH(tout)} ساعة.`);
+  return {wb,D,today,tin,tout,emps};
+}
+function exportStaffHoursExcel(opts){
+  opts=opts||{};
+  const r=buildStaffHoursWB(opts), D=r.D;
+  if(!D.rows.length)return showAlert('لا توجد كوادر لإنشاء الإحصائية.','warning');
+  if(!D.reportCount)return showAlert('لا توجد بلاغات ضمن الفترة المحددة.','warning');
+  XLSX.writeFile(r.wb, opts.filename||`إحصائية_ساعات_العمل_${r.today}.xlsx`);
+  showAlert(`تم تصدير التقرير المستقل: كشف مفصل لـ ${r.emps} موظف، ${D.daily.length} سجل يومي — ضمن الدوام ${fmtH(r.tin)} ساعة / خارج الدوام ${fmtH(r.tout)} ساعة.`);
 }
 
 // ======================== طيّ أقسام التبويبات (باستثناء نموذج البلاغ والخريطة) ========================
@@ -6633,6 +6678,84 @@ function grpPrintFinal(id){
   w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير المجموعة — '+esc(d.g.name)+'</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:10mm 10mm 17mm}@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-size:9pt;color:#555}}body{margin:0}.fr-credit{display:none}.pc{position:fixed;bottom:-12mm;left:0;right:0;text-align:center;font-size:10pt;color:#444;border-top:1px solid #bbb;padding-top:3px}'+FR_CSS+'</style></head><body><div style="text-align:center;font-weight:700;padding:6px 0">المجموعة: '+esc(d.g.name)+'</div>'+frHTML(d.rs)+'<div class="pc">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div><script>setTimeout(function(){print()},700)<\/script></body></html>');
   w.document.close();
 }
+// ======================== تقارير المجموعات المفصلة (ساعات الكادر التراكمي + البلاغات) ========================
+function grpRepGroups(){ return grpSorted(); }
+function grpRepOnShow(){ grpRepRender(); }
+function grpRepPopulate(){
+  var sel=document.getElementById('grpRepSelect'); if(!sel) return '';
+  var list=grpRepGroups(), cur=sel.value;
+  sel.innerHTML='<option value="">— اختر مجموعة —</option>'+list.map(function(g){
+    return '<option value="'+g.id+'">'+esc(g.name)+' ('+((g.reportIds||[]).length)+' بلاغ)</option>';
+  }).join('');
+  if(cur&&list.some(function(g){return g.id===cur;})) sel.value=cur;
+  return sel.value;
+}
+function grpRepFillPeriod(){
+  var id=(document.getElementById('grpRepSelect')||{}).value||'';
+  var g=grpById(id); if(!g){ showAlert('اختر مجموعة أولاً.','warning'); return; }
+  var f=document.getElementById('grpRepFrom'), t=document.getElementById('grpRepTo');
+  if(f) f.value=g.from||''; if(t) t.value=g.to||'';
+  grpRepRender();
+}
+function grpRepData(){
+  var id=(document.getElementById('grpRepSelect')||{}).value||'';
+  var g=grpById(id); if(!g) return null;
+  var from=(document.getElementById('grpRepFrom')||{}).value||'';
+  var to=(document.getElementById('grpRepTo')||{}).value||'';
+  var all=grpReportsByIds(g.reportIds);
+  var rs=all.filter(function(r){ return (!from||r.reportDate>=from)&&(!to||r.reportDate<=to); });
+  var D=staffHoursData({reports:rs,from:from,to:to});
+  return {g:g,rs:rs,all:all,D:D,from:from,to:to};
+}
+function grpRepPeriodLabel(d){
+  if(d.from||d.to) return 'من '+(d.from?fmtDMY(d.from):'…')+' إلى '+(d.to?fmtDMY(d.to):'…');
+  return 'كل بلاغات المجموعة';
+}
+function grpRepRender(){
+  grpRepPopulate();
+  var mo=document.getElementById('grpRepPreview'), me=document.getElementById('grpRepMeta');
+  if(!mo||!me) return;
+  var d=grpRepData();
+  if(!d){ mo.innerHTML='<div class="text-muted">لا توجد مجموعات بعد. أنشئ مجموعة من تبويب «مجموعات البلاغات».</div>'; me.textContent=''; return; }
+  me.innerHTML='<b>المجموعة:</b> '+esc(d.g.name)+' — <b>الفترة:</b> '+esc(grpRepPeriodLabel(d))+' — <b>البلاغات المعروضة:</b> '+d.rs.length+' من '+d.all.length;
+  if(!d.rs.length){ mo.innerHTML='<div class="text-muted p-2">لا توجد بلاغات في هذه المجموعة ضمن الفترة المحددة.</div>'; return; }
+  var t=function(f){return f.reduce(function(s,r){return s+r;},0);};
+  var kpi=function(v,l){ return '<div class="col-6 col-md-3"><div class="border rounded p-2 text-center"><div class="fw-bold">'+v+'</div><div class="small text-muted">'+l+'</div></div></div>'; };
+  mo.innerHTML='<div class="row g-2 mb-3">'
+      +kpi(d.rs.length,'بلاغات المجموعة')
+      +kpi(d.D.rows.length,'كوادر نشطة')
+      +kpi(fmtH(t(d.D.rows.map(function(e){return e.total;})))+' ساعة','إجمالي الساعات')
+      +kpi(fmtH(t(d.D.rows.map(function(e){return e.count;}))),'تكرار الكوادر')
+    +'</div>'
+    +'<div class="table-responsive"><table class="table table-bordered table-sm align-middle mb-0">'
+      +'<thead class="table-light"><tr><th>الرقم الوظيفي</th><th>الاسم</th><th>المسمى الوظيفي</th><th>ساعات ميدانية</th><th>ساعات مكتبية</th><th>الإجمالي</th><th>ضمن الدوام</th><th>خارج الدوام</th><th>عدد البلاغات</th></tr></thead>'
+      +'<tbody>'+(d.D.rows.map(function(e){ return '<tr><td><b>'+esc(e.number||'—')+'</b></td><td>'+esc(e.name)+'</td><td>'+esc(e.role||'')+'</td><td>'+fmtH(e.field)+'</td><td>'+fmtH(e.office)+'</td><td><b>'+fmtH(e.total)+'</b></td><td>'+fmtH(e.inH)+'</td><td>'+fmtH(e.outH)+'</td><td>'+e.count+'</td></tr>'; }).join('')||'<tr><td colspan="9" class="text-center text-muted">لا توجد بيانات</td></tr>')+'</tbody></table></div>';
+}
+function grpRepDetailedWB(d){
+  var period='المجموعة: '+d.g.name+' — '+grpRepPeriodLabel(d);
+  var r=buildStaffHoursWB({reports:d.rs,from:d.from,to:d.to,periodLabel:period});
+  var wb=r.wb;
+  var b=buildFinalWS(d.rs,{range:grpRepPeriodLabel(d),title:'تفاصيل بلاغات المجموعة: '+d.g.name,group:d.g.name});
+  wb.Sheets['تفاصيل البلاغات']=b.ws;
+  wb.SheetNames=['تفاصيل البلاغات'].concat(wb.SheetNames);
+  return {wb:wb,D:r.D};
+}
+function grpRepExportDetailed(){
+  var d=grpRepData();
+  if(!d){ showAlert('اختر مجموعة أولاً.','warning'); return; }
+  if(!d.rs.length){ showAlert('لا توجد بلاغات في هذه المجموعة ضمن الفترة المحددة.','warning'); return; }
+  var wb=grpRepDetailedWB(d).wb;
+  XLSX.writeFile(wb,'تقرير_مفصل_'+grpSafe(d.g.name)+'_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير التقرير المفصل للمجموعة «'+d.g.name+'» بصيغة Excel.');
+}
+function grpRepPrint(){
+  var d=grpRepData();
+  if(!d){ showAlert('اختر مجموعة أولاً.','warning'); return; }
+  if(!d.rs.length){ showAlert('لا توجد بلاغات في هذه المجموعة ضمن الفترة المحددة.','warning'); return; }
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير مفصل — '+esc(d.g.name)+'</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:10mm 10mm 17mm}@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-size:9pt;color:#555}}body{margin:0}.fr-credit{display:none}.pc{position:fixed;bottom:-12mm;left:0;right:0;text-align:center;font-size:10pt;color:#444;border-top:1px solid #bbb;padding-top:3px}'+FR_CSS+'</style></head><body><div style="text-align:center;font-weight:700;padding:6px 0">المجموعة: '+esc(d.g.name)+' — '+esc(grpRepPeriodLabel(d))+'</div>'+frHTML(d.rs)+'<div class="pc">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div><script>setTimeout(function(){print()},700)<\/script></body></html>');
+  w.document.close();
+}
 var _grpOrfId='', _grpOrfImgs={stamp:'',sign:'',signAuth:'',signMgr1:''};
 function grpOrfImgIds(kind){ var s=kind==='stamp'?'Stamp':kind==='signAuth'?'SignAuth':kind==='signMgr1'?'SignMgr1':'Sign'; return {file:'grpOrf'+s+'File',prev:'grpOrf'+s+'Prev',clear:'grpOrf'+s+'Clear'}; }
 function grpOrfV(id){ var el=document.getElementById(id); return el?String(el.value||'').trim():''; }
@@ -6746,8 +6869,8 @@ function renderCentralGroups(){
   });
   rows.innerHTML=html||'<tr><td colspan="4" class="text-center text-muted">لا توجد مجموعات بعد</td></tr>';
 }
-if(document.readyState!=='loading'){ try{ grpRender(); }catch(e){} }
-else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender(); }catch(e){} });
+if(document.readyState!=='loading'){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} }
+else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} });
 </script>
 </body>
 </html>
