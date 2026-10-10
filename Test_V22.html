@@ -1302,6 +1302,7 @@
         <ul>
           <li>حدّد <b>الفترة الزمنية</b> ثم استعرض الإحصاءات (عدد البلاغات الميدانية/المكتبية، الحالات، الكوادر).</li>
           <li><b>التقرير النهائي المجمّع</b>: يضم ملخصاً وكشوفاً للفترة المحددة، مع إمكانية الطباعة والتصدير إلى Excel.</li>
+          <li>زر <b>«تقرير رسمي»</b> أعلى الصفحة: تقرير مستقل بترويسة رسمية وشعار — تصدير <b>Excel</b> و<b>Word</b> و<b>طباعة/PDF</b> مع ختم وتوقيع، ونطاق تاريخ وخيارات إظهار.</li>
         </ul>
 
         <h3><i class="fas fa-clock"></i> 6) تقرير ساعات العمل</h3>
@@ -1556,6 +1557,7 @@
     <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span class="credit-brand"><i class="fas fa-pen-nib"></i> إعداد وتصميم <b>م. أحمد الزن</b></span>
       <span class="credit-note"><i class="fas fa-shield-halved"></i> غرفة عمليات إدارة بلاغات الطوارئ — <i class="fas fa-calendar"></i> 2025 - 2026</span>
+      <button type="button" class="btn btn-sm btn-info fw-bold text-white" id="officialReportBtn" onclick="openOfficialReport()" title="إصدار تقرير رسمي مستقل (Excel / Word / طباعة PDF)"><i class="fas fa-file-signature"></i> تقرير رسمي</button>
       <button type="button" class="btn btn-sm btn-outline-warning fw-bold" id="passDirBtn" onclick="openPass('manage', ACTIVE_DIR.key)"><i class="fas fa-key"></i> كلمة المرور</button>
       <button type="button" class="btn btn-sm btn-warning fw-bold" id="changeDirBtn" onclick="openHome()"><i class="fas fa-right-left"></i> تغيير المديرية</button>
       <span class="cloud-badge offline" id="cloudBadge" title="حالة المزامنة السحابية"><span>☁️</span><span>غير متصل ⚠️</span></span>
@@ -2254,6 +2256,53 @@
       <button type="button" class="btn btn-success" onclick="doExportRange()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
     </div>
   </div></div></div>
+
+  <!-- نافذة التقرير الرسمي المستقل (Excel / Word / PDF) -->
+  <div class="modal fade" id="officialReportModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content" dir="rtl">
+    <div class="modal-header"><h5 class="modal-title"><i class="fas fa-file-signature"></i> إصدار تقرير رسمي</h5><button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="row g-3 mb-2">
+        <div class="col-md-6"><label class="form-label required">من تاريخ</label><input type="date" id="orfFrom" class="form-control" onchange="orfUpdateInfo()"><div class="form-text">صيغة: سنة-شهر-يوم</div></div>
+        <div class="col-md-6"><label class="form-label required">إلى تاريخ</label><input type="date" id="orfTo" class="form-control" onchange="orfUpdateInfo()"><div class="form-text">صيغة: سنة-شهر-يوم</div></div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="orfAllDates" onchange="var c=this.checked;document.getElementById('orfFrom').disabled=c;document.getElementById('orfTo').disabled=c;orfUpdateInfo()">
+        <label class="form-check-label" for="orfAllDates">تضمين جميع البلاغات بغض النظر عن التاريخ</label>
+      </div>
+      <div class="row g-3 mb-2">
+        <div class="col-md-4"><label class="form-label">رقم التقرير (اختياري)</label><input type="text" id="orfNumber" class="form-control" placeholder="مثال: 2026/001"></div>
+        <div class="col-md-4"><label class="form-label">القسم / الوحدة</label><input type="text" id="orfDept" class="form-control" placeholder="مثال: قسم المتابعة والتقارير"></div>
+        <div class="col-md-4"><label class="form-label">المحافظة</label><input type="text" id="orfProv" class="form-control"></div>
+      </div>
+      <div class="row g-3 mb-2">
+        <div class="col-md-6"><label class="form-label">مدير مديرية الأشغال</label><input type="text" id="orfMgr1" class="form-control"></div>
+        <div class="col-md-6"><label class="form-label">مدير مديرية الطوارئ</label><input type="text" id="orfMgr2" class="form-control"></div>
+      </div>
+      <div class="mb-2">
+        <label class="form-label mb-1">معدّو التقرير</label>
+        <div id="orfAuthorsList" class="d-grid gap-1"></div>
+        <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="orfAddAuthor('')"><i class="fas fa-plus"></i> إضافة معد</button>
+      </div>
+      <fieldset class="border rounded p-2 mb-2">
+        <legend class="float-none w-auto px-1 fs-6 text-primary">خيارات التقرير</legend>
+        <div class="row g-2 small">
+          <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptCoords" checked><label class="form-check-label" for="orfOptCoords">إظهار الإحداثيات</label></div></div>
+          <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptStaff" checked><label class="form-check-label" for="orfOptStaff">إظهار الكادر المشارك</label></div></div>
+          <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptVehicles" checked><label class="form-check-label" for="orfOptVehicles">إظهار الآليات</label></div></div>
+          <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptSpeed" checked><label class="form-check-label" for="orfOptSpeed">إظهار سرعة الاستجابة</label></div></div>
+          <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptStamp" checked><label class="form-check-label" for="orfOptStamp">إظهار الختم الرسمي</label></div></div>
+      </div>
+      </fieldset>
+      <div id="orfInfo" class="form-text"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+      <button type="button" class="btn btn-success" onclick="officialReportExcel()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+      <button type="button" class="btn btn-primary" onclick="officialReportWord()"><i class="fas fa-file-word"></i> تنزيل Word</button>
+      <button type="button" class="btn btn-info text-white" onclick="officialReportPrint()"><i class="fas fa-print"></i> معاينة وطباعة / PDF</button>
+    </div>
+  </div></div></div>
+
   <footer class="text-center py-3 mt-5">
     <p><span id="footTitle">غرفة عمليات مديرية أشغال محافظة مأدبا © 2025-2026 — إعداد وتصميم م. أحمد الزن</span></p>
   </footer>
@@ -2268,7 +2317,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.11';
+    const APP_VERSION = '2026.10.09.12';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5747,6 +5796,204 @@ function closeCentral(){
   const stSel=document.getElementById('centralListStatus');
   if(stSel) stSel.addEventListener('change',function(){ renderCentralList(); });
 })();
+</script>
+<script>
+// ======================== التقرير الرسمي المستقل (Excel / Word / PDF) ========================
+var ORF_KEY='orfSettingsV1';
+function _orfVal(id){var el=document.getElementById(id);return el?String(el.value||'').trim():'';}
+function _orfChk(id){var el=document.getElementById(id);return !!(el&&el.checked);}
+function orfAddAuthor(val){
+  var list=document.getElementById('orfAuthorsList'); if(!list) return;
+  var row=document.createElement('div'); row.className='input-group input-group-sm';
+  var inp=document.createElement('input'); inp.type='text'; inp.className='form-control orf-author'; inp.placeholder='اسم معدّ التقرير'; inp.value=val||'';
+  var btn=document.createElement('button'); btn.type='button'; btn.className='btn btn-outline-danger'; btn.title='حذف'; btn.innerHTML='<i class="fas fa-times"></i>';
+  btn.addEventListener('click',function(){row.remove();});
+  row.appendChild(inp); row.appendChild(btn); list.appendChild(row);
+}
+function orfAuthors(){return Array.prototype.slice.call(document.querySelectorAll('#orfAuthorsList .orf-author')).map(function(i){return i.value.trim();}).filter(Boolean);}
+function openOfficialReport(){
+  var dates=getLS(LS_KEYS.reports,[]).map(function(r){return r.reportDate;}).filter(Boolean).sort();
+  var S=frSettings();
+  var now=new Date();
+  var first=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  document.getElementById('orfFrom').value=dates[0]||first;
+  document.getElementById('orfTo').value=dates[dates.length-1]||now.toISOString().slice(0,10);
+  document.getElementById('orfFrom').disabled=false;
+  document.getElementById('orfTo').disabled=false;
+  document.getElementById('orfAllDates').checked=false;
+  document.getElementById('orfNumber').value='';
+  document.getElementById('orfProv').value=S.prov||ACTIVE_DIR.short;
+  document.getElementById('orfMgr1').value=S.mgr1||'';
+  document.getElementById('orfMgr2').value=S.mgr2||'';
+  var saved={}; try{saved=getLS(ORF_KEY,{});}catch(e){}
+  document.getElementById('orfDept').value=saved.dept||'';
+  if(saved.prov) document.getElementById('orfProv').value=saved.prov;
+  var list=document.getElementById('orfAuthorsList'); list.innerHTML='';
+  var authors=(saved.authors&&saved.authors.length)?saved.authors:['م. أحمد الزن'];
+  authors.forEach(orfAddAuthor);
+  orfUpdateInfo();
+  if(window.bootstrap&&bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(document.getElementById('officialReportModal')).show();
+  else document.getElementById('officialReportModal').style.display='block';
+}
+function orfUpdateInfo(){
+  var info=document.getElementById('orfInfo'); if(!info) return;
+  var all=_orfChk('orfAllDates');
+  var n=all?getLS(LS_KEYS.reports,[]).length:rangeReports(_orfVal('orfFrom'),_orfVal('orfTo')).length;
+  info.textContent=(all?'سيشمل التقرير جميع البلاغات المسجّلة':'سيشمل التقرير البلاغات الواقعة ضمن الفترة المحددة')+' — عدد البلاغات: '+n+'.';
+}
+function orfPeriodText(meta){
+  if(meta.all) return 'جميع الفترات';
+  var a=meta.from?fmtDMY(meta.from):'',b=meta.to?fmtDMY(meta.to):'';
+  if(a&&b&&a===b) return a;
+  if(a&&b) return 'من '+a+' إلى '+b;
+  return a||b||'';
+}
+function collectOfficialReport(){
+  var all=_orfChk('orfAllDates');
+  var from=_orfVal('orfFrom'),to=_orfVal('orfTo');
+  if(!all&&(!from||!to)){showAlert('حدد تاريخي البداية والنهاية أو فعّل خيار جميع البلاغات.','warning');return null;}
+  if(!all&&from>to){showAlert('تاريخ البداية بعد تاريخ النهاية.','warning');return null;}
+  var rs=all?frReports(true):rangeReports(from,to);
+  if(!rs.length){showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');return null;}
+  var meta={prov:_orfVal('orfProv')||ACTIVE_DIR.short,dept:_orfVal('orfDept'),number:_orfVal('orfNumber'),
+    mgr1:_orfVal('orfMgr1'),mgr2:_orfVal('orfMgr2'),authors:orfAuthors(),all:all,from:from,to:to,
+    opts:{coords:_orfChk('orfOptCoords'),staff:_orfChk('orfOptStaff'),vehicles:_orfChk('orfOptVehicles'),speed:_orfChk('orfOptSpeed'),stamp:_orfChk('orfOptStamp')}};
+  try{setLS(ORF_KEY,{dept:meta.dept,prov:meta.prov,authors:meta.authors});}catch(e){}
+  return {rs:rs,meta:meta};
+}
+function buildOfficialReportHTML(rs,meta,forPrint){
+  var O=meta.opts||{},S=frSettings(),M=frMeta(rs);
+  var prov=meta.prov||S.prov||ACTIVE_DIR.short;
+  var period=orfPeriodText(meta);
+  var logo='logo-web.png'; try{logo=new URL('logo-web.png',location.href).href;}catch(e){}
+  var field=0,office=0,coordsBad=0;
+  var rows=rs.map(function(r,i){
+    var veh=reportVehicles(r),mode=r.workMode||'ميداني',h=hoursOf(r);
+    if(mode==='مكتبي') office+=h; else field+=h;
+    if(coordBad(r)) coordsBad++;
+    var staff=(r.staff||[]).map(function(s){return esc(staffNameNo(s))+' / '+esc(s.role||'');}).join('<br>')||'—';
+    var vehTxt=veh.map(function(v){return esc(v.type||'')+(v.number?(' — '+esc(v.number)):'');}).join('<br>')||'—';
+    var tds='<td class="c">'+(i+1)+'</td>';
+    tds+='<td class="c">'+esc(r.reportNumber||'—')+'</td>';
+    tds+='<td class="c nowrap">'+esc(dayName(r.reportDate)||'')+'<br>'+esc(r.reportDate?fmtDMY(r.reportDate):'')+'</td>';
+    tds+='<td class="l">'+escBr(r.missionType||'')+'</td>';
+    tds+='<td class="l">'+escBr(r.actionsTaken||'')+'</td>';
+    if(O.staff) tds+='<td class="l">'+staff+'</td>';
+    if(O.vehicles) tds+='<td class="l">'+vehTxt+'</td>';
+    if(O.coords) tds+='<td class="c'+(coordBad(r)?' bad':'')+'">'+esc(r.longitude||'')+'<br>'+esc(r.latitude||'')+'</td>';
+    tds+='<td class="c">'+esc(mode)+'<br><b>'+fmtH(h)+'</b> ساعة</td>';
+    if(O.speed) tds+='<td class="c">'+esc(r.responseSpeed||'—')+'</td>';
+    return '<tr>'+tds+'</tr>';
+  }).join('');
+  var colCount=6+(O.staff?1:0)+(O.vehicles?1:0)+(O.coords?1:0)+(O.speed?1:0);
+  if(!rs.length) rows='<tr><td class="c muted" colspan="'+colCount+'">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
+  var days=String(M.days||'');
+  var head='<tr><th style="width:3%">الرقم</th><th style="width:9%">رقم البلاغ</th><th style="width:9%">اليوم والتاريخ</th><th style="width:15%">نوع البلاغ</th><th>الإجراء المتخذ</th>'
+    +(O.staff?'<th style="width:16%">الكادر المشارك</th>':'')
+    +(O.vehicles?'<th style="width:11%">الآليات</th>':'')
+    +(O.coords?'<th style="width:9%">الإحداثيات<br><small>الطول / العرض</small></th>':'')
+    +'<th style="width:8%">مدة العمل</th>'
+    +(O.speed?'<th style="width:7%">سرعة الاستجابة</th>':'')+'</tr>';
+  var stamp=O.stamp?('<div class="orf-stamp"><div class="orf-stamp-in"><span>مديرية الطوارئ</span><b>مُصدَّق</b><span>'+esc(prov)+'</span></div></div>'):'';
+  var css='<style>'
+    +'@page{size:A4 portrait;margin:14mm 12mm 18mm}'
+    +'*{box-sizing:border-box}'
+    +'body{font-family:"Cairo",Tahoma,sans-serif;direction:rtl;color:#1a2030;background:#fff;margin:0;font-size:11px}'
+    +'.orf-page{max-width:820px;margin:0 auto;padding:18px}'
+    +'.orf-bar{text-align:center;margin-bottom:14px}'
+    +'.orf-bar button{background:#0d6efd;color:#fff;border:0;border-radius:8px;padding:8px 20px;margin:0 5px;cursor:pointer;font-family:inherit;font-size:13px}'
+    +'.orf-bar button:last-child{background:#6c757d}'
+    +'.orf-head{border:2px solid #1a3a6b;border-radius:6px;overflow:hidden;margin-bottom:14px}'
+    +'.orf-head-top{background:#1a3a6b;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'.orf-logo{height:60px;background:#fff;border-radius:6px;padding:3px}'
+    +'.orf-org{text-align:center;flex:1}'
+    +'.orf-org .n{font-size:17px;font-weight:800}'
+    +'.orf-org .s{font-size:11px;opacity:.92}'
+    +'.orf-org .d{font-size:12px;font-weight:700;margin-top:3px}'
+    +'.orf-badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;white-space:nowrap;min-width:70px;text-align:center}'
+    +'.orf-meta{display:flex;flex-wrap:wrap;gap:6px 18px;background:#eef3fb;border-top:1px solid #cdd8f0;padding:8px 16px;font-size:11px}'
+    +'.orf-meta b{color:#1a3a6b}'
+    +'.orf-title{text-align:center;margin:4px 0 12px}'
+    +'.orf-title h1{font-size:20px;margin:0;color:#1a3a6b}'
+    +'.orf-title .sub{font-size:12px;color:#555;margin-top:3px}'
+    +'.orf-kpis{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}'
+    +'.orf-kpi{flex:1;min-width:110px;background:#f5f8ff;border:1px solid #cdd8f0;border-radius:8px;padding:9px 6px;text-align:center}'
+    +'.orf-kpi .v{font-size:18px;font-weight:800;color:#1a3a6b}'
+    +'.orf-kpi .k{font-size:10px;color:#5a6b85;margin-top:2px}'
+    +'.orf-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9.5px}'
+    +'.orf-table th,.orf-table td{border:1px solid #7c8db5;padding:4px 5px;vertical-align:top;word-wrap:break-word;overflow-wrap:break-word}'
+    +'.orf-table th{background:#dbe4f3;color:#1a3a6b;text-align:center;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'.orf-table td.c{text-align:center}.orf-table td.l{text-align:right}.orf-table td.nowrap{white-space:nowrap}'
+    +'.orf-table td.bad{background:#fde2e0;color:#b3261e;font-weight:700}'
+    +'.orf-table td.muted{color:#888}'
+    +'.orf-table tr{page-break-inside:avoid}.orf-table thead{display:table-header-group}'
+    +'.orf-sign{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-top:26px}'
+    +'.orf-sign-block{flex:1}'
+    +'.orf-sign-title{font-weight:700;color:#1a3a6b;text-align:center}'
+    +'.orf-sign-line{border-bottom:1px solid #999;margin:22px 24px 5px}'
+    +'.orf-sign-name{text-align:center;font-size:10px;color:#555}'
+    +'.orf-stamp{display:flex;align-items:center;justify-content:center;padding:0 6px}'
+    +'.orf-stamp-in{width:110px;height:110px;border:2px dashed #b3261e;border-radius:50%;color:#b3261e;transform:rotate(-12deg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-weight:800;padding:6px}'
+    +'.orf-stamp-in span{font-size:9px}'
+    +'.orf-stamp-in b{font-size:15px;letter-spacing:2px;border-top:1px solid;border-bottom:1px solid;padding:2px 4px;margin:3px 0}'
+    +'.orf-gen{text-align:center;font-size:10px;color:#777;margin-top:16px;border-top:1px solid #ccc;padding-top:8px}'
+    +(forPrint?'@media print{.orf-bar{display:none}body{font-size:10.5px}.orf-page{padding:0}}':'')
+    +'</style>';
+  var bar=forPrint?('<div class="orf-bar"><button onclick="window.print()">🖨️ طباعة / حفظ PDF</button><button onclick="window.close()">✕ إغلاق</button></div>'):'';
+  var body='<div class="orf-page">'
+    +'<div class="orf-head">'
+      +'<div class="orf-head-top">'
+        +'<img class="orf-logo" src="'+logo+'" alt="الشعار">'
+        +'<div class="orf-org"><div class="n">وزارة الأشغال العامة والإسكان</div><div class="s">المملكة الأردنية الهاشمية — مديرية الطوارئ</div><div class="d">'+esc(prov)+'</div></div>'
+        +'<div class="orf-badge">'+(meta.number?('رقم التقرير<br>'+esc(meta.number)):'تقرير رسمي')+'</div>'
+      +'</div>'
+      +'<div class="orf-meta"><span><b>المحافظة:</b> '+esc(prov)+'</span>'+(meta.dept?('<span><b>القسم:</b> '+esc(meta.dept)+'</span>'):'')+'<span><b>الفترة:</b> '+esc(period)+'</span>'+(days?('<span><b>الأيام:</b> '+esc(days)+'</span>'):'')+'<span><b>عدد البلاغات:</b> '+rs.length+'</span></div>'
+    +'</div>'
+    +'<div class="orf-title"><h1>تقرير رسمي</h1><div class="sub">تقرير البلاغات ضمن مناطق الاختصاص</div></div>'
+    +'<div class="orf-kpis">'
+      +'<div class="orf-kpi"><div class="v">'+rs.length+'</div><div class="k">عدد البلاغات</div></div>'
+      +'<div class="orf-kpi"><div class="v">'+fmtH(field)+'</div><div class="k">ساعات ميدانية</div></div>'
+      +'<div class="orf-kpi"><div class="v">'+fmtH(office)+'</div><div class="k">ساعات مكتبية</div></div>'
+      +'<div class="orf-kpi"><div class="v">'+fmtH(field+office)+'</div><div class="k">إجمالي الساعات</div></div>'
+      +'<div class="orf-kpi"><div class="v" style="color:#b3261e">'+coordsBad+'</div><div class="k">إحداثيات ناقصة</div></div>'
+    +'</div>'
+    +'<table class="orf-table"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>'
+    +'<div class="orf-sign">'
+      +'<div class="orf-sign-block"><div class="orf-sign-title">معدّو التقرير</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+((meta.authors&&meta.authors.length)?meta.authors.map(esc).join(' ، '):'ــــــ')+'</div></div>'
+      +stamp
+      +'<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الطوارئ</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr2||'')+'</div></div>'
+    +'</div>'
+    +'<div class="orf-gen">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال — '+esc(new Date().toLocaleString('ar-JO'))+'</div>'
+    +'</div>';
+  return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>تقرير رسمي — '+esc(prov)+'</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">'+css+'</head><body>'+bar+body+'</body></html>';
+}
+function officialReportPrint(){
+  var d=collectOfficialReport(); if(!d) return;
+  var html=buildOfficialReportHTML(d.rs,d.meta,true);
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  w.document.write(html); w.document.close();
+}
+function officialReportWord(){
+  var d=collectOfficialReport(); if(!d) return;
+  var html=buildOfficialReportHTML(d.rs,d.meta,false);
+  try{
+    var blob=new Blob(['\ufeff'+html],{type:'application/msword;charset=utf-8'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
+    showAlert('تم تنزيل التقرير الرسمي بصيغة Word.');
+  }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+}
+function officialReportExcel(){
+  var d=collectOfficialReport(); if(!d) return;
+  var range=d.meta.all?'جميع الفترات':('من '+fmtDMY(d.meta.from)+' إلى '+fmtDMY(d.meta.to));
+  var b=buildFinalWS(d.rs,{range:range,title:'تقرير رسمي — البلاغات ضمن مناطق الاختصاص'});
+  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,b.ws,'تقرير رسمي');
+  XLSX.writeFile(wb,'تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير التقرير الرسمي بصيغة Excel.');
+}
 </script>
 </body>
 </html>
