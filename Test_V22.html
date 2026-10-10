@@ -2360,7 +2360,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.14';
+    const APP_VERSION = '2026.10.09.15';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5907,16 +5907,42 @@ function orfClearImage(kind){
 function orfSaveSettings(){
   try{ setLS(ORF_KEY,{dept:_orfVal('orfDept'),prov:_orfVal('orfProv'),authors:orfAuthors(),stamp:_orfStampImg,sign:_orfSignImg,stampLabel:_orfVal('orfStampLabel')}); }catch(e){}
 }
-var _orfLogoData='';
-function orfPreloadLogo(){
-  if(_orfLogoData) return;
+var _orfLogoData='', _orfLogoPromise=null;
+function orfLogoDataURL(){
+  if(_orfLogoData) return _orfLogoData;
   try{
-    var x=new XMLHttpRequest(); x.open('GET','logo-web.png',true); x.responseType='blob';
-    x.onload=function(){ if(x.response){ var fr=new FileReader(); fr.onload=function(){ _orfLogoData=String(fr.result||''); }; fr.readAsDataURL(x.response); } };
-    x.send();
+    var imgs=document.querySelectorAll('img.app-logo');
+    for(var i=0;i<imgs.length;i++){
+      var im=imgs[i];
+      if(im.complete && im.naturalWidth>0){
+        var c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight;
+        c.getContext('2d').drawImage(im,0,0);
+        var d=c.toDataURL('image/png');
+        if(d&&d.length>100){ _orfLogoData=d; return d; }
+      }
+    }
   }catch(e){}
+  return '';
 }
-function _orfLogoSrc(){ if(_orfLogoData) return _orfLogoData; try{ return new URL('logo-web.png',location.href).href; }catch(e){ return 'logo-web.png'; } }
+function orfLoadLogo(){
+  if(_orfLogoData) return Promise.resolve(_orfLogoData);
+  if(_orfLogoPromise) return _orfLogoPromise;
+  var fromImg=orfLogoDataURL(); if(fromImg) return Promise.resolve(fromImg);
+  _orfLogoPromise=new Promise(function(resolve){
+    try{
+      fetch('logo-web.png',{cache:'force-cache'}).then(function(r){return r.ok?r.blob():null;}).then(function(b){
+        if(!b){ resolve(''); return; }
+        var fr=new FileReader();
+        fr.onload=function(){ _orfLogoData=String(fr.result||''); resolve(_orfLogoData); };
+        fr.onerror=function(){ resolve(''); };
+        fr.readAsDataURL(b);
+      }).catch(function(){ _orfLogoPromise=null; resolve(''); });
+    }catch(e){ _orfLogoPromise=null; resolve(''); }
+  });
+  return _orfLogoPromise;
+}
+function orfPreloadLogo(){ orfLogoDataURL()||orfLoadLogo(); }
+function _orfLogoSrc(){ var d=orfLogoDataURL(); if(d) return d; if(_orfLogoData) return _orfLogoData; try{ return new URL('logo-web.png',location.href).href; }catch(e){ return 'logo-web.png'; } }
 function orfUpdateInfo(){
   var info=document.getElementById('orfInfo'); if(!info) return;
   var all=_orfChk('orfAllDates');
@@ -6139,15 +6165,20 @@ function buildOfficialReportWordHTML(rs,meta){
 }
 function officialReportWord(){
   var d=collectOfficialReport(); if(!d) return;
-  var html=buildOfficialReportWordHTML(d.rs,d.meta);
-  try{
-    var blob=new Blob(['\ufeff'+html],{type:'application/msword;charset=utf-8'});
-    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download='تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
-    showAlert('تم تنزيل التقرير الرسمي بصيغة Word.');
-  }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+  var go=function(){
+    var html=buildOfficialReportWordHTML(d.rs,d.meta);
+    try{
+      var blob=new Blob(['\ufeff'+html],{type:'application/msword;charset=utf-8'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
+      showAlert('تم تنزيل التقرير الرسمي بصيغة Word.');
+    }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+  };
+  orfLogoDataURL();
+  if(_orfLogoData) go();
+  else orfLoadLogo().then(function(){ go(); });
 }
 function officialReportExcel(){
   var d=collectOfficialReport(); if(!d) return;
