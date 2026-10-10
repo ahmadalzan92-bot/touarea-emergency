@@ -2248,6 +2248,8 @@
                 <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptVehicles" checked><label class="form-check-label" for="orfOptVehicles">إظهار الآليات</label></div></div>
                 <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptSpeed" checked><label class="form-check-label" for="orfOptSpeed">إظهار سرعة الاستجابة</label></div></div>
                 <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptStamp" checked><label class="form-check-label" for="orfOptStamp">إظهار الختم / التوقيع</label></div></div>
+                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptMgr1" checked><label class="form-check-label" for="orfOptMgr1">إظهار مدير مديرية الأشغال</label></div></div>
+                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" id="orfOptMgr2" checked><label class="form-check-label" for="orfOptMgr2">إظهار مدير مديرية الطوارئ</label></div></div>
               </div>
             </fieldset>
             <fieldset class="border rounded p-2 mb-3">
@@ -2261,7 +2263,9 @@
                       <img id="orfStampPrev" class="orf-img-prev" alt="معاينة الختم" style="display:none">
                       <button type="button" class="btn btn-sm btn-outline-danger" id="orfStampClear" style="display:none" onclick="orfClearImage('stamp')"><i class="fas fa-trash"></i> إزالة</button>
                     </div>
-                    <div class="form-text">إن لم تُرفع صورة، يُستخدم الختم النصي الافتراضي.</div>
+                    <div class="form-text">إن لم تُرفع صورة، يُستخدم ختم نصي بكلمة «مُصدَّق» مع النص التالي.</div>
+                    <label class="form-label mb-1 mt-2" for="orfStampLabel">نص الختم الافتراضي (اختياري)</label>
+                    <input type="text" id="orfStampLabel" class="form-control form-control-sm" placeholder="مثال: مديرية الأشغال أو مديرية الطوارئ" oninput="orfSaveSettings()">
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -2356,7 +2360,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.13';
+    const APP_VERSION = '2026.10.09.14';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5866,6 +5870,7 @@ function openOfficialReport(){
   var m2=document.getElementById('orfMgr2'); if(m2) m2.value=S.mgr2||'';
   var saved={}; try{saved=getLS(ORF_KEY,{});}catch(e){}
   var dept=document.getElementById('orfDept'); if(dept) dept.value=saved.dept||'';
+  var sl=document.getElementById('orfStampLabel'); if(sl) sl.value=saved.stampLabel||'';
   if(saved.prov&&prov) prov.value=saved.prov;
   _orfStampImg=saved.stamp||''; _orfSignImg=saved.sign||'';
   var sf=document.getElementById('orfStampFile'); if(sf) sf.value='';
@@ -5900,7 +5905,7 @@ function orfClearImage(kind){
   orfRenderImagePreview(kind); orfSaveSettings();
 }
 function orfSaveSettings(){
-  try{ setLS(ORF_KEY,{dept:_orfVal('orfDept'),prov:_orfVal('orfProv'),authors:orfAuthors(),stamp:_orfStampImg,sign:_orfSignImg}); }catch(e){}
+  try{ setLS(ORF_KEY,{dept:_orfVal('orfDept'),prov:_orfVal('orfProv'),authors:orfAuthors(),stamp:_orfStampImg,sign:_orfSignImg,stampLabel:_orfVal('orfStampLabel')}); }catch(e){}
 }
 var _orfLogoData='';
 function orfPreloadLogo(){
@@ -5934,10 +5939,18 @@ function collectOfficialReport(){
   if(!rs.length){showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');return null;}
   var meta={prov:_orfVal('orfProv')||ACTIVE_DIR.short,dept:_orfVal('orfDept'),number:_orfVal('orfNumber'),
     mgr1:_orfVal('orfMgr1'),mgr2:_orfVal('orfMgr2'),authors:orfAuthors(),all:all,from:from,to:to,
-    stampImg:_orfStampImg||'',signImg:_orfSignImg||'',
-    opts:{coords:_orfChk('orfOptCoords'),staff:_orfChk('orfOptStaff'),vehicles:_orfChk('orfOptVehicles'),speed:_orfChk('orfOptSpeed'),stamp:_orfChk('orfOptStamp')}};
+    stampImg:_orfStampImg||'',signImg:_orfSignImg||'',stampLabel:_orfVal('orfStampLabel'),
+    opts:{coords:_orfChk('orfOptCoords'),staff:_orfChk('orfOptStaff'),vehicles:_orfChk('orfOptVehicles'),speed:_orfChk('orfOptSpeed'),stamp:_orfChk('orfOptStamp'),mgr1:_orfChk('orfOptMgr1'),mgr2:_orfChk('orfOptMgr2')}};
   orfSaveSettings();
   return {rs:rs,meta:meta};
+}
+function orfSignatureBlocks(meta,O,stamp){
+  var nl=(meta.authors&&meta.authors.length)?meta.authors.map(function(a){return esc(a);}).join('<br>'):'ــــــ';
+  var s='<div class="orf-sign-block"><div class="orf-sign-title">معدّو التقرير</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+nl+'</div></div>';
+  if(O.mgr1) s+='<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الأشغال</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr1||'')+'</div></div>';
+  s+=stamp;
+  if(O.mgr2) s+='<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الطوارئ</div>'+((O.stamp&&meta.signImg)?('<img class="orf-sign-img" src="'+meta.signImg+'" alt="التوقيع">'):'')+'<div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr2||'')+'</div></div>';
+  return s;
 }
 function buildOfficialReportHTML(rs,meta,forPrint){
   var O=meta.opts||{},S=frSettings(),M=frMeta(rs);
@@ -5973,7 +5986,8 @@ function buildOfficialReportHTML(rs,meta,forPrint){
     +(O.coords?'<th style="width:9%">الإحداثيات<br><small>الطول / العرض</small></th>':'')
     +'<th style="width:8%">مدة العمل</th>'
     +(O.speed?'<th style="width:7%">سرعة الاستجابة</th>':'')+'</tr>';
-  var stamp=O.stamp?((meta.stampImg||'')?('<div class="orf-stamp"><img class="orf-stamp-img" src="'+meta.stampImg+'" alt="الختم الرسمي"></div>'):('<div class="orf-stamp"><div class="orf-stamp-in"><span>مديرية الطوارئ</span><b>مُصدَّق</b><span>'+esc(prov)+'</span></div></div>')):'';
+  var stampLabel=(meta.stampLabel||'').trim()||'ختم رسمي';
+  var stamp=O.stamp?((meta.stampImg||'')?('<div class="orf-stamp"><img class="orf-stamp-img" src="'+meta.stampImg+'" alt="الختم"></div>'):('<div class="orf-stamp"><div class="orf-stamp-in"><span>'+esc(stampLabel)+'</span><b>مُصدَّق</b><span>'+esc(prov)+'</span></div></div>')):'';
   var css='<style>'
     +'@page{size:A4 portrait;margin:14mm 12mm 18mm}'
     +'*{box-sizing:border-box}'
@@ -6039,11 +6053,7 @@ function buildOfficialReportHTML(rs,meta,forPrint){
       +'<div class="orf-kpi"><div class="v" style="color:#b3261e">'+coordsBad+'</div><div class="k">إحداثيات ناقصة</div></div>'
     +'</div>'
     +'<table class="orf-table"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="orf-sign">'
-      +'<div class="orf-sign-block"><div class="orf-sign-title">معدّو التقرير</div><div class="orf-sign-line"></div><div class="orf-sign-name">'+((meta.authors&&meta.authors.length)?meta.authors.map(esc).join(' ، '):'ــــــ')+'</div></div>'
-      +stamp
-      +'<div class="orf-sign-block"><div class="orf-sign-title">مدير مديرية الطوارئ</div>'+((O.stamp&&meta.signImg)?('<img class="orf-sign-img" src="'+meta.signImg+'" alt="التوقيع">'):'')+'<div class="orf-sign-line"></div><div class="orf-sign-name">'+esc(meta.mgr2||'')+'</div></div>'
-    +'</div>'
+    +'<div class="orf-sign">'+orfSignatureBlocks(meta,O,stamp)+'</div>'
     +'<div class="orf-gen">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال — '+esc(new Date().toLocaleString('ar-JO'))+'</div>'
     +'</div>';
   return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>تقرير رسمي — '+esc(prov)+'</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">'+css+'</head><body>'+bar+body+'</body></html>';
@@ -6092,13 +6102,20 @@ function buildOfficialReportWordHTML(rs,meta){
   var colCount=6+(O.staff?1:0)+(O.vehicles?1:0)+(O.coords?1:0)+(O.speed?1:0);
   var metaLine='<b>المحافظة:</b> '+E(prov)+(meta.dept?(' &nbsp;|&nbsp; <b>القسم:</b> '+E(meta.dept)):'')+' &nbsp;|&nbsp; <b>الفترة:</b> '+E(period)+(days?(' &nbsp;|&nbsp; <b>الأيام:</b> '+E(days)):'')+' &nbsp;|&nbsp; <b>عدد البلاغات:</b> '+rs.length;
   function kpi(v,k,color){return '<td width="20%" style="border:1px solid #cdd8f0;background:#f5f8ff;text-align:center;padding:5pt 2pt;vertical-align:middle"><div style="font-size:13pt;font-weight:bold;color:'+(color||'#1a3a6b')+'">'+v+'</div><div style="font-size:8pt;color:#5a6b85">'+k+'</div></td>';}
-  var stampCell=meta.stampImg?('<img src="'+meta.stampImg+'" style="height:80pt" alt="الختم">'):('<div style="width:80pt;height:80pt;border:2px dashed #b3261e;color:#b3261e;margin:0 auto;text-align:center;font-weight:bold;padding:6pt 0;font-size:8pt"><div>مديرية الطوارئ</div><div style="font-size:11pt;border-top:1px solid;border-bottom:1px solid;margin:4pt 10pt;padding:1pt 0">مُصدَّق</div><div>'+E(prov)+'</div></div>');
+  var stampLabel=(meta.stampLabel||'').trim()||'ختم رسمي';
+  var stampCell=meta.stampImg?('<img src="'+meta.stampImg+'" style="height:80pt" alt="الختم">'):('<div style="width:80pt;height:80pt;border:2px dashed #b3261e;color:#b3261e;margin:0 auto;text-align:center;font-weight:bold;padding:6pt 0;font-size:8pt"><div>'+E(stampLabel)+'</div><div style="font-size:11pt;border-top:1px solid;border-bottom:1px solid;margin:4pt 10pt;padding:1pt 0">مُصدَّق</div><div>'+E(prov)+'</div></div>');
   var signImg=meta.signImg?('<div><img src="'+meta.signImg+'" style="height:42pt" alt="التوقيع"></div>'):'';
-  var sigBlock=O.stamp?('<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18pt"><tr>'
-    +'<td width="35%" style="text-align:center;vertical-align:top"><div style="font-weight:bold;color:#1a3a6b">معدّو التقرير</div><div style="border-bottom:1px solid #999;margin:16pt 18pt 4pt"></div><div style="font-size:8pt;color:#555">'+((meta.authors&&meta.authors.length)?meta.authors.map(E).join(' ، '):'')+'</div></td>'
-    +'<td width="30%" style="text-align:center;vertical-align:middle">'+stampCell+'</td>'
-    +'<td width="35%" style="text-align:center;vertical-align:top"><div style="font-weight:bold;color:#1a3a6b">مدير مديرية الطوارئ</div>'+signImg+'<div style="border-bottom:1px solid #999;margin:'+(meta.signImg?'4pt':'16pt')+' 18pt 4pt"></div><div style="font-size:8pt;color:#555">'+E(meta.mgr2||'')+'</div></td>'
-    +'</tr></table>'):'';
+  var bCount=1+(O.mgr1?1:0)+(O.stamp?1:0)+(O.mgr2?1:0);
+  var colW=Math.floor(100/bCount)+'%';
+  var sTD=function(inner,mid){return '<td width="'+colW+'" style="text-align:center;vertical-align:'+(mid?'middle':'top')+'">'+inner+'</td>';};
+  var sTitle=function(t){return '<div style="font-weight:bold;color:#1a3a6b">'+t+'</div>';};
+  var sLine='<div style="border-bottom:1px solid #999;margin:16pt 18pt 4pt"></div>';
+  var cells='';
+  cells+=sTD(sTitle('معدّو التقرير')+sLine+'<div style="font-size:8pt;color:#555">'+((meta.authors&&meta.authors.length)?meta.authors.map(E).join('<br>'):'')+'</div>');
+  if(O.mgr1) cells+=sTD(sTitle('مدير مديرية الأشغال')+sLine+'<div style="font-size:8pt;color:#555">'+E(meta.mgr1||'')+'</div>');
+  if(O.stamp) cells+=sTD(stampCell,true);
+  if(O.mgr2) cells+=sTD(sTitle('مدير مديرية الطوارئ')+signImg+'<div style="border-bottom:1px solid #999;margin:'+(meta.signImg?'4pt':'16pt')+' 18pt 4pt"></div><div style="font-size:8pt;color:#555">'+E(meta.mgr2||'')+'</div>');
+  var sigBlock='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="margin-top:18pt"><tr>'+cells+'</tr></table>';
   return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
     +'<head><meta charset="utf-8"><title>تقرير رسمي — '+E(prov)+'</title>'
     +'<style>@page{size:A4 portrait;margin:1.3cm 1.1cm}body{font-family:"Cairo","Segoe UI",Tahoma,sans-serif;direction:rtl;font-size:9pt;color:#1a2030}table{border-collapse:collapse}td,th{vertical-align:top}</style>'
