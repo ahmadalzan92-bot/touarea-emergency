@@ -941,6 +941,8 @@
       transition:transform .18s var(--ease),border-color .18s var(--ease);
     }
     .staff-badge:hover{transform:translateY(-1px);border-color:var(--gold)}
+    .staff-badge .staff-mode{width:auto;padding:.15rem 1.5rem .15rem .4rem;font-size:.78rem;min-width:78px}
+    .staff-badge .staff-mode.is-office{background:#fdeedd;border-color:#d99406;font-weight:700}
 
     .staff-selector{
       max-height:230px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;
@@ -1295,7 +1297,7 @@
           <li>من تبويب <span class="guide-chip">البلاغات</span> اضغط <b>«بلاغ جديد»</b>.</li>
           <li>عبّئ البيانات: رقم البلاغ، التاريخ، نوع المهمة، والجهة/المحافظة.</li>
           <li>حدّد الموقع بالضغط على <b>الخريطة</b>، أو استخدم زر <b>«موقعي الحالي»</b> لأخذ إحداثياتك تلقائياً.</li>
-          <li>أضف <b>أرقام المركبات</b> والكوادر المشاركة (يمكن إضافة صفوف متعددة).</li>
+          <li>أضف <b>أرقام المركبات</b> والكوادر المشاركة (يمكن إضافة صفوف متعددة). لكل كادر تحدّد <b>نوع عمله: ميداني أو مكتبي</b> من قائمة «نوع عمله» عند الإضافة، ويمكن تغييره لاحقاً لكل شخص من شارة الكادر.</li>
           <li>اكتب الإجراءات المتخذة، وارفق الصور/المستندات عند الحاجة.</li>
           <li>اضغط <b>حفظ</b> ليُضاف البلاغ إلى السجل.</li>
         </ol>
@@ -1859,9 +1861,15 @@
                 </div>
 
                 <!-- أمر الحركة -->
-                <div class="col-md-3">
+                <div class="col-md-2">
                   <label class="form-label">رقم أمر الحركة</label>
                   <input type="text" class="form-control" id="movementOrderInput" placeholder="أدخل رقم أمر الحركة">
+                </div>
+
+                <!-- نوع عمل الكادر -->
+                <div class="col-md-1">
+                  <label class="form-label">نوع عمله</label>
+                  <select class="form-select" id="staffModeInput"><option>ميداني</option><option>مكتبي</option></select>
                 </div>
               </div>
 
@@ -2532,7 +2540,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.21';
+    const APP_VERSION = '2026.10.09.22';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3841,7 +3849,9 @@
         box.innerHTML = '<p class="text-muted text-center m-0">لم يتم إضافة أي كوادر بعد</p>';
         return;
       }
+      const rw = (document.getElementById('workMode')||{}).value || 'ميداني';
       selectedStaffForMission.forEach((x,idx)=>{
+        if(!x.mode) x.mode = rw;
         const parts = [];
         if(x.vehicleType || x.vehicleNumber){
           parts.push([x.vehicleType, x.vehicleNumber].filter(Boolean).join(' / '));
@@ -3850,12 +3860,22 @@
 
         const div = document.createElement('div');
         div.className = 'staff-badge';
+        const office = x.mode === 'مكتبي';
         div.innerHTML = `
           <span><i class="fas fa-user"></i> ${staffNameNo(x)} — ${x.role || 'غير محدد'} ${parts.length ? ' — '+parts.join(' — ') : ''}</span>
+          <select class="form-select form-select-sm staff-mode${office?' is-office':''}" onchange="setStaffMissionMode(${idx},this.value)" title="نوع عمل هذا الكادر">
+            <option value="ميداني"${office?'':' selected'}>ميداني</option>
+            <option value="مكتبي"${office?' selected':''}>مكتبي</option>
+          </select>
           <button class="btn btn-sm btn-link text-danger" onclick="removeStaffFromMission(${idx})" title="إزالة"><i class="fas fa-times"></i></button>
         `;
         box.appendChild(div);
       });
+    }
+
+    function setStaffMissionMode(index, mode){
+      const x = selectedStaffForMission[index];
+      if(x){ x.mode = (mode==='مكتبي')?'مكتبي':'ميداني'; renderSelectedStaff(); }
     }
 
     function addStaffToMission(){
@@ -3887,9 +3907,12 @@
         return showAlert('تمت إضافة هذا الكادر مسبقاً.', 'danger');
       }
 
+      const staffMode = ((document.getElementById('staffModeInput')||{}).value === 'مكتبي') ? 'مكتبي' : 'ميداني';
+
       selectedStaffForMission.push({
         staffId, name: staffName, role: finalRole,
         number: (st && st.number) ? st.number : '',
+        mode: staffMode,
         vehicleNumber: vehicleNumber || '',
         vehicleType: finalVehicleType || '',
         movementOrder
@@ -4126,7 +4149,7 @@ function compressImageFile(file){
         reporter, reportMethod, reporterPhone,
         location: locationTxt, longitude, latitude,
         actionsTaken, reportStatus, teamNo, workMode, responseSpeed, dayKind,
-        staff: selectedStaffForMission.slice(),
+        staff: selectedStaffForMission.map(x=>Object.assign({},x,{mode:x.mode||workMode})),
         attachments: pendingAttachments.slice(),
         createdAt: new Date().toISOString()
       };
@@ -4191,7 +4214,7 @@ function compressImageFile(file){
       const staffHTML = r.staff.map(s=>{
         const veh = (s.vehicleType || s.vehicleNumber) ? ` — ${[s.vehicleType, s.vehicleNumber].filter(Boolean).join(' / ')}` : '';
         const mo = s.movementOrder ? ` — أمر:${s.movementOrder}` : '';
-        return `<div class="staff-badge">${staffNameNo(s)} — ${s.role || ''}${veh}${mo}</div>`;
+        return `<div class="staff-badge">${staffNameNo(s)} — ${s.role || ''}${veh}${mo} — <b>${staffModeOf(s,r)}</b></div>`;
       }).join('');
 
       return `
@@ -4315,7 +4338,7 @@ function compressImageFile(file){
       aoa.push([]);
       let rowNum=1;
       reports.forEach(r=>{
-        const staffLines=r.staff.map(s=>`${staffNameNo(s)}/${s.role||''}`).join('\n');
+        const staffLines=r.staff.map(s=>`${staffNameNo(s)}/${s.role||''} (${staffModeOf(s,r)})`).join('\n');
         const vehicleEntries=r.staff.filter(s=>s.vehicleNumber||s.vehicleType);
         const fv=vehicleEntries[0]||{};
         aoa.push([rowNum,r.missionType,r.reportNumber,r.actionsTaken,
@@ -4401,7 +4424,7 @@ function compressImageFile(file){
       aoa.push([]);
       let rn=1;
       reports.forEach(r=>{
-        const staffLines=r.staff.map(s=>`${staffNameNo(s)}/${s.role||''}`).join('\n');
+        const staffLines=r.staff.map(s=>`${staffNameNo(s)}/${s.role||''} (${staffModeOf(s,r)})`).join('\n');
         const ve=r.staff.filter(s=>s.vehicleNumber||s.vehicleType);
         const fv=ve[0]||{};
         aoa.push([rn,r.missionType,r.reportNumber,r.actionsTaken,
@@ -4564,8 +4587,17 @@ function hoursOf(r){
   if(s&&e){const a=+s[1]*60+ +s[2],b=+e[1]*60+ +e[2];if(b>a)return Math.round(b-a)/60;}
   return h;
 }
+// نوع العمل لكل شخص مشارك في البلاغ: يُعتمد على حقل الشخص، وإلا نوع عمل البلاغ العام
+function staffModeOf(s,r){ return (s&&s.mode)||(r&&r.workMode)||'ميداني'; }
+// نوع العمل المعتمد للبلاغ ككل: مكتبي فقط إذا كان جميع المشاركين مكتبيين، وإلا ميداني
+function reportWorkMode(r){
+  const st=(r&&r.staff)||[]; let f=0,o=0;
+  st.forEach(s=>{ if(staffModeOf(s,r)==='مكتبي') o++; else f++; });
+  if(!st.length) return (r&&r.workMode)||'ميداني';
+  return (o&&!f)?'مكتبي':'ميداني';
+}
 function coordOk(lon,lat){const x=parseFloat(lon),y=parseFloat(lat);return x>=34.9&&x<=39.4&&y>=29.1&&y<=33.5;}
-function coordBad(r){if(r.workMode==='مكتبي'&&!r.longitude&&!r.latitude)return false;return !coordOk(r.longitude,r.latitude);}
+function coordBad(r){if(reportWorkMode(r)==='مكتبي'&&!r.longitude&&!r.latitude)return false;return !coordOk(r.longitude,r.latitude);}
 function reportVehicles(r){
   if(r.vehicles&&r.vehicles.length)return r.vehicles;
   const seen=new Set(),out=[];
@@ -4591,9 +4623,9 @@ function frMeta(rs){
 function frHTML(rs){
   const S=frSettings(),M=frMeta(rs);let field=0,office=0;
   const rows=rs.map((r,i)=>{
-    const veh=reportVehicles(r),mode=r.workMode||'ميداني',h=hoursOf(r);
+    const veh=reportVehicles(r),mode=reportWorkMode(r),h=hoursOf(r);
     if(mode==='مكتبي')office+=h;else field+=h;
-    const staff=(r.staff||[]).map(s=>esc(staffNameNo(s))+'/'+esc(s.role||'')).join('<br>');
+    const staff=(r.staff||[]).map(s=>esc(staffNameNo(s))+'/'+esc(s.role||'')+' ('+esc(staffModeOf(s,r))+')').join('<br>');
     return `<tr><td>${i+1}</td><td class="l">${escBr(r.missionType)}</td><td>${esc(r.reportNumber||'ــــ')}</td><td class="l">${escBr(r.actionsTaken)}</td>
 <td class="${coordBad(r)?'bad':''}">${esc(r.longitude)}<br>${esc(r.latitude)}</td><td>${esc(r.teamNo)}</td><td class="l">${staff}</td>
 <td>${veh.map(v=>esc(v.type)).join('<br>')}</td><td>${veh.map(v=>esc(v.number)).join('<br>')}</td>
@@ -4632,8 +4664,8 @@ function buildFinalWS(rs,opts){
   merges.push({s:{r:4,c:7},e:{r:5,c:8}});
   let r0=7;
   rs.forEach((r,i)=>{
-    const veh=reportVehicles(r),h=Math.max(4,veh.length),mode=r.workMode||'ميداني';
-    const staffTxt=(r.staff||[]).map(s=>`${staffNameNo(s)}/${s.role||''}`).join('\n');
+    const veh=reportVehicles(r),h=Math.max(4,veh.length),mode=reportWorkMode(r);
+    const staffTxt=(r.staff||[]).map(s=>`${staffNameNo(s)}/${s.role||''} (${staffModeOf(s,r)})`).join('\n');
     put(r0+h-1,0,'');
     put(r0,0,i+1);put(r0,1,r.missionType);put(r0,2,numOrStr(r.reportNumber)||'ــــ');put(r0,3,r.actionsTaken);
     put(r0+1,4,numOrStr(r.longitude));put(r0+2,4,numOrStr(r.latitude));
@@ -4739,7 +4771,7 @@ collectIncidentForm=function(){
 function renderKpis(){
   const el=document.getElementById('kpis');if(!el)return;
   const rs=getLS(LS_KEYS.reports,[]);let f=0,o=0;
-  rs.forEach(r=>{if(r.workMode==='مكتبي')o+=hoursOf(r);else f+=hoursOf(r);});
+  rs.forEach(r=>{if(reportWorkMode(r)==='مكتبي')o+=hoursOf(r);else f+=hoursOf(r);});
   const k=(n,t)=>`<div class="col-6 col-md-3"><div class="kpi"><b>${n}</b><span>${t}</span></div></div>`;
   el.innerHTML=k(rs.length,'إجمالي البلاغات')+k(fmtH(f),'ساعات ميدانية')+k(fmtH(o),'ساعات مكتبية')+k(getLS(LS_KEYS.staff,[]).length,'الكوادر المسجلة');
 }
@@ -4889,7 +4921,7 @@ function renderMap(fit){
   frReports(true).forEach((r,i)=>{
     const s=r.status||'منجز';counts[s]=(counts[s]||0)+1;
     if(st&&s!==st)return;
-    if(!coordOk(r.longitude,r.latitude)){if(r.workMode!=='مكتبي')pending.push({r,n:i+1});return;}
+    if(!coordOk(r.longitude,r.latitude)){if(reportWorkMode(r)!=='مكتبي')pending.push({r,n:i+1});return;}
     const ll=[parseFloat(r.latitude),parseFloat(r.longitude)];pts.push(ll);
     const icon=L.divIcon({className:'',html:`<div class="pin" style="background:${STATUSES[s]||'#1f6fb2'}">${i+1}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]});
     const m=L.marker(ll,{draggable:true,icon,title:r.missionType}).addTo(MLAYER);
@@ -5041,7 +5073,7 @@ function exportMapExcel(){
 }
 function exportFormExcel(){
   const g=id=>(document.getElementById(id)||{}).value||'';
-  const rows=[['رقم البلاغ',g('reportNumber')],['تاريخ البلاغ',g('reportDate')],['وقت البدء',g('startTime')],['وقت الانتهاء',g('endTime')],['مدة العمل',document.getElementById('durationDisplay').textContent],['حالة الطقس',g('weather')],['طبيعة المهمة',g('missionType')],['وصف البلاغ',g('reportDescription')],['المبلغ',g('reporter')],['طريقة التبليغ',g('reportMethod')],['هاتف المبلغ',g('reporterPhone')],['موقع البلاغ',g('location')],['خط الطول',g('longitude')],['خط العرض',g('latitude')],['حالة البلاغ',g('reportStatus')],['رقم الفرقة',g('teamNo')],['نوع العمل',g('workMode')],['الإجراءات المتخذة',g('actionsTaken')],['الكادر المشارك',selectedStaffForMission.map(x=>`${staffNameNo(x)}/${x.role||''}`).join('\n')]];
+  const rows=[['رقم البلاغ',g('reportNumber')],['تاريخ البلاغ',g('reportDate')],['وقت البدء',g('startTime')],['وقت الانتهاء',g('endTime')],['مدة العمل',document.getElementById('durationDisplay').textContent],['حالة الطقس',g('weather')],['طبيعة المهمة',g('missionType')],['وصف البلاغ',g('reportDescription')],['المبلغ',g('reporter')],['طريقة التبليغ',g('reportMethod')],['هاتف المبلغ',g('reporterPhone')],['موقع البلاغ',g('location')],['خط الطول',g('longitude')],['خط العرض',g('latitude')],['حالة البلاغ',g('reportStatus')],['رقم الفرقة',g('teamNo')],['نوع العمل',g('workMode')],['الإجراءات المتخذة',g('actionsTaken')],['الكادر المشارك',selectedStaffForMission.map(x=>`${staffNameNo(x)}/${x.role||''} (${x.mode||g('workMode')})`).join('\n')]];
   const ws=XLSX.utils.aoa_to_sheet([['الحقل','القيمة'],...rows]);ws['!cols']=[{wch:22},{wch:70}];
   const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
   XLSX.utils.book_append_sheet(wb,ws,'نموذج البلاغ');saveWB(wb,'نموذج_البلاغ');
@@ -5288,12 +5320,13 @@ function staffHoursData(opts){
   getLS(LS_KEYS.staff,[]).forEach(s=>reg(s.number||'',s.name,s.title||'',1000));
   const daily=[];
   reports.forEach(r=>{
-    const h=hoursOf(r), office=(r.workMode==='مكتبي');
+    const h=hoursOf(r);
     const du=dutySplit(r);
     const rdk=reportDayKind(r);
     (r.staff||[]).forEach(s=>{
       const num=staffNumber(s);
       const e=reg(num,s.name,s.role||'');
+      const office=(staffModeOf(s,r)==='مكتبي');
       if(office)e.office+=h;else e.field+=h;
       e.inH+=du.inH; e.outH+=du.outH;
       if(du.holiday)e.holiday++;
@@ -5336,7 +5369,7 @@ function staffHoursData(opts){
       reports:0,field:0,office:0,total:0,inH:0,outH:0,dayOff:false}; dayMap.set(ds,g); }
     if(r.dayKind==='off'||r.dayKind==='عطلة رسمية') g.dayOff=true;
     g.reports++; g.total=roundH(g.total+h);
-    if(r.workMode==='مكتبي')g.office=roundH(g.office+h);else g.field=roundH(g.field+h);
+    if(reportWorkMode(r)==='مكتبي')g.office=roundH(g.office+h);else g.field=roundH(g.field+h);
     g.inH=roundH(g.inH+du.inH); g.outH=roundH(g.outH+du.outH);
   });
   // نطاق الفترة لعرض العطل الرسمية الثابتة تلقائياً (يشمل الأيام بلا بلاغات)
@@ -5697,7 +5730,7 @@ function renderCentral(){
   const dirRows=data.map(function(x){
     const rs=x.reports;
     let field=0,office=0,active=0,done=0;
-    rs.forEach(function(r){ if(r.workMode==='مكتبي'){office++;}else{field++;} if((r.status||'منجز')==='منجز'){done++;}else{active++;} });
+    rs.forEach(function(r){ if(reportWorkMode(r)==='مكتبي'){office++;}else{field++;} if((r.status||'منجز')==='منجز'){done++;}else{active++;} });
     const rec=x.reports;
     tReports+=rec.length; tField+=field; tOffice+=office; tActive+=active; tDone+=done; tStaff+=x.staff.length;
     return {x,field,office,active,done};
@@ -5797,8 +5830,8 @@ function centralBuildWS(hits){
     const gStart=r0;
     g.forEach((o,i)=>{
       const r=o.r;
-      const veh=reportVehicles(r),h=Math.max(4,veh.length),mode=r.workMode||'ميداني';
-      const staffTxt=(r.staff||[]).map(s=>`${staffNameNo(s)}/${s.role||''}`).join('\n');
+      const veh=reportVehicles(r),h=Math.max(4,veh.length),mode=reportWorkMode(r);
+      const staffTxt=(r.staff||[]).map(s=>`${staffNameNo(s)}/${s.role||''} (${staffModeOf(s,r)})`).join('\n');
       put(r0+h-1,0,'');
       put(r0,0,++seq);put(r0,1,d.short);put(r0,2,r.missionType);put(r0,3,numOrStr(r.reportNumber)||'ــــ');put(r0,4,r.actionsTaken);
       put(r0+1,5,numOrStr(r.longitude));put(r0+2,5,numOrStr(r.latitude));
@@ -5841,7 +5874,7 @@ function centralBuildSummarySheet(provs){
   const by=[];
   provs.forEach(p=>{
     const g=centralFlat().filter(o=>o.d.key===p.key);
-    const re=g.filter(x=>x.r.workMode!=='مكتبي'),off=g.filter(x=>x.r.workMode==='مكتبي');
+    const re=g.filter(x=>reportWorkMode(x.r)!=='مكتبي'),off=g.filter(x=>reportWorkMode(x.r)==='مكتبي');
     by.push({d:p,total:g.length,field:re.reduce((a,x)=>a+hoursOf(x.r),0),office:off.reduce((a,x)=>a+hoursOf(x.r),0)});
   });
   const N=6,aoa=[],merges=[];
@@ -5917,7 +5950,7 @@ function centralMapRender(fit){
       m.bindPopup(function(){
         try{
           const opts=Object.keys(STATUSES).map(function(k){return '<option '+(k===(r.status||'منجز')?'selected':'')+'>'+k+'</option>';}).join('');
-          const staff=(r.staff||[]).length?r.staff.map(function(s){return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):'');}).join('<br>'):'لا يوجد';
+          const staff=(r.staff||[]).length?r.staff.map(function(s){return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):'')+' ('+esc(staffModeOf(s,r))+')';}).join('<br>'):'لا يوجد';
           const veh=reportVehicles(r).length?reportVehicles(r).map(function(v){return esc(v.type)+(v.number?' — '+esc(v.number):'');}).join('<br>'):'لا يوجد';
           return '<div dir="rtl" style="min-width:250px">'+
             '<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(o.d.short)+'</span> بلاغ '+esc(r.reportNumber||'ــــ')+'</div>'+
@@ -6171,10 +6204,10 @@ function buildOfficialReportHTML(rs,meta,forPrint){
   var stampImg=meta.stampImg||'', signImg=meta.signImg||'';
   var field=0,office=0,coordsBad=0;
   var rows=rs.map(function(r,i){
-    var veh=reportVehicles(r),mode=r.workMode||'ميداني',h=hoursOf(r);
+    var veh=reportVehicles(r),mode=reportWorkMode(r),h=hoursOf(r);
     if(mode==='مكتبي') office+=h; else field+=h;
     if(coordBad(r)) coordsBad++;
-    var staff=(r.staff||[]).map(function(s){return esc(staffNameNo(s))+' / '+esc(s.role||'');}).join('<br>')||'—';
+    var staff=(r.staff||[]).map(function(s){return esc(staffNameNo(s))+' / '+esc(s.role||'')+' ('+esc(staffModeOf(s,r))+')';}).join('<br>')||'—';
     var vehTxt=veh.map(function(v){return esc(v.type||'')+(v.number?(' — '+esc(v.number)):'');}).join('<br>')||'—';
     var tds='<td class="c">'+(i+1)+'</td>';
     tds+='<td class="c">'+esc(r.reportNumber||'—')+'</td>';
@@ -6286,10 +6319,10 @@ function buildOfficialReportWordHTML(rs,meta){
   var Bd='border:1px solid #7c8db5';
   var field=0,office=0,coordsBad=0,bodyRows='';
   rs.forEach(function(r,i){
-    var mode=r.workMode||'ميداني',h=hoursOf(r);
+    var mode=reportWorkMode(r),h=hoursOf(r);
     if(mode==='مكتبي') office+=h; else field+=h;
     var bad=coordBad(r); if(bad) coordsBad++;
-    var staff=(r.staff||[]).map(function(s){return E(staffNameNo(s))+' / '+E(s.role||'');}).join('<br>')||'—';
+    var staff=(r.staff||[]).map(function(s){return E(staffNameNo(s))+' / '+E(s.role||'')+' ('+E(staffModeOf(s,r))+')';}).join('<br>')||'—';
     var veh=reportVehicles(r).map(function(v){return E(v.type||'')+(v.number?(' — '+E(v.number)):'');}).join('<br>')||'—';
     var tds='<td style="'+Bd+';padding:3pt 4pt;text-align:center;vertical-align:top">'+(i+1)+'</td>'
       +'<td style="'+Bd+';padding:3pt 4pt;text-align:center;vertical-align:top">'+E(r.reportNumber||'—')+'</td>'
