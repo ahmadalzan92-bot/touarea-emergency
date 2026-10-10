@@ -1323,6 +1323,7 @@
           <li>تبويب <b>«التقرير الرسمي»</b> (بعد تحليل البيانات): تقرير مستقل بترويسة رسمية وشعار — تصدير <b>Excel</b> و<b>Word</b> (يُضمِّن الشعار وصور الختم والتوقيع فعلياً داخل الملف) و<b>طباعة/PDF</b>، مع نطاق تاريخ، وخيارات إظهار، وإمكانية <b>إدراج صورة الختم وتوقيع اختياري لمعدّي التقرير ومدير الأشغال ومدير الطوارئ</b>.</li>
           <li>تبويب <b>«المجموعات»</b>: أنشئ <b>بكجاً مسمّى</b> (مثل «منخفض + تاريخ») وأضف إليه البلاغات <b>يدوياً</b> أو بزر <b>«إضافة كل بلاغات الفترة»</b>، ثم أصدر <b>تقريراً رسمياً</b> و<b>تقريراً نهائياً</b> لكل مجموعة (Excel/Word/PDF). زر <b>«تقرير رسمي مخصص»</b> يفتح <b>كل خيارات التقرير الرسمي</b> (المحافظة/القسم/الرقم/المدراء/المعدّون/الختم/التوقيعات/عناصر التقرير) ويصدره على بلاغات المجموعة المحددة فقط. المجموعات تُحفظ وتُزامَن سحابياً.</li>
           <li>تبويب <b>«تقارير المجموعات المفصلة»</b>: اختر مجموعة (وحدّد فترة فرعية اختيارياً) ثم أصدر <b>تقريراً مفصلاً</b> على نمط تقرير ساعات العمل: <b>كشف مفصل لكل موظف + الإجمالي حسب الرقم الوظيفي + التفصيل اليومي + أيام العطل + ورقة تفاصيل بلاغات المجموعة</b>، بصيغة Excel، مع <b>معاينة/طباعة PDF</b>.</li>
+          <li>تبويب <b>«احتساب مكافآت الطوارئ»</b>: كشف مكافآت على نمط «ساعات العمل التراكمي» (الاسم/الوظيفة الفعلية/مجموع ساعات العمل خارج أوقات الدوام الرسمي/مجموع ساعات الجولات التفقدية/التقييم المستحق). حدّد الفترة أو اضغط <b>«كل الفترة»</b>، ثم <b>صدّر Excel بالمعادلات نفسها</b> (صيغة التقييم A/B/C/D ومجاميع SUM) أو <b>اطبع/صدّر PDF</b>. سلم التقييم: A≥30، B≥20، C≥10، D≥0 ساعة.</li>
         </ul>
 
         <h3><i class="fas fa-clock"></i> 6) تقرير ساعات العمل</h3>
@@ -1620,6 +1621,7 @@
       <li class="nav-item" role="presentation"><button class="nav-link" id="official-tab" data-bs-toggle="tab" data-bs-target="#officialReport" type="button" role="tab"><i class="fas fa-file-signature"></i> التقرير الرسمي</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab" onclick="grpRender()"><i class="fas fa-layer-group"></i> مجموعات البلاغات</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="grpRep-tab" data-bs-toggle="tab" data-bs-target="#grpReports" type="button" role="tab" onclick="grpRepOnShow()"><i class="fas fa-file-invoice"></i> تقارير المجموعات المفصلة</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="bonus-tab" data-bs-toggle="tab" data-bs-target="#bonus" type="button" role="tab" onclick="bonusOnShow()"><i class="fas fa-award"></i> احتساب مكافآت الطوارئ</button></li>
     </ul>
 
     <div class="tab-content" id="myTabContent">
@@ -2411,6 +2413,39 @@
           </div>
         </div>
       </div>
+
+      <div class="tab-pane fade" id="bonus" role="tabpanel">
+        <div class="card mt-4">
+          <div class="card-header">
+            <span><i class="fas fa-award"></i> احتساب مكافآت الطوارئ (حسب ساعات العمل خارج أوقات الدوام الرسمي)</span>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-secondary py-2 small mb-3">
+              <i class="fas fa-circle-info"></i> تقرير مكافآت الطوارئ على نمط كشف «ساعات العمل التراكمي»: <b>الاسم</b> · <b>الوظيفة الفعلية</b> · <b>مجموع ساعات العمل الكلي خارج أوقات الدوام الرسمي</b> · <b>مجموع ساعات الجولات التفقدية</b> · <b>التقييم المستحق</b>. يلتزم ملف Excel المُصدَّر بـ<b>معادلات الملف الأصلي نفسها</b> (تقييم الاستحقاق ومجاميع الساعات).
+              <div class="mt-1"><b>سلم التقييم (خارج أوقات الدوام):</b> A ≥ 30 ساعة · B ≥ 20 · C ≥ 10 · D ≥ 0.</div>
+            </div>
+            <div class="row g-3 align-items-end mb-3">
+              <div class="col-md-3">
+                <label class="form-label mb-1">من تاريخ</label>
+                <input type="date" id="bonusFrom" class="form-control form-control-sm" onchange="bonusRender()">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label mb-1">إلى تاريخ</label>
+                <input type="date" id="bonusTo" class="form-control form-control-sm" onchange="bonusRender()">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="bonusFillPeriod()" title="استخدام كامل الفترة المتاحة"><i class="fas fa-calendar-range"></i> كامل الفترة</button>
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button type="button" class="btn btn-success btn-sm" onclick="bonusExport()"><i class="fas fa-file-excel"></i> تصدير Excel بالمعادلات</button>
+              <button type="button" class="btn btn-outline-info btn-sm" onclick="bonusPrint()"><i class="fas fa-print"></i> معاينة / طباعة PDF</button>
+            </div>
+            <div class="small text-muted mb-2" id="bonusMeta"></div>
+            <div id="bonusPreview"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2540,7 +2575,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.22';
+    const APP_VERSION = '2026.10.09.23';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -6902,7 +6937,123 @@ function renderCentralGroups(){
   });
   rows.innerHTML=html||'<tr><td colspan="4" class="text-center text-muted">لا توجد مجموعات بعد</td></tr>';
 }
-if(document.readyState!=='loading'){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} }
+// ======================== احتساب مكافآت الطوارئ ========================
+var BONUS_TITLE='تفاصيل مكافئة مناوبي مديرية اشغال ';
+var BONUS_HEADERS=['الاسم','الوظيفة الفعلية (سائق/عامل/مهندس...الخ)','مجموع ساعات العمل الكلي خارج أوقات الدوام الرسمي','مجموع ساعات الجولات التفقدية','التقييم المستحق لساعات العمل'];
+// سلم التقييم المطابق حرفياً لمعادلة الملف الأصلي
+function bonusGrade(h){ h=Number(h)||0; return h>=30?'A':(h>=20?'B':(h>=10?'C':(h>=0?'D':''))); }
+function bonusEvalFormula(r){ return 'IF(C'+r+'>=30,"A",IF(C'+r+'>=20,"B",IF(C'+r+'>=10,"C",IF(C'+r+'>=0,"D",""))))'; }
+function bonusIsRound(m){ return /جولة|جولات|تفقد/.test(String(m||'')); }
+function bonusRows(opts){
+  opts=opts||{};
+  var from=(opts.from!==undefined)?opts.from:((document.getElementById('bonusFrom')||{}).value||'');
+  var to=(opts.to!==undefined)?opts.to:((document.getElementById('bonusTo')||{}).value||'');
+  var D=staffHoursData({from:from,to:to});
+  var rows=D.rows.map(function(e){
+    var rounds=0;
+    (e.reports||[]).forEach(function(rp){ if(bonusIsRound(rp.missionType)) rounds+=(rp.hours||0); });
+    rounds=roundH(rounds);
+    var outH=roundH(e.outH);
+    return {number:e.number,name:e.name,aliases:e.aliases||[],role:e.role||'',outH:outH,rounds:rounds,grade:bonusGrade(outH),count:e.count};
+  }).sort(function(a,b){ return cmpNum(a.number,b.number)||String(a.name).localeCompare(String(b.name),'ar'); });
+  return {rows:rows,from:from,to:to,
+    totOut:roundH(rows.reduce(function(s,x){return s+x.outH;},0)),
+    totRounds:roundH(rows.reduce(function(s,x){return s+x.rounds;},0)),
+    reportCount:D.reportCount};
+}
+function bonusFillPeriod(){
+  var ds=getLS(LS_KEYS.reports,[]).map(function(r){return r.reportDate;}).filter(Boolean).sort();
+  var f=document.getElementById('bonusFrom'),t=document.getElementById('bonusTo');
+  if(f)f.value=ds[0]||''; if(t)t.value=ds[ds.length-1]||'';
+  bonusRender();
+}
+function bonusRender(){
+  var box=document.getElementById('bonusPreview'); if(!box) return;
+  var D=bonusRows();
+  var meta=document.getElementById('bonusMeta');
+  if(meta) meta.innerHTML='<b>الفترة:</b> '+esc(shPeriodLabel(D.from,D.to))+' &nbsp;—&nbsp; <b>عدد البلاغات:</b> '+D.reportCount+' &nbsp;—&nbsp; <b>عدد الكوادر:</b> '+D.rows.length;
+  if(!D.rows.length){ box.innerHTML='<div class="text-muted">لا توجد كوادر ضمن الفترة المحددة.</div>'; return; }
+  box.innerHTML='<div class="table-responsive"><table class="table table-bordered table-sm align-middle mb-0">'
+    +'<thead class="table-light"><tr>'+BONUS_HEADERS.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead>'
+    +'<tbody>'+D.rows.map(function(x){ return '<tr><td>'+esc(x.name)+(x.aliases.length?'<div class="small text-muted">(يظهر أيضاً: '+x.aliases.map(esc).join('، ')+')</div>':'')+'</td><td>'+esc(x.role||'')+'</td><td>'+fmtH(x.outH)+'</td><td>'+fmtH(x.rounds)+'</td><td><b>'+esc(x.grade)+'</b></td></tr>'; }).join('')+'</tbody>'
+    +'<tfoot><tr class="table-light fw-bold"><td>المجموع</td><td></td><td>'+fmtH(D.totOut)+'</td><td>'+fmtH(D.totRounds)+'</td><td></td></tr></tfoot>'
+    +'</table></div>';
+}
+function bonusOnShow(){ try{ bonusRender(); }catch(e){} }
+function styleBonusWS(ws,aoa,dataStart,dataEnd,totalRow){
+  var N=6, thin={style:'thin',color:{rgb:'000000'}}, bd={top:thin,bottom:thin,left:thin,right:thin};
+  for(var R=0;R<aoa.length;R++)for(var C=0;C<N;C++){
+    var a=XLSX.utils.encode_cell({r:R,c:C});
+    if(!ws[a])ws[a]={t:'s',v:''};
+    var isTitle=R<=2, isHead=R===3||R===4, isData=R>=dataStart&&R<=dataEnd, isTot=totalRow!==null&&R===totalRow;
+    var st={alignment:{wrapText:true,vertical:'center',horizontal:isTitle?'center':'center',readingOrder:2},
+      font:{name:'Arial',sz:isTitle?13:11,bold:isTitle||isHead||isTot}};
+    if(!isTitle)st.border=bd;
+    if(isHead)st.fill={fgColor:{rgb:'D9E1F2'}};
+    if(isTot)st.fill={fgColor:{rgb:'FFF2CC'}};
+    ws[a].s=st;
+  }
+}
+function buildBonusWB(opts){
+  opts=opts||{};
+  var D=bonusRows(opts);
+  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
+  var N=6, aoa=[], blank=function(){return Array(N).fill('');};
+  var put=function(r,c,v){ while(aoa.length<=r) aoa.push(blank()); aoa[r][c]=v; };
+  put(0,0,'وزارة الاشغال العامة والإسكان');
+  put(1,0,'مديرية الطوارئ');
+  put(2,0,BONUS_TITLE+ACTIVE_DIR.short+' في المنخفضات حسب التقارير');
+  BONUS_HEADERS.concat(['']).forEach(function(t,c){ put(3,c,t); });
+  var n=D.rows.length, dataStart=5, dataEnd=n?4+n:4, totalRow=n?5+n:null;
+  D.rows.forEach(function(x,i){ put(dataStart+i,0,x.name); put(dataStart+i,1,x.role||''); put(dataStart+i,2,x.outH); put(dataStart+i,3,x.rounds); put(dataStart+i,4,x.grade); });
+  if(n) put(totalRow,0,'المجموع');
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  // المعادلات: تقييم الاستحقاق لكل صف + مجاميع الساعات (بنفس معادلات الملف الأصلي)
+  D.rows.forEach(function(x,i){ var er=6+i; ws['E'+er]={t:'s',f:bonusEvalFormula(er),v:x.grade}; });
+  if(n){
+    var tr=6+n;
+    ws['C'+tr]={t:'n',f:'SUM(C6:C'+(5+n)+')',v:D.totOut};
+    ws['D'+tr]={t:'n',f:'SUM(D6:D'+(5+n)+')',v:D.totRounds};
+  }
+  var merges=[{s:{r:0,c:0},e:{r:0,c:5}},{s:{r:1,c:0},e:{r:1,c:5}},{s:{r:2,c:0},e:{r:2,c:5}}];
+  [0,1,2,3,4,5].forEach(function(c){ merges.push({s:{r:3,c:c},e:{r:4,c:c}}); });
+  if(n) merges.push({s:{r:5+n,c:0},e:{r:5+n,c:1}});
+  ws['!merges']=merges;
+  ws['!cols']=[{wch:28},{wch:26},{wch:26},{wch:22},{wch:16},{wch:12}];
+  styleBonusWS(ws,aoa,n?dataStart:4,n?dataEnd:4,totalRow);
+  addExcelFooter(ws);
+  XLSX.utils.book_append_sheet(wb,ws,'مكافآت الطوارئ');
+  return {wb:wb,D:D};
+}
+function bonusExport(){
+  var D=bonusRows();
+  if(!D.rows.length) return showAlert('لا توجد كوادر لإنشاء تقرير المكافآت.','warning');
+  var wb=buildBonusWB({from:D.from,to:D.to}).wb;
+  XLSX.writeFile(wb,'احتساب_مكافآت_الطوارئ_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير تقرير احتساب مكافآت الطوارئ ('+D.rows.length+' كادر) بصيغة Excel مع المعادلات.');
+}
+function bonusPrint(){
+  var D=bonusRows();
+  if(!D.rows.length) return showAlert('لا توجد كوادر للطباعة.','warning');
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  var rows=D.rows.map(function(x,i){ return '<tr><td>'+(i+1)+'</td><td>'+esc(x.name)+'</td><td>'+esc(x.role||'')+'</td><td>'+fmtH(x.outH)+'</td><td>'+fmtH(x.rounds)+'</td><td><b>'+esc(x.grade)+'</b></td></tr>'; }).join('');
+  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>احتساب مكافآت الطوارئ</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">'
+    +'<style>@page{size:A4 portrait;margin:12mm 10mm 17mm}body{font-family:Cairo,Arial,sans-serif;margin:0}'
+    +'h1{font-size:16px;text-align:center;margin:0 0 2px}h2{font-size:14px;text-align:center;margin:0 0 10px}'
+    +'table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #555;padding:5px 6px;text-align:center}'
+    +'thead th{background:#e8eef7}tfoot td{background:#fff2cc;font-weight:700}'
+    +'.pc{margin-top:14px;text-align:center;font-size:10pt;color:#444}</style></head><body>'
+    +'<h1>وزارة الاشغال العامة والإسكان</h1><h2>مديرية الطوارئ — '+esc(BONUS_TITLE+ACTIVE_DIR.short)+'</h2>'
+    +'<div style="text-align:center;font-size:11px;color:#555;margin-bottom:6px">'+esc(shPeriodLabel(D.from,D.to))+'</div>'
+    +'<table><thead><tr><th>م</th>'+BONUS_HEADERS.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td colspan="3">المجموع</td><td>'+fmtH(D.totOut)+'</td><td>'+fmtH(D.totRounds)+'</td><td></td></tr></tfoot></table>'
+    +'<div class="pc">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div>'
+    +'<script>setTimeout(function(){print()},700)<\/script></body></html>');
+  w.document.close();
+}
+if(document.readyState!=='loading'){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} try{ bonusRender(); }catch(e){} }
 else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender(); }catch(e){} try{ grpRepRender(); }catch(e){} });
 </script>
 </body>
