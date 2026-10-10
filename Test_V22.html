@@ -2372,7 +2372,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.16';
+    const APP_VERSION = '2026.10.09.17';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5928,8 +5928,10 @@ function orfLogoDataURL(){
     for(var i=0;i<imgs.length;i++){
       var im=imgs[i];
       if(im.complete && im.naturalWidth>0){
-        var c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight;
-        c.getContext('2d').drawImage(im,0,0);
+        var nw=im.naturalWidth, nh=im.naturalHeight, mh=67, sc=nh>mh?(mh/nh):1;
+        var cw=Math.max(1,Math.round(nw*sc)), ch=Math.max(1,Math.round(nh*sc));
+        var c=document.createElement('canvas'); c.width=cw; c.height=ch;
+        c.getContext('2d').drawImage(im,0,0,cw,ch);
         var d=c.toDataURL('image/png');
         if(d&&d.length>100){ _orfLogoData=d; return d; }
       }
@@ -6143,10 +6145,10 @@ function buildOfficialReportWordHTML(rs,meta){
   var metaLine='<b>المحافظة:</b> '+E(prov)+(meta.dept?(' &nbsp;|&nbsp; <b>القسم:</b> '+E(meta.dept)):'')+' &nbsp;|&nbsp; <b>الفترة:</b> '+E(period)+(days?(' &nbsp;|&nbsp; <b>الأيام:</b> '+E(days)):'')+' &nbsp;|&nbsp; <b>عدد البلاغات:</b> '+rs.length;
   function kpi(v,k,color){return '<td width="20%" style="border:1px solid #cdd8f0;background:#f5f8ff;text-align:center;padding:5pt 2pt;vertical-align:middle"><div style="font-size:13pt;font-weight:bold;color:'+(color||'#1a3a6b')+'">'+v+'</div><div style="font-size:8pt;color:#5a6b85">'+k+'</div></td>';}
   var stampLabel=(meta.stampLabel||'').trim()||'ختم رسمي';
-  var stampCell=meta.stampImg?('<img src="'+meta.stampImg+'" style="height:80pt" alt="الختم">'):('<div style="width:80pt;height:80pt;border:2px dashed #b3261e;color:#b3261e;margin:0 auto;text-align:center;font-weight:bold;padding:6pt 0;font-size:8pt"><div>'+E(stampLabel)+'</div><div style="font-size:11pt;border-top:1px solid;border-bottom:1px solid;margin:4pt 10pt;padding:1pt 0">مُصدَّق</div><div>'+E(prov)+'</div></div>');
-  var signImg=meta.signImg?('<div><img src="'+meta.signImg+'" style="height:42pt" alt="التوقيع"></div>'):'';
-  var authSign=meta.signAuthImg?('<div><img src="'+meta.signAuthImg+'" style="height:42pt" alt="توقيع معدّي التقرير"></div>'):'';
-  var m1Sign=meta.signMgr1Img?('<div><img src="'+meta.signMgr1Img+'" style="height:42pt" alt="توقيع مدير الأشغال"></div>'):'';
+  var stampCell=meta.stampImg?('<img src="'+meta.stampImg+'" height="107" style="height:80pt" alt="الختم">'):('<div style="width:80pt;height:80pt;border:2px dashed #b3261e;color:#b3261e;margin:0 auto;text-align:center;font-weight:bold;padding:6pt 0;font-size:8pt"><div>'+E(stampLabel)+'</div><div style="font-size:11pt;border-top:1px solid;border-bottom:1px solid;margin:4pt 10pt;padding:1pt 0">مُصدَّق</div><div>'+E(prov)+'</div></div>');
+  var signImg=meta.signImg?('<div><img src="'+meta.signImg+'" height="56" style="height:42pt" alt="التوقيع"></div>'):'';
+  var authSign=meta.signAuthImg?('<div><img src="'+meta.signAuthImg+'" height="56" style="height:42pt" alt="توقيع معدّي التقرير"></div>'):'';
+  var m1Sign=meta.signMgr1Img?('<div><img src="'+meta.signMgr1Img+'" height="56" style="height:42pt" alt="توقيع مدير الأشغال"></div>'):'';
   var bCount=1+(O.mgr1?1:0)+(O.stamp?1:0)+(O.mgr2?1:0);
   var colW=Math.floor(100/bCount)+'%';
   var sTD=function(inner,mid){return '<td width="'+colW+'" style="text-align:center;vertical-align:'+(mid?'middle':'top')+'">'+inner+'</td>';};
@@ -6164,7 +6166,7 @@ function buildOfficialReportWordHTML(rs,meta){
     +'<style>@page{size:A4 portrait;margin:1.3cm 1.1cm}body{font-family:"Cairo","Segoe UI",Tahoma,sans-serif;direction:rtl;font-size:9pt;color:#1a2030}table{border-collapse:collapse}td,th{vertical-align:top}</style>'
     +'</head><body dir="rtl" style="direction:rtl">'
     +'<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid #1a3a6b"><tr>'
-      +'<td width="18%" style="background:#1a3a6b;text-align:center;padding:8pt 4pt;vertical-align:middle"><img src="'+logo+'" style="height:50pt" alt="الشعار"></td>'
+      +'<td width="18%" style="background:#1a3a6b;text-align:center;padding:8pt 4pt;vertical-align:middle"><img src="'+logo+'" height="67" style="height:50pt" alt="الشعار"></td>'
       +'<td style="background:#1a3a6b;color:#ffffff;text-align:center;vertical-align:middle;padding:8pt"><div style="font-size:15pt;font-weight:bold">وزارة الأشغال العامة والإسكان</div><div style="font-size:8pt">المملكة الأردنية الهاشمية — مديرية الطوارئ</div><div style="font-size:11pt;font-weight:bold;margin-top:2pt">'+E(prov)+'</div></td>'
       +'<td width="20%" style="background:#1a3a6b;color:#ffffff;font-size:9pt;font-weight:bold;text-align:center;vertical-align:middle;padding:6pt">'+(meta.number?('رقم التقرير<br>'+E(meta.number)):'تقرير رسمي')+'</td>'
     +'</tr></table>'
@@ -6245,10 +6247,35 @@ function buildOfficialReportWordDoc(){
   var d=collectOfficialReport(); if(!d) return null;
   return orfWrapMHTML(buildOfficialReportWordHTML(d.rs,d.meta));
 }
+function orfShrinkSupported(){ try{ var c=document.createElement('canvas'); return !!(c.getContext&&c.getContext('2d')); }catch(e){ return false; } }
+function orfShrinkDataURL(url,maxH){
+  return new Promise(function(resolve){
+    if(!url||!orfShrinkSupported()||!/^data:image\//.test(url)){ resolve(url); return; }
+    var done=false, fin=function(v){ if(!done){ done=true; resolve(v); } };
+    try{
+      var im=new Image();
+      im.onload=function(){
+        try{
+          var w=im.naturalWidth, h=im.naturalHeight;
+          if(!w||!h||h<=maxH){ fin(url); return; }
+          var sc=maxH/h, cw=Math.max(1,Math.round(w*sc));
+          var c=document.createElement('canvas'); c.width=cw; c.height=maxH;
+          c.getContext('2d').drawImage(im,0,0,cw,maxH);
+          var out=c.toDataURL('image/png');
+          fin(out&&out.length>100?out:url);
+        }catch(e){ fin(url); }
+      };
+      im.onerror=function(){ fin(url); };
+      setTimeout(function(){ fin(url); },1500);
+      im.src=url;
+    }catch(e){ fin(url); }
+  });
+}
 function officialReportWord(){
   var d=collectOfficialReport(); if(!d) return;
-  var go=function(){
-    var doc=orfWrapMHTML(buildOfficialReportWordHTML(d.rs,d.meta));
+  var download=function(meta,logo){
+    if(logo) _orfLogoData=logo;
+    var doc=orfWrapMHTML(buildOfficialReportWordHTML(d.rs,meta));
     try{
       var blob=new Blob([doc],{type:'application/msword'});
       var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -6258,9 +6285,18 @@ function officialReportWord(){
       showAlert('تم تنزيل التقرير الرسمي بصيغة Word.');
     }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
   };
-  orfLogoDataURL();
-  if(_orfLogoData) go();
-  else orfLoadLogo().then(function(){ go(); });
+  if(!orfShrinkSupported()){ download(d.meta,_orfLogoData); return; }
+  var logoP=(_orfLogoData?Promise.resolve(_orfLogoData):orfLoadLogo()).then(function(u){ return orfShrinkDataURL(u,67); });
+  Promise.all([
+    logoP,
+    orfShrinkDataURL(d.meta.stampImg,107),
+    orfShrinkDataURL(d.meta.signAuthImg,56),
+    orfShrinkDataURL(d.meta.signMgr1Img,56),
+    orfShrinkDataURL(d.meta.signImg,56)
+  ]).then(function(r){
+    var meta=Object.assign({},d.meta,{stampImg:r[1],signAuthImg:r[2],signMgr1Img:r[3],signImg:r[4]});
+    download(meta,r[0]);
+  });
 }
 function officialReportExcel(){
   var d=collectOfficialReport(); if(!d) return;
