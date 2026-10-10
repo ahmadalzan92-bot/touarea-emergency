@@ -2225,7 +2225,10 @@
             <div class="card mt-4">
               <div class="card-header">
                 <h5 class="section-title mb-0">إحصائية ساعات العمل حسب الرقم الوظيفي</h5>
-                <button type="button" class="btn btn-sm btn-success" onclick="exportStaffHoursExcel()" title="تصدير تقرير مستقل بصيغة Excel"><i class="fas fa-file-excel"></i> تصدير تقرير مستقل</button>
+                <div class="d-flex gap-2 flex-wrap">
+                  <button type="button" class="btn btn-sm btn-success" onclick="exportStaffHoursExcel()" title="تصدير تقرير مستقل بصيغة Excel"><i class="fas fa-file-excel"></i> تصدير تقرير مستقل</button>
+                  <button type="button" class="btn btn-sm btn-primary" onclick="exportStaffHoursWord()" title="تصدير هذا القسم بصيغة Word بنفس التصميم والألوان"><i class="fas fa-file-word"></i> تصدير Word</button>
+                </div>
               </div>
               <div class="card-body">
                 <div class="row g-3 mb-3 align-items-end">
@@ -2601,7 +2604,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.26';
+    const APP_VERSION = '2026.10.09.27';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5735,6 +5738,117 @@ function exportStaffHoursExcel(opts){
   if(!D.reportCount)return showAlert('لا توجد بلاغات ضمن الفترة المحددة.','warning');
   XLSX.writeFile(r.wb, opts.filename||`إحصائية_ساعات_العمل_${r.today}.xlsx`);
   showAlert(`تم تصدير التقرير المستقل: كشف مفصل لـ ${r.emps} موظف، ${D.daily.length} سجل يومي — ضمن الدوام ${fmtH(r.tin)} ساعة / خارج الدوام ${fmtH(r.tout)} ساعة.`);
+}
+// تصدير قسم «إحصائية ساعات العمل حسب الرقم الوظيفي» إلى Word بنفس تصميم الشاشة وألوانها
+function exportStaffHoursWord(){
+  try{
+    const D=staffHoursData();
+    if(!D.rows.length) return showAlert('لا توجد كوادر لإنشاء الإحصائية.','warning');
+    if(!D.reportCount) return showAlert('لا توجد بلاغات ضمن الفترة المحددة.','warning');
+    const today=new Date().toISOString().slice(0,10);
+    const E=esc;
+    const HDR='#0f4c81',LINE='#c7d2e0',INK='#0d2440',STRIPE='#f7fafd',LIGHT='#eef3f9',MUT='#64748b',SOFT='#eef3fb';
+    const B='border:1px solid '+LINE+';padding:3pt 2pt;font-size:8pt;vertical-align:middle';
+    const CB=B+';text-align:center';
+    const hc=function(t){ return '<th style="'+CB+';background:'+HDR+';color:#ffffff;font-weight:bold;padding:4pt 2pt">'+t+'</th>'; };
+    const dc=function(t,ex){ return '<td style="'+CB+';'+(ex||'')+'">'+t+'</td>'; };
+    const badge=function(t,bg,fg){ return '<span style="background:'+bg+';color:'+(fg||'#ffffff')+';padding:1pt 5pt;font-size:7.5pt;font-weight:bold">'+E(t)+'</span>'; };
+    const dutyBg=function(s){ return s==='ضمن الدوام الرسمي'?'#12833f':s==='خارج الدوام الرسمي'?'#c0392b':s==='جزئي (ضمن وخارج)'?'#d99406':'#94a3b8'; };
+    const dutyFg=function(s){ return s==='جزئي (ضمن وخارج)'?'#241a00':'#ffffff'; };
+    const secTitle=function(t){ return '<div style="background:'+HDR+';color:#ffffff;font-weight:bold;font-size:10pt;padding:4pt 8pt;margin:10pt 0 4pt">'+t+'</div>'; };
+    const tf=roundH(D.rows.reduce((s,r)=>s+r.field,0)), tof=roundH(D.rows.reduce((s,r)=>s+r.office,0));
+    const tt=roundH(D.rows.reduce((s,r)=>s+r.total,0));
+    const tin=roundH(D.rows.reduce((s,r)=>s+r.inH,0)), tout=roundH(D.rows.reduce((s,r)=>s+r.outH,0));
+    const tfri=roundH(D.rows.reduce((s,r)=>s+r.friH,0)),tsat=roundH(D.rows.reduce((s,r)=>s+r.satH,0)),toff=roundH(D.rows.reduce((s,r)=>s+r.offH,0));
+    const tcount=D.rows.reduce((s,r)=>s+r.count,0);
+    const banner='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border:2px solid '+HDR+';border-collapse:collapse"><tr>'
+      +'<td style="background:'+HDR+';color:#ffffff;text-align:center;padding:8pt;border:none">'
+      +'<div style="font-size:15pt;font-weight:bold">وزارة الأشغال العامة والإسكان</div>'
+      +'<div style="font-size:8.5pt">المملكة الأردنية الهاشمية — مديرية الطوارئ</div>'
+      +'<div style="font-size:12pt;font-weight:bold;margin-top:3pt">إحصائية ساعات العمل حسب الرقم الوظيفي — '+E(ACTIVE_DIR.short||'')+'</div>'
+      +'</td></tr><tr><td style="background:'+SOFT+';padding:5pt 8pt;font-size:8.5pt;border:1px solid '+HDR+';border-top:none">'
+      +'<b>تاريخ الإحصائية:</b> '+fmtDMY(today)+' ('+dayName(today)+') &nbsp;—&nbsp; <b>الفترة:</b> '+E(shPeriodLabel(D.from,D.to))
+      +' &nbsp;—&nbsp; <b>عدد البلاغات:</b> '+D.reportCount+' &nbsp;—&nbsp; <b>السجلات اليومية:</b> '+D.daily.length
+      +' &nbsp;—&nbsp; <b>الفرز والفصل:</b> حسب الرقم الوظيفي<br><span style="font-size:7.5pt;color:'+MUT+'">'+E(DUTY_LABEL)+'</span>'
+      +'</td></tr></table>';
+    const sumHead=['الرقم الوظيفي','الاسم','المسمى الوظيفي','ساعات ميدانية','ساعات مكتبية','الإجمالي','ضمن الدوام الرسمي','خارج الدوام الرسمي','ساعات الجمعة','ساعات السبت','ساعات العطل الرسمية','تصنيف الدوام','عدد البلاغات','من تاريخ','إلى تاريخ'];
+    const sum='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%"><thead><tr>'+sumHead.map(hc).join('')+'</tr></thead><tbody>'
+      +D.rows.map(function(r,i){
+        const bg=i%2?STRIPE:'#ffffff';
+        return '<tr>'
+          +dc('<b>'+E(r.number||'—')+'</b>','background:'+bg+';font-weight:bold')
+          +dc(E(r.name)+(r.aliases.length?'<div style="font-size:6.5pt;color:'+MUT+'">(يظهر أيضاً: '+r.aliases.map(E).join('، ')+')</div>':''),'background:'+bg+';text-align:right')
+          +dc(E(r.role||''),'background:'+bg+';text-align:right')
+          +dc(fmtH(r.field),'background:'+bg)+dc(fmtH(r.office),'background:'+bg)+dc('<b>'+fmtH(r.total)+'</b>','background:'+bg)
+          +dc(fmtH(r.inH),'background:'+bg)+dc(fmtH(r.outH),'background:'+bg)
+          +dc(fmtH(r.friH),'background:'+bg)+dc(fmtH(r.satH),'background:'+bg)+dc(fmtH(r.offH),'background:'+bg)
+          +dc(badge(r.duty,dutyBg(r.duty),dutyFg(r.duty)),'background:'+bg)
+          +dc(r.count,'background:'+bg)+dc(r.first?fmtDMY(r.first):'—','background:'+bg)+dc(r.last?fmtDMY(r.last):'—','background:'+bg)
+          +'</tr>';
+      }).join('')+'</tbody><tfoot><tr>'
+      +'<td colspan="3" style="'+CB+';background:'+LIGHT+';font-weight:bold">الإجمالي</td>'
+      +dc(fmtH(tf),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tof),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tt),'background:'+LIGHT+';font-weight:bold')
+      +dc(fmtH(tin),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tout),'background:'+LIGHT+';font-weight:bold')
+      +dc(fmtH(tfri),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tsat),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(toff),'background:'+LIGHT+';font-weight:bold')
+      +dc('','background:'+LIGHT)+dc(tcount,'background:'+LIGHT+';font-weight:bold')+'<td colspan="2" style="'+CB+';background:'+LIGHT+'"></td>'
+      +'</tr></tfoot></table>';
+    const dHead=['التاريخ','اليوم','نوع اليوم','ساعات ميدانية','ساعات مكتبية','الإجمالي','ضمن الدوام','خارج الدوام','عدد البلاغات'];
+    const tdt=roundH(D.days.reduce((s,g)=>roundH(s+g.total),0)),tdin=roundH(D.days.reduce((s,g)=>roundH(s+g.inH),0)),tdout=roundH(D.days.reduce((s,g)=>roundH(s+g.outH),0)),tdc=D.days.reduce((s,g)=>s+g.reports,0);
+    const days='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%"><thead><tr>'+dHead.map(hc).join('')+'</tr></thead><tbody>'
+      +(D.days.map(function(g,i){
+        const bg=i%2?STRIPE:'#ffffff';
+        const kindBg=g.kind==='الجمعة'||g.kind==='السبت'?'#12833f':g.kind==='عطلة رسمية'?'#c0392b':'#6c757d';
+        const nm=(g.name&&g.name!=='محددة')?' ('+E(g.name)+')':'';
+        return '<tr>'+dc(fmtDMY(g.date),'background:'+bg)+dc(E(g.day),'background:'+bg)+dc(badge(g.kind,kindBg)+nm,'background:'+bg)
+          +dc(fmtH(g.field),'background:'+bg)+dc(fmtH(g.office),'background:'+bg)+dc('<b>'+fmtH(g.total)+'</b>','background:'+bg)
+          +dc(fmtH(g.inH),'background:'+bg)+dc(fmtH(g.outH),'background:'+bg)+dc(g.reports,'background:'+bg)+'</tr>';
+      }).join('')||'<tr><td colspan="9" style="'+CB+';color:'+MUT+'">لا توجد أيام في الفترة</td></tr>')
+      +'</tbody><tfoot><tr><td colspan="3" style="'+CB+';background:'+LIGHT+';font-weight:bold">الإجمالي</td>'
+      +'<td style="'+CB+';background:'+LIGHT+'"></td><td style="'+CB+';background:'+LIGHT+'"></td>'+dc(fmtH(tdt),'background:'+LIGHT+';font-weight:bold')
+      +dc(fmtH(tdin),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tdout),'background:'+LIGHT+';font-weight:bold')+dc(tdc,'background:'+LIGHT+';font-weight:bold')
+      +'</tr></tfoot></table>';
+    const detHead=['م','رقم البلاغ','التاريخ','اليوم','طبيعة المهمة','نوع العمل','الساعات','ضمن الدوام','خارج الدوام','تصنيف الدوام','الإجراء المتخذ'];
+    const detThead='<tr>'+detHead.map(hc).join('')+'</tr>';
+    const detail=D.rows.filter(function(e){return e.reports.length;}).map(function(e,i){
+      const p=SH_PALETTE[i%SH_PALETTE.length];
+      const head='<div style="background:'+p.c+';color:#ffffff;padding:5pt 8pt;font-weight:bold;font-size:9pt">'
+        +'<span style="background:rgba(255,255,255,.22);padding:1pt 6pt;font-size:8pt">'+E(e.number||'—')+'</span> '
+        +E(e.name)+(e.aliases.length?' <span style="font-size:7pt;color:#e8eef8">(يظهر أيضاً: '+e.aliases.map(E).join('، ')+')</span>':'')
+        +' — <span style="font-size:8pt">'+E(e.role||'')+'</span>'
+        +'<div style="font-weight:normal;font-size:7.5pt;margin-top:2pt">الإجمالي: <b>'+fmtH(e.total)+'</b> ساعة (ميداني '+fmtH(e.field)+' / مكتبي '+fmtH(e.office)+') — '+e.count+' بلاغ — ضمن الدوام <b>'+fmtH(e.inH)+'</b> / خارج الدوام <b>'+fmtH(e.outH)+'</b></div></div>';
+      const tbody=e.reports.map(function(rp,k){
+        const bg=k%2?STRIPE:'#ffffff';
+        return '<tr>'+dc(k+1,'background:'+bg)+dc(E(rp.reportNumber||'—'),'background:'+bg)+dc(rp.date?fmtDMY(rp.date):'—','background:'+bg)
+          +dc(E(dayName(rp.date)),'background:'+bg)+dc(E(rp.missionType),'background:'+bg)+dc(E(rp.mode),'background:'+bg)
+          +dc('<b>'+fmtH(rp.hours)+'</b>','background:'+bg)+dc(fmtH(rp.inH),'background:'+bg)+dc(fmtH(rp.outH),'background:'+bg)
+          +dc(badge(rp.duty,dutyBg(rp.duty),dutyFg(rp.duty)),'background:'+bg)
+          +dc(E(rp.actions),'background:'+bg+';text-align:right;font-size:7pt')
+          +'</tr>';
+      }).join('');
+      return '<div style="border:1px solid '+p.c+';border-top:3px solid '+p.c+';margin:8pt 0;page-break-inside:avoid">'+head
+        +'<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%"><thead>'+detThead+'</thead><tbody>'+tbody+'</tbody></table></div>';
+    }).join('');
+    const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+      +'<head><meta charset="utf-8"><title>إحصائية ساعات العمل حسب الرقم الوظيفي</title>'
+      +'<style>@page{size:A4 landscape;margin:1cm}body{font-family:"Cairo","Segoe UI",Tahoma,sans-serif;direction:rtl;color:'+INK+';font-size:9pt;margin:0}table{border-collapse:collapse}td,th{vertical-align:middle}</style>'
+      +'</head><body dir="rtl" style="direction:rtl">'
+      +banner
+      +secTitle('الإجمالي حسب الرقم الوظيفي')+sum
+      +secTitle('أيام الجمعة والسبت والعطل الرسمية')+days
+      +secTitle('الكشف المفصل لكل موظف — الساعات والبلاغات')+(detail||('<div style="color:'+MUT+'">لا يوجد كشف مفصل.</div>'))
+      +'<div style="text-align:center;font-size:8pt;color:#777;margin-top:16pt;border-top:1px solid #ccc;padding-top:6pt">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال — '+E(new Date().toLocaleString('ar-JO'))+'</div>'
+      +'</body></html>';
+    const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='إحصائية_ساعات_العمل_'+ACTIVE_DIR.short+'_'+today+'.doc';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
+    showAlert('تم تنزيل قسم إحصائية ساعات العمل بصيغة Word بنفس التصميم والألوان.');
+  }catch(err){
+    showAlert('تعذّر إنشاء ملف Word.','danger');
+  }
 }
 
 // ======================== طيّ أقسام التبويبات (باستثناء نموذج البلاغ والخريطة) ========================
