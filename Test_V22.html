@@ -747,6 +747,15 @@
     #officialReport .orf-upload{border:1px dashed #b7c8dd;border-radius:10px;padding:10px;background:#f8fafd}
     #officialReport .orf-img-prev{max-height:80px;max-width:150px;border:1px solid #cfd8e3;border-radius:6px;background:#fff;padding:3px}
 
+    .grp-card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer;transition:box-shadow .2s,border-color .2s}
+    .grp-card:hover{box-shadow:var(--sh-1);border-color:#b7c8dd}
+    .grp-card.active{border-color:#0f4c81;box-shadow:0 0 0 2px rgba(15,76,129,.18);background:#f5f9ff}
+    .grp-rep-list{max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:4px}
+    .grp-rep{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;border-bottom:1px solid #eef2f7}
+    .grp-rep:hover{background:#f2f7fd}
+    .grp-rep input{flex:none;width:1.1em;height:1.1em}
+    .grp-rep .rn{font-weight:700;color:#0f4c81;min-width:90px}
+
     .table{--bs-table-striped-bg:#f7fafd;--bs-table-hover-bg:#eaf3fc;--bs-table-border-color:var(--line);color:var(--ink);border-color:var(--line)}
     .table thead th{
       background:var(--grad-card)!important;color:#fff!important;
@@ -1307,6 +1316,7 @@
           <li>حدّد <b>الفترة الزمنية</b> ثم استعرض الإحصاءات (عدد البلاغات الميدانية/المكتبية، الحالات، الكوادر).</li>
           <li><b>التقرير النهائي المجمّع</b>: يضم ملخصاً وكشوفاً للفترة المحددة، مع إمكانية الطباعة والتصدير إلى Excel.</li>
           <li>تبويب <b>«التقرير الرسمي»</b> (بعد تحليل البيانات): تقرير مستقل بترويسة رسمية وشعار — تصدير <b>Excel</b> و<b>Word</b> (يُضمِّن الشعار وصور الختم والتوقيع فعلياً داخل الملف) و<b>طباعة/PDF</b>، مع نطاق تاريخ، وخيارات إظهار، وإمكانية <b>إدراج صورة الختم وتوقيع اختياري لمعدّي التقرير ومدير الأشغال ومدير الطوارئ</b>.</li>
+          <li>تبويب <b>«المجموعات»</b>: أنشئ <b>بكجاً مسمّى</b> (مثل «منخفض + تاريخ») وأضف إليه البلاغات <b>يدوياً</b> أو بزر <b>«إضافة كل بلاغات الفترة»</b>، ثم أصدر <b>تقريراً رسمياً</b> و<b>تقريراً نهائياً</b> لكل مجموعة (Excel/Word/PDF). المجموعات تُحفظ وتُزامَن سحابياً.</li>
         </ul>
 
         <h3><i class="fas fa-clock"></i> 6) تقرير ساعات العمل</h3>
@@ -1319,6 +1329,7 @@
         <h3><i class="fas fa-layer-group"></i> 7) العرض المركزي</h3>
         <ul>
           <li>يعرض بلاغات <b>جميع المحافظات</b> مجتمعة مع خريطة تفاعلية وإحصاءات لحظية.</li>
+          <li>تبويب <b>«مجموعات المحافظات»</b> يعرض مجموعات البلاغات المُنشأة في كل مديرية (الاسم والفترة وعدد البلاغات).</li>
           <li>يسهّل المتابعة والإشراف المركزي، مع إمكانية التصدير.</li>
         </ul>
 
@@ -1365,6 +1376,7 @@
         <li class="nav-item" role="presentation"><button class="nav-link active" id="cov-tab" data-bs-toggle="tab" data-bs-target="#centralOverview" type="button" role="tab"><i class="fas fa-chart-pie"></i> نظرة عامة</button></li>
         <li class="nav-item" role="presentation"><button class="nav-link" id="clist-tab" data-bs-toggle="tab" data-bs-target="#centralReportList" type="button" role="tab"><i class="fas fa-clock-rotate-left"></i> سجل بلاغات المحافظات</button></li>
         <li class="nav-item" role="presentation"><button class="nav-link" id="cmap-tab" data-bs-toggle="tab" data-bs-target="#centralMapPane" type="button" role="tab"><i class="fas fa-map-location-dot"></i> الخريطة التفاعلية</button></li>
+        <li class="nav-item" role="presentation"><button class="nav-link" id="cgrp-tab" data-bs-toggle="tab" data-bs-target="#centralGroups" type="button" role="tab" onclick="renderCentralGroups()"><i class="fas fa-layer-group"></i> مجموعات المحافظات</button></li>
       </ul>
 
       <div class="tab-content" id="centralTabContent">
@@ -1449,6 +1461,19 @@
                 <div id="centralMapBox"></div>
               </div>
               <div class="mt-2" id="centralMapNote"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane fade" id="centralGroups" role="tabpanel">
+          <div class="card mt-4">
+            <div class="card-header"><span>مجموعات البلاغات في جميع المحافظات</span></div>
+            <div class="card-body p-0">
+              <div style="max-height:560px;overflow-y:auto">
+                <table class="table table-hover align-middle mb-0" id="centralGroupsTable">
+                  <thead class="table-light"><tr><th>المحافظة</th><th>المجموعة</th><th>الفترة</th><th>عدد البلاغات</th></tr></thead>
+                  <tbody id="centralGroupRows"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -1587,6 +1612,7 @@
       <li class="nav-item" role="presentation"><button class="nav-link" id="final-tab" data-bs-toggle="tab" data-bs-target="#final" type="button" role="tab"><i class="fas fa-file-contract"></i> التقرير النهائي</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis" type="button" role="tab"><i class="fas fa-chart-pie"></i> تحليل البيانات</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="official-tab" data-bs-toggle="tab" data-bs-target="#officialReport" type="button" role="tab"><i class="fas fa-file-signature"></i> التقرير الرسمي</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab" onclick="grpRender()"><i class="fas fa-layer-group"></i> مجموعات البلاغات</button></li>
     </ul>
 
     <div class="tab-content" id="myTabContent">
@@ -2301,6 +2327,41 @@
           </div>
         </div>
       </div>
+
+      <div class="tab-pane fade" id="groups" role="tabpanel">
+        <div class="card mt-4">
+          <div class="card-header">
+            <span><i class="fas fa-layer-group"></i> مجموعات البلاغات (منخفضات / أحداث)</span>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-secondary py-2 small mb-3">
+              <i class="fas fa-circle-info"></i> أنشئ مجموعة باسمها (مثال: «منخفض 2026-10-09»)، أضف إليها البلاغات يدوياً أو كل بلاغات فترة زمنية بضغطة، ثم صدّر لها تقريراً رسمياً ونهائياً (Excel / Word / PDF). تُحفظ المجموعات وتُزامَن سحابياً وتظهر في العرض المركزي.
+            </div>
+            <div class="row g-3">
+              <div class="col-lg-4">
+                <div class="border rounded p-3 h-100">
+                  <h6 class="fw-bold mb-3"><i class="fas fa-plus-circle"></i> إنشاء مجموعة جديدة</h6>
+                  <label class="form-label mb-1 required">اسم المجموعة</label>
+                  <input id="grpName" class="form-control form-control-sm mb-2" placeholder="مثال: منخفض 2026-10-09">
+                  <div class="row g-2">
+                    <div class="col-6"><label class="form-label mb-1">من تاريخ</label><input type="date" id="grpFrom" class="form-control form-control-sm"></div>
+                    <div class="col-6"><label class="form-label mb-1">إلى تاريخ</label><input type="date" id="grpTo" class="form-control form-control-sm"></div>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm mt-3 w-100" onclick="grpCreate()"><i class="fas fa-plus"></i> إنشاء المجموعة</button>
+                  <hr>
+                  <h6 class="fw-bold mb-2">المجموعات المحفوظة</h6>
+                  <div id="grpList" class="d-grid gap-2"></div>
+                </div>
+              </div>
+              <div class="col-lg-8">
+                <div class="border rounded p-3 h-100" id="grpDetail">
+                  <div class="text-muted">اختر مجموعة من القائمة أو أنشئ مجموعة جديدة.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2371,7 +2432,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.18';
+    const APP_VERSION = '2026.10.09.19';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2457,7 +2518,8 @@
       lastPrinted: 'lastPrintedReportIndex',
       workTypes: 'workTypesDb',
       vehicleTypes: 'vehicleTypesDb',
-      holidays: 'officialHolidays'
+      holidays: 'officialHolidays',
+      groups: 'incidentGroups'
     };
 
     function rawLSKey(key){
@@ -5522,6 +5584,7 @@ function centralReadAll(){
 }
 function centralStatusColor(s){ return STATUSES[s]||'#1f6fb2'; }
 function renderCentral(){
+  renderCentralGroups();
   const data=centralReadAll();
   let tReports=0,tField=0,tOffice=0,tActive=0,tDone=0,tStaff=0,tRecent=tReports;
   const dirRows=data.map(function(x){
@@ -6306,6 +6369,225 @@ function officialReportExcel(){
   XLSX.writeFile(wb,'تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
   showAlert('تم تصدير التقرير الرسمي بصيغة Excel.');
 }
+</script>
+<script>
+// ======================== مجموعات البلاغات (تجميع بكجات وإصدار تقارير) ========================
+var _grpSel='';
+function grpAll(){ return getLS(LS_KEYS.groups,[])||[]; }
+function grpSave(arr){ setLS(LS_KEYS.groups,arr||[]); }
+function grpById(id){ return grpAll().filter(function(g){return g.id===id;})[0]||null; }
+function grpSorted(){ return grpAll().slice().sort(function(a,b){return String(b.createdAt||'').localeCompare(String(a.createdAt||''));}); }
+function grpUid(){ return 'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function grpSafe(name){ return String(name||'مجموعة').replace(/[\\\/:*?"<>|]+/g,'_').replace(/\s+/g,'_').slice(0,40); }
+function grpReportsByIds(ids){
+  ids=ids||[]; if(!ids.length) return [];
+  var set={}; ids.forEach(function(i){ set[i]=1; });
+  return getLS(LS_KEYS.reports,[]).filter(function(r){ return set[r.id]; })
+    .sort(function(a,b){ return String(a.reportDate||'').localeCompare(String(b.reportDate||''))||(a.id-b.id); });
+}
+function grpUpdate(id,fields){
+  var arr=grpAll(),g=null;
+  arr.forEach(function(x){ if(x.id===id){ Object.assign(x,fields); g=x; } });
+  if(g) grpSave(arr);
+  return g;
+}
+function grpCreate(){
+  var name=String((document.getElementById('grpName')||{}).value||'').trim();
+  var from=(document.getElementById('grpFrom')||{}).value||'';
+  var to=(document.getElementById('grpTo')||{}).value||'';
+  if(!name){ showAlert('أدخل اسم المجموعة.','warning'); return; }
+  if(from&&to&&from>to){ showAlert('تاريخ البداية بعد تاريخ النهاية.','warning'); return; }
+  var g={id:grpUid(),name:name,from:from,to:to,number:'',reportIds:[],createdAt:new Date().toISOString()};
+  var arr=grpAll(); arr.push(g); grpSave(arr);
+  var nEl=document.getElementById('grpName'); if(nEl) nEl.value='';
+  _grpSel=g.id; grpRender();
+  if(from&&to) grpAddPeriod(g.id,true);
+  showAlert('تم إنشاء المجموعة «'+name+'».');
+}
+function grpDelete(id){
+  var g=grpById(id); if(!g) return;
+  if(!confirm('حذف المجموعة «'+g.name+'»؟')) return;
+  grpSave(grpAll().filter(function(x){return x.id!==id;}));
+  if(_grpSel===id) _grpSel='';
+  grpRender();
+}
+function grpSelect(id){ _grpSel=id; grpRender(); }
+function grpRender(){ grpListRender(); grpDetailRender(); }
+function grpListRender(){
+  var box=document.getElementById('grpList'); if(!box) return;
+  var list=grpSorted();
+  if(!list.length){ box.innerHTML='<div class="text-muted small">لا توجد مجموعات بعد.</div>'; return; }
+  box.innerHTML=list.map(function(g){
+    var n=(g.reportIds||[]).length;
+    var active=(g.id===_grpSel)?' active':'';
+    var per=(g.from||g.to)?(' <span class="text-muted">• '+(g.from||'?')+' ← '+(g.to||'?')+'</span>'):'';
+    return '<div class="grp-card'+active+'" onclick="grpSelect(\''+g.id+'\')">'
+      +'<div class="d-flex justify-content-between align-items-start gap-2">'
+      +'<b>'+esc(g.name)+'</b>'
+      +'<button type="button" class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();grpDelete(\''+g.id+'\')"><i class="fas fa-trash"></i></button>'
+      +'</div>'
+      +'<div class="small mt-1">عدد البلاغات: <b>'+((g.reportIds||[]).length)+'</b>'+per+'</div>'
+      +'</div>';
+  }).join('');
+}
+function grpDetailRender(){
+  var box=document.getElementById('grpDetail'); if(!box) return;
+  var g=grpById(_grpSel);
+  if(!g){ box.innerHTML='<div class="text-muted">اختر مجموعة من القائمة أو أنشئ مجموعة جديدة.</div>'; return; }
+  var reps=grpReportsByIds(g.reportIds);
+  var all=getLS(LS_KEYS.reports,[]).slice().sort(function(a,b){
+    return String(b.reportDate||'').localeCompare(String(a.reportDate||''))||(b.id-a.id);
+  });
+  var idSet={}; (g.reportIds||[]).forEach(function(i){ idSet[i]=1; });
+  var repRows=all.map(function(r){
+    var on=idSet[r.id]?' checked':'';
+    return '<label class="grp-rep"><input type="checkbox"'+on+' onchange="grpToggle(\''+g.id+'\','+r.id+',this.checked)">'
+      +'<span class="rn">'+esc(r.reportNumber||'—')+'</span>'
+      +'<span class="small">'+esc(r.reportDate||'')+' — '+esc(r.missionType||'')+'</span></label>';
+  }).join('')||'<div class="text-muted small p-2">لا توجد بلاغات مسجّلة.</div>';
+  box.innerHTML=''
+    +'<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">'
+      +'<div class="d-flex align-items-center gap-2 flex-wrap">'
+        +'<label class="form-label small mb-0 fw-bold">اسم المجموعة</label>'
+        +'<input type="text" class="form-control form-control-sm" style="width:220px" value="'+esc(g.name)+'" onchange="grpRename(\''+g.id+'\',this.value)">'
+        +'<label class="form-label small mb-0 fw-bold">رقم التقرير</label>'
+        +'<input type="text" class="form-control form-control-sm" style="width:140px" value="'+esc(g.number||'')+'" onchange="grpUpdate(\''+g.id+'\',{number:this.value.trim()})">'
+      +'</div>'
+      +'<span class="badge bg-primary">'+reps.length+' بلاغ محدّد</span>'
+    +'</div>'
+    +'<div class="row g-2 mb-2">'
+      +'<div class="col-6 col-md-3"><label class="form-label small mb-1">من تاريخ</label><input type="date" class="form-control form-control-sm" value="'+(g.from||'')+'" onchange="grpUpdate(\''+g.id+'\',{from:this.value})"></div>'
+      +'<div class="col-6 col-md-3"><label class="form-label small mb-1">إلى تاريخ</label><input type="date" class="form-control form-control-sm" value="'+(g.to||'')+'" onchange="grpUpdate(\''+g.id+'\',{to:this.value})"></div>'
+      +'<div class="col-12 col-md-6 d-flex align-items-end gap-2 flex-wrap">'
+        +'<button type="button" class="btn btn-sm btn-outline-primary" onclick="grpAddPeriod(\''+g.id+'\')"><i class="fas fa-plus"></i> إضافة كل بلاغات الفترة</button>'
+        +'<button type="button" class="btn btn-sm btn-outline-secondary" onclick="grpClearMembers(\''+g.id+'\')"><i class="fas fa-eraser"></i> إفراغ المجموعة</button>'
+      +'</div>'
+    +'</div>'
+    +'<div class="d-flex flex-wrap gap-2 mb-3">'
+      +'<button type="button" class="btn btn-success btn-sm" onclick="grpExportOfficialExcel(\''+g.id+'\')"><i class="fas fa-file-excel"></i> رسمي Excel</button>'
+      +'<button type="button" class="btn btn-primary btn-sm" onclick="grpExportOfficialWord(\''+g.id+'\')"><i class="fas fa-file-word"></i> رسمي Word</button>'
+      +'<button type="button" class="btn btn-info btn-sm text-white" onclick="grpPrintOfficial(\''+g.id+'\')"><i class="fas fa-print"></i> رسمي PDF</button>'
+      +'<button type="button" class="btn btn-outline-success btn-sm" onclick="grpExportFinalExcel(\''+g.id+'\')"><i class="fas fa-table"></i> نهائي Excel</button>'
+      +'<button type="button" class="btn btn-outline-info btn-sm" onclick="grpPrintFinal(\''+g.id+'\')"><i class="fas fa-print"></i> نهائي PDF</button>'
+    +'</div>'
+    +'<div class="d-flex justify-content-between align-items-center mb-1"><b class="small">بلاغات المجموعة ('+reps.length+' محدّد من '+all.length+')</b></div>'
+    +'<div class="grp-rep-list">'+repRows+'</div>';
+}
+function grpRename(id,val){ val=String(val||'').trim()||'مجموعة'; grpUpdate(id,{name:val}); grpRender(); }
+function grpToggle(id,repId,on){
+  var arr=grpAll();
+  arr.forEach(function(g){
+    if(g.id!==id) return;
+    g.reportIds=g.reportIds||[];
+    if(on){ if(g.reportIds.indexOf(repId)<0) g.reportIds.push(repId); }
+    else { g.reportIds=g.reportIds.filter(function(x){return x!==repId;}); }
+  });
+  grpSave(arr); grpListRender();
+}
+function grpAddPeriod(id,silent){
+  var g=grpById(id); if(!g) return;
+  if(!g.from||!g.to){ if(!silent) showAlert('حدّد تاريخي «من» و«إلى» أولاً.','warning'); return; }
+  if(g.from>g.to){ if(!silent) showAlert('تاريخ البداية بعد تاريخ النهاية.','warning'); return; }
+  var inRange=getLS(LS_KEYS.reports,[]).filter(function(r){ return r.reportDate>=g.from && r.reportDate<=g.to; });
+  var have={}; (g.reportIds||[]).forEach(function(i){ have[i]=1; });
+  g.reportIds=g.reportIds||[]; var added=0;
+  inRange.forEach(function(r){ if(!have[r.id]){ g.reportIds.push(r.id); have[r.id]=1; added++; } });
+  grpUpdate(id,{reportIds:g.reportIds});
+  grpRender();
+  if(!silent) showAlert('تمت إضافة '+added+' بلاغاً للمجموعة.');
+}
+function grpClearMembers(id){
+  if(!confirm('إفراغ المجموعة من كل البلاغات؟')) return;
+  grpUpdate(id,{reportIds:[]}); grpRender();
+}
+function grpBaseMeta(g){
+  var S=frSettings(), saved={}; try{ saved=getLS(ORF_KEY,{}); }catch(e){}
+  return {prov:saved.prov||S.prov||ACTIVE_DIR.short, dept:saved.dept||'', number:g.number||'',
+    mgr1:S.mgr1||'', mgr2:S.mgr2||'', authors:(saved.authors&&saved.authors.length)?saved.authors:[],
+    all:false, from:g.from||'', to:g.to||'',
+    stampImg:saved.stamp||'', signImg:saved.sign||'', signAuthImg:saved.signAuth||'', signMgr1Img:saved.signMgr1||'',
+    stampLabel:saved.stampLabel||'', group:g.name||'',
+    opts:{coords:true,staff:true,vehicles:true,speed:false,stamp:true,mgr1:true,mgr2:true}};
+}
+function grpGuard(id){
+  var g=grpById(id); if(!g) return null;
+  var rs=grpReportsByIds(g.reportIds);
+  if(!rs.length){ showAlert('لا توجد بلاغات في هذه المجموعة.','warning'); return null; }
+  return {g:g,rs:rs};
+}
+function grpExportOfficialExcel(id){
+  var d=grpGuard(id); if(!d) return;
+  var meta=grpBaseMeta(d.g);
+  var b=buildFinalWS(d.rs,{range:orfPeriodText(meta),title:'تقرير رسمي — البلاغات ضمن مناطق الاختصاص',group:d.g.name});
+  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,b.ws,'تقرير رسمي');
+  XLSX.writeFile(wb,'تقرير_رسمي_'+grpSafe(d.g.name)+'_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير تقرير المجموعة الرسمي بصيغة Excel.');
+}
+function grpExportOfficialWord(id){
+  var d=grpGuard(id); if(!d) return;
+  var meta=grpBaseMeta(d.g);
+  var fname='تقرير_رسمي_'+grpSafe(d.g.name)+'_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
+  function download(M,logo){
+    if(logo) _orfLogoData=logo;
+    var doc=orfWrapMHTML(buildOfficialReportWordHTML(d.rs,M));
+    try{
+      var blob=new Blob([doc],{type:'application/msword'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+      showAlert('تم تنزيل تقرير المجموعة الرسمي بصيغة Word.');
+    }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+  }
+  if(!orfShrinkSupported()){ download(meta,_orfLogoData); return; }
+  var logoP=(_orfLogoData?Promise.resolve(_orfLogoData):orfLoadLogo()).then(function(u){ return orfShrinkDataURL(u,67); });
+  Promise.all([
+    logoP,
+    orfShrinkDataURL(meta.stampImg,107),
+    orfShrinkDataURL(meta.signAuthImg,56),
+    orfShrinkDataURL(meta.signMgr1Img,56),
+    orfShrinkDataURL(meta.signImg,56)
+  ]).then(function(r){
+    var M=Object.assign({},meta,{stampImg:r[1],signAuthImg:r[2],signMgr1Img:r[3],signImg:r[4]});
+    download(M,r[0]);
+  });
+}
+function grpPrintOfficial(id){
+  var d=grpGuard(id); if(!d) return;
+  var html=buildOfficialReportHTML(d.rs,grpBaseMeta(d.g),true);
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  w.document.write(html); w.document.close();
+}
+function grpExportFinalExcel(id){
+  var d=grpGuard(id); if(!d) return;
+  var b=buildFinalWS(d.rs,{range:orfPeriodText(grpBaseMeta(d.g)),group:d.g.name});
+  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,b.ws,'تقرير البلاغات');
+  XLSX.writeFile(wb,'تقرير_نهائي_'+grpSafe(d.g.name)+'_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير تقرير المجموعة النهائي بصيغة Excel.');
+}
+function grpPrintFinal(id){
+  var d=grpGuard(id); if(!d) return;
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير المجموعة — '+esc(d.g.name)+'</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>@page{size:A4 landscape;margin:10mm 10mm 17mm}@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-size:9pt;color:#555}}body{margin:0}.fr-credit{display:none}.pc{position:fixed;bottom:-12mm;left:0;right:0;text-align:center;font-size:10pt;color:#444;border-top:1px solid #bbb;padding-top:3px}'+FR_CSS+'</style></head><body><div style="text-align:center;font-weight:700;padding:6px 0">المجموعة: '+esc(d.g.name)+'</div>'+frHTML(d.rs)+'<div class="pc">إعداد وتصميم المهندس أحمد الزن — صدر هذا التقرير آلياً من نظام طوارئ الأشغال</div><script>setTimeout(function(){print()},700)<\/script></body></html>');
+  w.document.close();
+}
+function renderCentralGroups(){
+  var rows=document.getElementById('centralGroupRows'); if(!rows) return;
+  var html='';
+  DIRECTORATES.forEach(function(dir){
+    var gs=getLSFor(dir.key,LS_KEYS.groups,[])||[];
+    gs.slice().sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); }).forEach(function(g){
+      html+='<tr><td><i class="fas fa-building me-1 text-success"></i><b>'+esc(dir.short)+'</b> <span class="text-muted small">'+esc(dir.code)+'</span></td>'
+        +'<td>'+esc(g.name)+'</td>'
+        +'<td class="small">'+esc((g.from||'—')+' ← '+(g.to||'—'))+'</td>'
+        +'<td class="text-center">'+((g.reportIds||[]).length)+'</td></tr>';
+    });
+  });
+  rows.innerHTML=html||'<tr><td colspan="4" class="text-center text-muted">لا توجد مجموعات بعد</td></tr>';
+}
+if(document.readyState!=='loading'){ try{ grpRender(); }catch(e){} }
+else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender(); }catch(e){} });
 </script>
 </body>
 </html>
