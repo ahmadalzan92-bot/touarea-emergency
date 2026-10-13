@@ -1667,6 +1667,7 @@
       <li class="nav-item" role="presentation"><button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab"><i class="fas fa-clock-rotate-left"></i> سجل البلاغات</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapPane" type="button" role="tab"><i class="fas fa-map-location-dot"></i> الخريطة</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="final-tab" data-bs-toggle="tab" data-bs-target="#final" type="button" role="tab"><i class="fas fa-file-contract"></i> التقرير النهائي</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="newreport-tab" data-bs-toggle="tab" data-bs-target="#newReport" type="button" role="tab"><i class="fas fa-file-circle-plus"></i> نموذج تقرير جديد</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis" type="button" role="tab"><i class="fas fa-chart-pie"></i> تحليل البيانات</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="official-tab" data-bs-toggle="tab" data-bs-target="#officialReport" type="button" role="tab"><i class="fas fa-file-signature"></i> التقرير الرسمي</button></li>
       <li class="nav-item" role="presentation"><button class="nav-link" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button" role="tab" onclick="grpRender()"><i class="fas fa-layer-group"></i> مجموعات البلاغات</button></li>
@@ -1910,6 +1911,15 @@
                     </div>
                   </div>
                   <datalist id="vehicleTypeList"></datalist>
+                </div>
+
+                <!-- ملكية الآلية -->
+                <div class="col-md-2">
+                  <label class="form-label">ملكية الآلية</label>
+                  <select class="form-select" id="vehicleOwnershipInput">
+                    <option value="حكومي">حكومي</option>
+                    <option value="مستأجر">مستأجر</option>
+                  </select>
                 </div>
 
                 <!-- أمر الحركة -->
@@ -2246,6 +2256,64 @@
       </div>
 
       <!-- تحليل البيانات -->
+      <div class="tab-pane fade" id="newReport" role="tabpanel">
+        <div class="card mt-4">
+          <div class="card-header">
+            <span><i class="fas fa-file-invoice"></i> نموذج تقرير جديد — تقرير البلاغات ضمن مناطق الاختصاص</span>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-sm btn-light" onclick="nrpRender()"><i class="fas fa-rotate"></i> تحديث المعاينة</button>
+              <button type="button" class="btn btn-sm btn-success" onclick="nrpExportExcel()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+              <button type="button" class="btn btn-sm btn-primary" onclick="nrpExportWord()"><i class="fas fa-file-word"></i> تصدير Word</button>
+              <button type="button" class="btn btn-sm btn-danger" onclick="nrpPrint()"><i class="fas fa-print"></i> طباعة / PDF</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-secondary py-2 small mb-3">
+              <i class="fas fa-circle-info"></i> نموذج مطابق لملف «تقرير البلاغات ضمن مناطق الاختصاص» (اليوم · التاريخ · رقم البلاغ · نوع البلاغ · الإجراء · الفرقة · الكادر · الآليات ونوعها و<b>ملكيتها (حكومي/مستأجر)</b> · خلال/خارج أوقات العمل · حالة البلاغ · سرعة الاستجابة · الإحداثيات · صور البلاغ). تُدرج صورة <b>الختم</b> و<b>التوقيع</b> فعلياً في <b>Word</b> و<b>PDF</b>، وفي <b>Excel</b> يُعرض عدد صور البلاغ.
+            </div>
+            <div class="row g-3 mb-2">
+              <div class="col-md-4"><label class="form-label">من تاريخ</label><input type="date" id="nrpFrom" class="form-control" onchange="nrpRender()"><div class="form-text">صيغة: سنة-شهر-يوم</div></div>
+              <div class="col-md-4"><label class="form-label">إلى تاريخ</label><input type="date" id="nrpTo" class="form-control" onchange="nrpRender()"><div class="form-text">صيغة: سنة-شهر-يوم</div></div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="nrpAllDates" onchange="nrpToggleAll()">
+                  <label class="form-check-label" for="nrpAllDates">كل الفترة (جميع البلاغات)</label>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-2">
+              <div class="col-md-4"><label class="form-label">المحافظة</label><input type="text" id="nrpProv" class="form-control" oninput="nrpSaveSettings();nrpRender()"></div>
+              <div class="col-md-4"><label class="form-label">مدير مديرية الأشغال</label><input type="text" id="nrpMgr1" class="form-control" oninput="nrpSaveSettings();nrpRender()"></div>
+              <div class="col-md-4"><label class="form-label">مدير مديرية الطوارئ</label><input type="text" id="nrpMgr2" class="form-control" oninput="nrpSaveSettings();nrpRender()"></div>
+            </div>
+            <fieldset class="border rounded p-2 mb-3">
+              <legend class="float-none w-auto px-1 fs-6 text-primary">إدراج الختم والتوقيع (صور)</legend>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label mb-1" for="nrpStampFile"><i class="fas fa-stamp"></i> صورة الختم الرسمي</label>
+                  <input type="file" id="nrpStampFile" class="form-control form-control-sm" accept="image/*" onchange="nrpPickImage(this,'stamp')">
+                  <div class="d-flex align-items-center gap-2 mt-2">
+                    <img id="nrpStampPrev" class="orf-img-prev" alt="معاينة الختم" style="display:none">
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="nrpStampClear" style="display:none" onclick="nrpClearImage('stamp')"><i class="fas fa-trash"></i> إزالة</button>
+                  </div>
+                  <div class="form-text">يُدرج الختم في خانة مدير مديرية الطوارئ.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label mb-1" for="nrpSignFile"><i class="fas fa-signature"></i> صورة التوقيع</label>
+                  <input type="file" id="nrpSignFile" class="form-control form-control-sm" accept="image/*" onchange="nrpPickImage(this,'sign')">
+                  <div class="d-flex align-items-center gap-2 mt-2">
+                    <img id="nrpSignPrev" class="orf-img-prev" alt="معاينة التوقيع" style="display:none">
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="nrpSignClear" style="display:none" onclick="nrpClearImage('sign')"><i class="fas fa-trash"></i> إزالة</button>
+                  </div>
+                  <div class="form-text">يُدرج التوقيع في خانة مدير مديرية الأشغال.</div>
+                </div>
+              </div>
+            </fieldset>
+            <div id="nrpInfo" class="small text-muted mb-2"></div>
+            <div id="nrpPreview" class="nrp-preview"></div>
+          </div>
+        </div>
+      </div>
       <div class="tab-pane fade" id="analysis" role="tabpanel">
         <div class="card mt-4">
           <div class="card-header">
@@ -2655,7 +2723,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.35';
+    const APP_VERSION = '2026.10.09.36';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3969,7 +4037,7 @@
         if(!x.mode) x.mode = rw;
         const parts = [];
         if(x.vehicleType || x.vehicleNumber){
-          parts.push([x.vehicleType, x.vehicleNumber].filter(Boolean).join(' / '));
+          parts.push([x.vehicleType, x.vehicleNumber].filter(Boolean).join(' / ')+(x.ownership?' ('+x.ownership+')':''));
         }
         if(x.movementOrder){ parts.push('أمر: '+x.movementOrder); }
 
@@ -3999,6 +4067,7 @@
       const vehicleNumber = (document.getElementById('vehicleNumberInput').value || '').trim();
       const vehicleTypeInput = (document.getElementById('vehicleTypeInput').value || '').trim();
       const movementOrder = (document.getElementById('movementOrderInput').value || '').trim();
+      const vehicleOwnership = ((document.getElementById('vehicleOwnershipInput')||{}).value || 'حكومي').trim();
 
       if(!staffName) return showAlert('اكتب/اختر اسم الكادر.', 'warning');
 
@@ -4030,6 +4099,7 @@
         mode: staffMode,
         vehicleNumber: vehicleNumber || '',
         vehicleType: finalVehicleType || '',
+        ownership: vehicleOwnership || 'حكومي',
         movementOrder
       });
 
@@ -4327,7 +4397,7 @@ function compressImageFile(file){
     }
     function buildReportHTML(r){
       const staffHTML = r.staff.map(s=>{
-        const veh = (s.vehicleType || s.vehicleNumber) ? ` — ${[s.vehicleType, s.vehicleNumber].filter(Boolean).join(' / ')}` : '';
+        const veh = (s.vehicleType || s.vehicleNumber) ? ` — ${[s.vehicleType, s.vehicleNumber].filter(Boolean).join(' / ')}${s.ownership?' ('+s.ownership+')':''}` : '';
         const mo = s.movementOrder ? ` — أمر:${s.movementOrder}` : '';
         return `<div class="staff-badge">${staffNameNo(s)} — ${s.role || ''}${veh}${mo} — <b>${staffModeOf(s,r)}</b></div>`;
       }).join('');
@@ -4716,7 +4786,7 @@ function coordBad(r){if(reportWorkMode(r)==='مكتبي'&&!r.longitude&&!r.latit
 function reportVehicles(r){
   if(r.vehicles&&r.vehicles.length)return r.vehicles;
   const seen=new Set(),out=[];
-  (r.staff||[]).forEach(s=>{if(s.vehicleType||s.vehicleNumber){const k=s.vehicleType+'|'+s.vehicleNumber;if(!seen.has(k)){seen.add(k);out.push({type:s.vehicleType||'',number:s.vehicleNumber||''});}}});
+  (r.staff||[]).forEach(s=>{if(s.vehicleType||s.vehicleNumber){const k=s.vehicleType+'|'+s.vehicleNumber;if(!seen.has(k)){seen.add(k);out.push({type:s.vehicleType||'',number:s.vehicleNumber||'',ownership:s.ownership||''});}}});
   return out;
 }
 function numOrStr(v){const t=String(v==null?'':v).trim();return /^[\d.]+$/.test(t)&&!isNaN(+t)?+t:t;}
@@ -7404,6 +7474,15 @@ else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender();
         <li>أزرار: <b>تحديث</b>، <b>من تاريخ إلى تاريخ</b> (تجميع اختياري)، <b>تصدير Excel</b>، <b>طباعة / PDF</b>.</li>
         <li>يمكن <b>استيراد بلاغات</b> من تقرير رسمي سابق بصيغة Excel.</li>
       </ul>`},
+    newReport:{t:'<i class="fas fa-file-invoice"></i> نموذج تقرير جديد',h:`
+      <h4>نموذج تقرير جديد (قالب مناطق الاختصاص)</h4>
+      <ul>
+        <li>حدّد <b>من/إلى تاريخ</b> أو فعّل <b>كل الفترة</b>.</li>
+        <li>حرّر اسم <b>مدير مديرية الأشغال</b> و<b>مدير مديرية الطوارئ</b>، وأدرج صور <b>الختم</b> و<b>التوقيع</b>.</li>
+        <li>يُبنى الجدول بعمود <b>ملكية الآلية (حكومي/مستأجر)</b> المفرد لكل آلية، وساعات العمل <b>خلال/خارج الدوام</b>، والإحداثيات، وعدد صور البلاغ.</li>
+        <li>أزرار: <b>تصدير Excel</b> و<b>Word</b> و<b>طباعة/PDF</b> (الختم والتوقيع وصور البلاغ تُدرج في Word وPDF).</li>
+      </ul>
+      <div class="tg-note"><i class="fas fa-truck"></i> حقل «ملكية الآلية» يُحدَّد لكل آلية عند إضافة الكادر في نموذج البلاغ.</div>`},
     analysis:{t:'<i class="fas fa-chart-pie"></i> تحليل البيانات',h:`
       <h4>الإحصاءات وساعات العمل</h4>
       <ul>
@@ -7504,6 +7583,291 @@ else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender();
     if(el && window.MutationObserver) new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['style']});
   });
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',sync); else sync();
+})();
+</script>
+<script>
+// ======================== نموذج تقرير جديد (مطابق لقالب «تقرير البلاغات ضمن مناطق الاختصاص») ========================
+var NRP_KEY='newReportSettingsV1';
+var _nrpStampImg='', _nrpSignImg='';
+var NRP_DEF_MGR1='م. أحمد عطاالله الكساسبة';
+
+var NRP_CSS=`
+.nrp-preview{overflow:auto}
+.nrp table.nrp-main{border-collapse:collapse;width:100%;font-family:'Cairo',Tahoma,sans-serif;direction:rtl;font-size:11px;color:#1a2030;background:#fff}
+.nrp table.nrp-main td,.nrp table.nrp-main th{border:1px solid #555;padding:3px 4px;vertical-align:top;text-align:center;word-break:break-word}
+.nrp table.nrp-main th{background:#dbe4f3;color:#1a3a6b;font-weight:700}
+.nrp table.nrp-main td.nrp-l{text-align:right}
+.nrp table.nrp-main tbody tr:nth-child(even){background:#f6f9fe}
+.nrp .nrp-photo{max-width:70px;max-height:52px;object-fit:contain;display:block;margin:2px auto 0}
+.nrp .nrp-sign{display:flex;justify-content:space-between;gap:20px;margin-top:28px}
+.nrp .nrp-sign>div{flex:1;text-align:center;font-weight:700}
+.nrp .nrp-sign img{max-height:80px;max-width:170px;object-fit:contain;display:block;margin:4px auto}
+.nrp .nrp-sign .nrp-line{border-bottom:1px solid #999;margin:30px 24px 6px}
+.nrp .nrp-credit{text-align:center;font-size:10px;color:#777;margin-top:16px;border-top:1px solid #ccc;padding-top:6px}
+@media print{.nrp table.nrp-main tbody tr{page-break-inside:avoid}.nrp table.nrp-main thead{display:table-header-group}}
+`;
+function nrpEnsureCSS(){ if(document.getElementById('nrpStyle'))return; var s=document.createElement('style'); s.id='nrpStyle'; s.textContent=NRP_CSS; document.head.appendChild(s); }
+
+function nrpVal(id){var el=document.getElementById(id);return el?String(el.value||'').trim():'';}
+function nrpMgr1Val(){return nrpVal('nrpMgr1')||NRP_DEF_MGR1;}
+function nrpMgr2Val(){return nrpVal('nrpMgr2')||(frSettings().mgr2||'');}
+function nrpProvVal(){return nrpVal('nrpProv')||ACTIVE_DIR.short;}
+function nrpImgId(kind){return kind==='stamp'?'Stamp':'Sign';}
+
+function nrpImgPrev(kind){
+  var sfx=nrpImgId(kind);
+  var img=document.getElementById('nrp'+sfx+'Prev'), clr=document.getElementById('nrp'+sfx+'Clear');
+  var val=kind==='stamp'?_nrpStampImg:_nrpSignImg;
+  if(img){ if(val){img.src=val;img.style.display='inline-block';}else{img.removeAttribute('src');img.style.display='none';} }
+  if(clr) clr.style.display=val?'inline-block':'none';
+}
+function nrpPickImage(input,kind){
+  var f=input.files&&input.files[0]; if(!f)return;
+  if(!/^image\//.test(f.type)){ showAlert('الرجاء اختيار ملف صورة صالح.','warning'); input.value=''; return; }
+  if(f.size>1572864){ showAlert('حجم الصورة كبير (يزيد عن 1.5MB) — يُفضَّل صورة أصغر.','warning'); }
+  var fr=new FileReader();
+  fr.onload=function(){ if(kind==='stamp')_nrpStampImg=String(fr.result||''); else _nrpSignImg=String(fr.result||''); nrpImgPrev(kind); nrpSaveSettings(); nrpRender(); };
+  fr.onerror=function(){ showAlert('تعذّر قراءة الصورة.','danger'); };
+  fr.readAsDataURL(f);
+}
+function nrpClearImage(kind){
+  if(kind==='stamp')_nrpStampImg=''; else _nrpSignImg='';
+  var el=document.getElementById('nrp'+nrpImgId(kind)+'File'); if(el)el.value='';
+  nrpImgPrev(kind); nrpSaveSettings(); nrpRender();
+}
+function nrpSaveSettings(){
+  try{ setLS(NRP_KEY,{prov:nrpVal('nrpProv'),mgr1:nrpVal('nrpMgr1'),mgr2:nrpVal('nrpMgr2'),stamp:_nrpStampImg,sign:_nrpSignImg}); }catch(e){}
+}
+function nrpLoad(){
+  nrpEnsureCSS();
+  var dates=getLS(LS_KEYS.reports,[]).map(function(r){return r.reportDate;}).filter(Boolean).sort();
+  var S=frSettings(), saved={}; try{saved=getLS(NRP_KEY,{});}catch(e){}
+  var now=new Date();
+  var fFrom=document.getElementById('nrpFrom'), fTo=document.getElementById('nrpTo'), allCb=document.getElementById('nrpAllDates');
+  if(fFrom && !fFrom.dataset.init){ fFrom.dataset.init='1'; fFrom.value=dates[0]||new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10); }
+  if(fTo && !fTo.dataset.init){ fTo.dataset.init='1'; fTo.value=dates[dates.length-1]||now.toISOString().slice(0,10); }
+  var prov=document.getElementById('nrpProv'); if(prov) prov.value=saved.prov||S.prov||ACTIVE_DIR.short;
+  var m1=document.getElementById('nrpMgr1'); if(m1) m1.value=saved.mgr1||NRP_DEF_MGR1;
+  var m2=document.getElementById('nrpMgr2'); if(m2) m2.value=saved.mgr2||S.mgr2||'';
+  _nrpStampImg=saved.stamp||''; _nrpSignImg=saved.sign||'';
+  ['stamp','sign'].forEach(function(k){ var el=document.getElementById('nrp'+nrpImgId(k)+'File'); if(el)el.value=''; nrpImgPrev(k); });
+  nrpToggleAll(true);
+}
+function nrpToggleAll(silent){
+  var all=!!(document.getElementById('nrpAllDates')||{}).checked;
+  var f=document.getElementById('nrpFrom'), t=document.getElementById('nrpTo');
+  if(f)f.disabled=all; if(t)t.disabled=all;
+  if(!silent) nrpRender();
+}
+function nrpReports(){
+  var all=!!(document.getElementById('nrpAllDates')||{}).checked;
+  if(all) return frReports(true);
+  var f=nrpVal('nrpFrom'), t=nrpVal('nrpTo');
+  if(!f||!t||f>t) return [];
+  return rangeReports(f,t);
+}
+
+// --- أوقات خلال/خارج الدوام ---
+function nrpFmt(m){ var h=Math.floor(m/60),mm=((m%60)+60)%60; return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm; }
+function nrpHM(s){ var m=/^\s*(\d{1,2})\s*:\s*(\d{2})/.exec(s||''); return m?((+m[1])*60+ +m[2]):null; }
+function nrpSumH(segs){ return roundH(segs.reduce(function(a,g){return a+(g.e-g.s);},0)/60); }
+function nrpDuty(r){
+  var s=nrpHM(r.startTime), e=nrpHM(r.endTime);
+  var kd=(typeof reportDayKind==='function')?reportDayKind(r):{holiday:false};
+  if(s===null||e===null||e<=s){ var d=dutySplit(r); return {inH:d.inH,outH:d.outH,inSegs:[],outSegs:[]}; }
+  if(kd.holiday) return {inH:0,outH:roundH((e-s)/60),inSegs:[],outSegs:[{s:s,e:e}]};
+  var inSegs=[],outSegs=[];
+  if(s<DUTY_START) outSegs.push({s:s,e:Math.min(e,DUTY_START)});
+  if(e>DUTY_END) outSegs.push({s:Math.max(s,DUTY_END),e:e});
+  var inS=Math.max(s,DUTY_START), inE=Math.min(e,DUTY_END);
+  if(inE>inS) inSegs.push({s:inS,e:inE});
+  return {inH:nrpSumH(inSegs),outH:nrpSumH(outSegs),inSegs:inSegs,outSegs:outSegs};
+}
+function nrpSegTxt(segs){
+  if(!segs||!segs.length) return {start:'',end:''};
+  return {start:segs.map(function(g){return nrpFmt(g.s);}).join('\n'), end:segs.map(function(g){return nrpFmt(g.e);}).join('\n')};
+}
+function nrpStatus(r){
+  var s=String(r.status||'').trim();
+  if(/منتهي|منجز|مكتمل|مكتملة|تم/.test(s)) return 'منتهي';
+  if(/مؤجل/.test(s)) return 'مؤجل';
+  if(/قيد|جديد|تنفيذ/.test(s)) return 'قيد الإجراء';
+  return s;
+}
+function nrpStaffText(r){ return (r.staff||[]).map(function(s){ return staffNameNo(s)+(s.role?(' / '+s.role):''); }).join('\n'); }
+function nrpVehCols(r){
+  var veh=reportVehicles(r);
+  return { types:veh.map(function(v){return v.type||'';}).join('\n'), owns:veh.map(function(v){return v.ownership||'';}).join('\n'), numbers:veh.map(function(v){return v.number==null?'':String(v.number);}).join('\n') };
+}
+function nrpPhotos(r){ return (r.attachments||[]).filter(function(a){return attachmentKind(a)==='image';}); }
+function nrpRow(r,i){
+  var d=nrpDuty(r), v=nrpVehCols(r), ph=nrpPhotos(r);
+  var inT=nrpSegTxt(d.inSegs), outT=nrpSegTxt(d.outSegs);
+  return [
+    i+1, dayName(r.reportDate)||'', r.reportDate?fmtDMY(r.reportDate):'', nrpProvVal(),
+    numOrStr(r.reportNumber)||'', r.missionType||'', r.actionsTaken||'', r.teamNo||'',
+    nrpStaffText(r), v.types, v.owns, v.numbers,
+    inT.start, inT.end, d.inH?numOrStr(fmtH(d.inH)):'',
+    outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
+    nrpStatus(r), r.responseSpeed||'',
+    [r.longitude,r.latitude].filter(Boolean).join('\n'),
+    ph.length?(ph.length+' صورة'):''
+  ];
+}
+function nrpDutyInfo(rs){ var inH=0,outH=0; rs.forEach(function(r){var d=nrpDuty(r);inH+=d.inH||0;outH+=d.outH||0;}); return {inH:roundH(inH),outH:roundH(outH)}; }
+
+function nrpTableHTML(rs){
+  var rows=rs.map(function(r,i){
+    var v=nrpRow(r,i), ph=nrpPhotos(r);
+    var photoCell = ph.length? (esc(ph.length+' صورة') + (ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+ph[0].data+'" alt="صورة البلاغ">'):'')) : '';
+    return '<tr>'
+      +'<td>'+(i+1)+'</td>'
+      +'<td>'+esc(v[1])+'</td>'
+      +'<td>'+esc(v[2])+'</td>'
+      +'<td>'+esc(v[3])+'</td>'
+      +'<td>'+esc(v[4])+'</td>'
+      +'<td class="nrp-l">'+escBr(v[5])+'</td>'
+      +'<td class="nrp-l">'+escBr(v[6])+'</td>'
+      +'<td>'+esc(v[7])+'</td>'
+      +'<td class="nrp-l">'+escBr(v[8])+'</td>'
+      +'<td class="nrp-l">'+escBr(v[9])+'</td>'
+      +'<td>'+escBr(v[10])+'</td>'
+      +'<td>'+escBr(v[11])+'</td>'
+      +'<td>'+escBr(v[12])+'</td>'
+      +'<td>'+escBr(v[13])+'</td>'
+      +'<td>'+esc(v[14])+'</td>'
+      +'<td>'+escBr(v[15])+'</td>'
+      +'<td>'+escBr(v[16])+'</td>'
+      +'<td>'+esc(v[17])+'</td>'
+      +'<td>'+esc(v[18])+'</td>'
+      +'<td>'+esc(v[19])+'</td>'
+      +'<td>'+escBr(v[20])+'</td>'
+      +'<td>'+photoCell+'</td>'
+      +'</tr>';
+  }).join('')||'<tr><td colspan="22" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
+  var head='<thead><tr>'
+    +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
+    +'<th rowspan="2">رقم البلاغ</th><th rowspan="2">نوع البلاغ</th><th rowspan="2">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
+    +'<th rowspan="2">أسماء العاملين في الفرقة مع بيان الوظيفة<br><small>(مهندس/ مراقب/ سائق/ سائق الية...الخ)</small></th>'
+    +'<th colspan="3">الآليات المستخدمة</th>'
+    +'<th colspan="3">خلال أوقات العمل</th>'
+    +'<th colspan="3">خارج أوقات العمل</th>'
+    +'<th rowspan="2">حالة البلاغ<br><small>(منتهي/ قيد الإجراء)</small></th>'
+    +'<th rowspan="2">سرعة الاستجابة<br><small>(خاص بمديرية الطوارئ)</small></th>'
+    +'<th rowspan="2">إحداثيات الموقع</th><th rowspan="2">صور للبلاغ</th>'
+    +'</tr><tr>'
+    +'<th>نوع الآلية</th><th>(حكومي / مستأجر)</th><th>رقم الآلية</th>'
+    +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
+    +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
+    +'</tr></thead>';
+  var sign='<div class="nrp-sign">'
+    +'<div><div>مدير مديرية الأشغال</div>'+(_nrpSignImg?('<img src="'+_nrpSignImg+'" alt="التوقيع">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr1Val())+'</div></div>'
+    +'<div><div>مدير مديرية الطوارئ</div>'+(_nrpStampImg?('<img src="'+_nrpStampImg+'" alt="الختم">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr2Val())+'</div></div>'
+    +'</div>';
+  var credit='<div class="nrp-credit">تقرير البلاغات ضمن مناطق الاختصاص — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ'+(ACTIVE_DIR.short?(' • '+esc(ACTIVE_DIR.short)):'')+'</div>';
+  return '<div class="nrp"><table class="nrp-main">'+head+'<tbody>'+rows+'</tbody></table>'+sign+credit+'</div>';
+}
+function nrpRender(){
+  nrpEnsureCSS();
+  var rs=nrpReports();
+  var box=document.getElementById('nrpPreview'); if(box) box.innerHTML=nrpTableHTML(rs);
+  var info=document.getElementById('nrpInfo');
+  if(info){ var all=!!(document.getElementById('nrpAllDates')||{}).checked; var d=nrpDutyInfo(rs);
+    info.textContent='عدد البلاغات: '+rs.length+(all?' (كل الفترة)':'')+' — ساعات خلال الدوام: '+fmtH(d.inH)+' — خارج الدوام: '+fmtH(d.outH)+' — الإجمالي: '+fmtH(d.inH+d.outH);
+  }
+}
+
+function nrpBuildWS(rs){
+  var N=22, aoa=[], merges=[], heights={};
+  var blank=function(){return new Array(N).fill('');};
+  var put=function(r,c,v){ while(aoa.length<=r) aoa.push(blank()); aoa[r][c]=v; };
+  put(0,0,'وزارة الأشغال العامة والإسكان');
+  put(1,0,'مديرية الطوارئ');
+  put(2,0,'تقرير بلاغات المنخفضات ضمن مناطق الاختصاص');
+  [['الرقم',0],['اليوم',1],['التاريخ',2],['المحافظة',3],['رقم البلاغ',4],['نوع البلاغ',5],['الاجراء المتخذ',6],['رقم الفرقة',7],['أسماء العاملين في الفرقة مع بيان الوظيفة (مهندس/ مراقب/ سائق/ سائق الية...الخ)',8],['الاليات المستخدمة',9],['خلال أوقات العمل',12],['خارج أوقات العمل',15],['حالة البلاغ (منتهي/ قيد الاجراء)',18],['سرعة الاستجابة (خاص بمديرية الطوارئ)',19],['احداثيات الموقع',20],['صور للبلاغ',21]].forEach(function(x){ put(3,x[1],x[0]); });
+  [['نوع الالية',9],['(حكومي / مستأجر)',10],['رقم الالية',11],['وقت البدء',12],['وقت الانتهاء',13],['مدة العمل الكلي',14],['وقت البدء',15],['وقت الانتهاء',16],['مدة العمل الكلي',17]].forEach(function(x){ put(5,x[1],x[0]); });
+  var r0=6;
+  rs.forEach(function(r,i){ var v=nrpRow(r,i);
+    for(var c=0;c<N;c++) put(r0,c,v[c]);
+    var lines=Math.max(3, String(v[8]||'').split('\n').length, String(v[9]||'').split('\n').length, Math.ceil(String(v[6]||'').length/32));
+    heights[r0]=Math.max(20, lines*16+4);
+    r0++;
+  });
+  var bodyEnd=r0; r0+=1;
+  var f0=r0, f1=r0+1;
+  put(f0,0,'مدير مديرية الاشغال'); put(f0,16,'مدير مديرية الطوارئ');
+  put(f1,0,nrpMgr1Val()); put(f1,16,nrpMgr2Val());
+  merges.push({s:{r:0,c:0},e:{r:0,c:21}});
+  merges.push({s:{r:1,c:0},e:{r:1,c:21}});
+  merges.push({s:{r:2,c:0},e:{r:2,c:21}});
+  [0,1,2,3,4,5,6,7,8,18,19,20,21].forEach(function(c){ merges.push({s:{r:3,c:c},e:{r:5,c:c}}); });
+  merges.push({s:{r:3,c:9},e:{r:4,c:11}});
+  merges.push({s:{r:3,c:12},e:{r:4,c:14}});
+  merges.push({s:{r:3,c:15},e:{r:4,c:17}});
+  merges.push({s:{r:f0,c:0},e:{r:f0,c:6}}); merges.push({s:{r:f1,c:0},e:{r:f1,c:6}});
+  merges.push({s:{r:f0,c:16},e:{r:f0,c:19}}); merges.push({s:{r:f1,c:16},e:{r:f1,c:19}});
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  var thin={style:'thin',color:{rgb:'000000'}}, bd={top:thin,bottom:thin,left:thin,right:thin};
+  for(var R=0;R<aoa.length;R++)for(var C=0;C<N;C++){
+    var a=XLSX.utils.encode_cell({r:R,c:C}); if(!ws[a])ws[a]={t:'s',v:''};
+    var hdr=R>=3&&R<6, top=R<3, sig=R>=bodyEnd, left=R>=6&&!sig&&(C===5||C===6||C===8);
+    var st={alignment:{wrapText:true,vertical:'center',horizontal:left?'right':'center',readingOrder:2},font:{name:'Arial',sz:top?14:11,bold:hdr||top||R===3||sig}};
+    if(hdr)st.fill={fgColor:{rgb:'D9E1F2'}};
+    if(R>=3&&!sig)st.border=bd;
+    ws[XLSX.utils.encode_cell({r:R,c:C})].s=st;
+  }
+  ws['!cols']=[5,8,10,10,10,16,30,8,32,12,11,10,9,9,9,9,9,9,13,13,14,12].map(function(w){return {wch:w};});
+  ws['!rows']=aoa.map(function(_,R){ return heights[R]?{hpt:heights[R]}:(R>=3&&R<6?{hpt:30}:{}); });
+  ws['!merges']=merges;
+  return ws;
+}
+function nrpExportExcel(){
+  var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
+  var ws=nrpBuildWS(rs);
+  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,ws,'نموذج تقرير');
+  XLSX.writeFile(wb,'نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير النموذج بصيغة Excel.');
+}
+
+function nrpWordHTML(rs){
+  var style='@page{size:A4 landscape;margin:8mm}'
+    +'body{font-family:"Cairo",Tahoma,sans-serif;direction:rtl;font-size:8pt;color:#1a2030}'
+    +'table.nrp-main{border-collapse:collapse;width:100%}'
+    +'table.nrp-main td,table.nrp-main th{border:1px solid #555;padding:2pt 3pt;vertical-align:top;text-align:center}'
+    +'table.nrp-main th{background:#dbe4f3;color:#1a3a6b;text-align:center;font-weight:bold}'
+    +'table.nrp-main td.nrp-l{text-align:right}'
+    +'.nrp-photo{height:34pt}'
+    +'.nrp-sign{width:100%;margin-top:16pt}'
+    +'.nrp-sign>div{display:table-cell;width:50%;text-align:center;font-weight:bold}'
+    +'.nrp-sign img{height:56pt}'
+    +'.nrp-sign .nrp-line{border-bottom:1px solid #999;margin:20pt 18pt 4pt}'
+    +'.nrp-credit{text-align:center;font-size:8pt;color:#777;margin-top:10pt}';
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>'+style+'</style></head><body dir="rtl" style="direction:rtl">'+nrpTableHTML(rs)+'</body></html>';
+}
+function nrpExportWord(){
+  var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
+  try{
+    var doc=orfWrapMHTML(nrpWordHTML(rs));
+    var blob=new Blob([doc],{type:'application/msword'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
+    showAlert('تم تنزيل النموذج بصيغة Word.');
+  }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+}
+function nrpPrint(){
+  var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>@page{size:A4 landscape;margin:8mm 7mm}body{margin:0}'+NRP_CSS+'</style></head><body>'+nrpTableHTML(rs)+'<scr'+'ipt>setTimeout(function(){print()},600)<\/scr'+'ipt></body></html>');
+  w.document.close();
+}
+
+(function(){
+  nrpEnsureCSS();
+  var btn=document.getElementById('newreport-tab');
+  if(btn) btn.addEventListener('shown.bs.tab',function(){ nrpLoad(); nrpRender(); });
 })();
 </script>
 </body>
