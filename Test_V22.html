@@ -752,7 +752,7 @@
     .date-wrap>input[type="date"]:not(.date-empty)+.date-hint,
     .date-wrap>input[type="datetime-local"]:not(.date-empty)+.date-hint{display:none}
     .form-check-input{border-color:#b7c8dd}
-    .form-check-input:checked{background-color:var(--primary);border-color:var(--primary)}
+    .form-check-input:checked{background-color:var(--primary-color,#0f4c81);border-color:var(--primary-color,#0f4c81);background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e")}
     input[type="date"],input[type="time"],input[type="datetime-local"]{min-height:42px}
     input[type="search"]::-webkit-search-cancel-button{filter:grayscale(.4)}
     #officialReport .form-check{padding-inline-start:1.75em;min-height:1.4em}
@@ -1861,12 +1861,18 @@
                 <div class="col-md-4">
                   <label class="form-label">اسم الكادر</label>
                   <div class="input-with-addon">
-                    <input list="staffList" class="form-control" id="staffNameInput" placeholder="اكتب أو اختر اسم الكادر" oninput="filterStaffSuggestions()">
+                    <input list="staffList" class="form-control" id="staffNameInput" placeholder="اكتب أو اختر اسم الكادر" oninput="filterStaffSuggestions(); autoFillStaffInfo()">
                     <div class="addon">
                       <button class="btn btn-outline-success" type="button" title="إضافة كادر للقاعدة" onclick="quickAddStaffFromMission()"><i class="fas fa-user-plus"></i></button>
                     </div>
                   </div>
                   <datalist id="staffList"></datalist>
+                </div>
+
+                <!-- الرقم الوظيفي -->
+                <div class="col-md-2">
+                  <label class="form-label">الرقم الوظيفي</label>
+                  <input type="text" class="form-control" id="staffNumberInput" placeholder="يُملأ تلقائياً من القاعدة">
                 </div>
 
                 <!-- طبيعة العمل -->
@@ -2280,6 +2286,11 @@
                   <label class="form-check-label" for="nrpAllDates">كل الفترة (جميع البلاغات)</label>
                 </div>
               </div>
+            </div>
+            <div class="row g-3 mb-2">
+              <div class="col-md-5"><label class="form-label">مجموعة بلاغات محفوظة</label><select id="nrpGroup" class="form-select" onchange="nrpRender()"><option value="">— كل البلاغات —</option></select></div>
+              <div class="col-md-3 d-flex align-items-end"><button type="button" class="btn btn-outline-secondary w-100" onclick="nrpFillGroupPeriod()"><i class="fas fa-folder-open"></i> فترة المجموعة</button></div>
+              <div class="col-md-4 d-flex align-items-end"><div class="form-text mb-2">عند اختيار مجموعة يُصدَّر التقرير لبلاغاتها فقط، ويمكن تضييقها بالفترة أعلاه.</div></div>
             </div>
             <div class="row g-3 mb-2">
               <div class="col-md-4"><label class="form-label">المحافظة</label><input type="text" id="nrpProv" class="form-control" oninput="nrpSaveSettings();nrpRender()"></div>
@@ -2723,7 +2734,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.36';
+    const APP_VERSION = '2026.10.09.37';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3381,6 +3392,24 @@
       workTypeDl.innerHTML = workTypes.map(t=>`<option value="${t}"></option>`).join('');
     }
     function unique(arr){ return [...new Set(arr.filter(Boolean))]; }
+
+    // ====== ملء بيانات الكادر المخزّن تلقائياً (المسمى والرقم الوظيفي) مع إمكانية التعديل اليدوي ======
+    function autoFillStaffInfo(){
+      const nameInput = document.getElementById('staffNameInput');
+      const name = (nameInput ? nameInput.value : '').trim();
+      if(!name) return;
+      const db = getLS(LS_KEYS.staff, []);
+      let st = db.find(s => s.name === name);
+      if(!st){
+        const cands = db.filter(s => multiPrefixMatch(name, s.name) || initialsMatch(name, s.name));
+        if(cands.length === 1) st = cands[0];
+      }
+      if(!st) return;
+      const titleEl = document.getElementById('workTypeInput');
+      const numEl = document.getElementById('staffNumberInput');
+      if(titleEl && st.title) titleEl.value = st.title;
+      if(numEl && st.number) numEl.value = st.number;
+    }
 
     // ====== اقتراحات ديناميكية حسب ما يُكتب (حساسية عالية) ======
     function filterStaffSuggestions(){
@@ -4068,6 +4097,7 @@
       const vehicleTypeInput = (document.getElementById('vehicleTypeInput').value || '').trim();
       const movementOrder = (document.getElementById('movementOrderInput').value || '').trim();
       const vehicleOwnership = ((document.getElementById('vehicleOwnershipInput')||{}).value || 'حكومي').trim();
+      const staffNumberInput = ((document.getElementById('staffNumberInput')||{}).value || '').trim();
 
       if(!staffName) return showAlert('اكتب/اختر اسم الكادر.', 'warning');
 
@@ -4095,7 +4125,7 @@
 
       selectedStaffForMission.push({
         staffId, name: staffName, role: finalRole,
-        number: (st && st.number) ? st.number : '',
+        number: staffNumberInput || ((st && st.number) ? st.number : ''),
         mode: staffMode,
         vehicleNumber: vehicleNumber || '',
         vehicleType: finalVehicleType || '',
@@ -4106,6 +4136,7 @@
       renderSelectedStaff();
       document.getElementById('staffNameInput').value = '';
       document.getElementById('workTypeInput').value = '';
+      document.getElementById('staffNumberInput').value = '';
       document.getElementById('vehicleNumberInput').value = '';
       document.getElementById('vehicleTypeInput').value = '';
       document.getElementById('movementOrderInput').value = '';
@@ -4695,7 +4726,7 @@ function compressImageFile(file){
     function clearIncidentForm(keepStaff=false){
       document.getElementById('incidentForm').reset();
       document.getElementById('durationDisplay').textContent = '00:00 ساعة';
-      ['staffNameInput','workTypeInput','vehicleNumberInput','vehicleTypeInput','movementOrderInput'].forEach(id=>{
+      ['staffNameInput','workTypeInput','staffNumberInput','vehicleNumberInput','vehicleTypeInput','movementOrderInput'].forEach(id=>{
         const el = document.getElementById(id);
         if(el) el.value = '';
       });
@@ -7477,7 +7508,7 @@ else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender();
     newReport:{t:'<i class="fas fa-file-invoice"></i> نموذج تقرير جديد',h:`
       <h4>نموذج تقرير جديد (قالب مناطق الاختصاص)</h4>
       <ul>
-        <li>حدّد <b>من/إلى تاريخ</b> أو فعّل <b>كل الفترة</b>.</li>
+        <li>حدّد <b>من/إلى تاريخ</b> أو فعّل <b>كل الفترة</b>، أو اختر <b>مجموعة بلاغات محفوظة</b> لتصدير تقريرها فقط.</li>
         <li>حرّر اسم <b>مدير مديرية الأشغال</b> و<b>مدير مديرية الطوارئ</b>، وأدرج صور <b>الختم</b> و<b>التوقيع</b>.</li>
         <li>يُبنى الجدول بعمود <b>ملكية الآلية (حكومي/مستأجر)</b> المفرد لكل آلية، وساعات العمل <b>خلال/خارج الدوام</b>، والإحداثيات، وعدد صور البلاغ.</li>
         <li>أزرار: <b>تصدير Excel</b> و<b>Word</b> و<b>طباعة/PDF</b> (الختم والتوقيع وصور البلاغ تُدرج في Word وPDF).</li>
@@ -7651,6 +7682,7 @@ function nrpLoad(){
   var m2=document.getElementById('nrpMgr2'); if(m2) m2.value=saved.mgr2||S.mgr2||'';
   _nrpStampImg=saved.stamp||''; _nrpSignImg=saved.sign||'';
   ['stamp','sign'].forEach(function(k){ var el=document.getElementById('nrp'+nrpImgId(k)+'File'); if(el)el.value=''; nrpImgPrev(k); });
+  nrpPopulateGroups();
   nrpToggleAll(true);
 }
 function nrpToggleAll(silent){
@@ -7659,11 +7691,34 @@ function nrpToggleAll(silent){
   if(f)f.disabled=all; if(t)t.disabled=all;
   if(!silent) nrpRender();
 }
+function nrpGroup(){ var el=document.getElementById('nrpGroup'); return (el&&el.value)||''; }
+function nrpGroupById(id){ try{ return (id&&typeof grpById==='function')?grpById(id):null; }catch(e){ return null; } }
+function nrpPopulateGroups(){
+  var sel=document.getElementById('nrpGroup'); if(!sel) return;
+  var list=(typeof grpSorted==='function')?grpSorted():[];
+  var cur=sel.value;
+  sel.innerHTML='<option value="">— كل البلاغات —</option>'+list.map(function(g){
+    return '<option value="'+g.id+'">'+esc(g.name)+' ('+((g.reportIds||[]).length)+' بلاغ)</option>';
+  }).join('');
+  if(cur&&list.some(function(g){return g.id===cur;})) sel.value=cur;
+}
+function nrpFillGroupPeriod(){
+  var g=nrpGroupById(nrpGroup()); if(!g) return showAlert('اختر مجموعة محفوظة أولاً.','warning');
+  var cb=document.getElementById('nrpAllDates'); if(cb){ cb.checked=false; nrpToggleAll(true); }
+  var f=document.getElementById('nrpFrom'), t=document.getElementById('nrpTo');
+  if(f) f.value=g.from||''; if(t) t.value=g.to||'';
+  nrpRender();
+}
 function nrpReports(){
   var all=!!(document.getElementById('nrpAllDates')||{}).checked;
+  var g=nrpGroupById(nrpGroup());
+  var f=nrpVal('nrpFrom'), t=nrpVal('nrpTo'), hasRange=!!(f&&t&&f<=t);
+  if(g){
+    var base=grpReportsByIds(g.reportIds);
+    return (all||!hasRange)?base:base.filter(function(r){ return r.reportDate>=f && r.reportDate<=t; });
+  }
   if(all) return frReports(true);
-  var f=nrpVal('nrpFrom'), t=nrpVal('nrpTo');
-  if(!f||!t||f>t) return [];
+  if(!hasRange) return [];
   return rangeReports(f,t);
 }
 
@@ -7772,8 +7827,8 @@ function nrpRender(){
   var rs=nrpReports();
   var box=document.getElementById('nrpPreview'); if(box) box.innerHTML=nrpTableHTML(rs);
   var info=document.getElementById('nrpInfo');
-  if(info){ var all=!!(document.getElementById('nrpAllDates')||{}).checked; var d=nrpDutyInfo(rs);
-    info.textContent='عدد البلاغات: '+rs.length+(all?' (كل الفترة)':'')+' — ساعات خلال الدوام: '+fmtH(d.inH)+' — خارج الدوام: '+fmtH(d.outH)+' — الإجمالي: '+fmtH(d.inH+d.outH);
+  if(info){ var all=!!(document.getElementById('nrpAllDates')||{}).checked; var d=nrpDutyInfo(rs); var g=nrpGroupById(nrpGroup());
+    info.textContent='النطاق: '+(g?('المجموعة: '+g.name):'كل البلاغات')+(all?' (كل الفترة)':'')+' — عدد البلاغات: '+rs.length+' — ساعات خلال الدوام: '+fmtH(d.inH)+' — خارج الدوام: '+fmtH(d.outH)+' — الإجمالي: '+fmtH(d.inH+d.outH);
   }
 }
 
