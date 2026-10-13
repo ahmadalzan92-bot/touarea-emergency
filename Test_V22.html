@@ -2270,6 +2270,14 @@
               <button type="button" class="btn btn-sm btn-light" onclick="nrpRender()"><i class="fas fa-rotate"></i> تحديث المعاينة</button>
               <button type="button" class="btn btn-sm btn-success" onclick="nrpExportExcel()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
               <button type="button" class="btn btn-sm btn-primary" onclick="nrpExportWord()"><i class="fas fa-file-word"></i> تصدير Word</button>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-sm btn-info text-white dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="تصدير بنفس تصميم صفحة التقرير الرسمي"><i class="fas fa-file-signature"></i> تقرير رسمي</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><button type="button" class="dropdown-item" onclick="nrpOfficialWord()"><i class="fas fa-file-word text-primary"></i> تنزيل Word</button></li>
+                  <li><button type="button" class="dropdown-item" onclick="nrpOfficialPrint()"><i class="fas fa-print text-info"></i> معاينة / طباعة PDF</button></li>
+                  <li><button type="button" class="dropdown-item" onclick="nrpOfficialExcel()"><i class="fas fa-file-excel text-success"></i> تصدير Excel</button></li>
+                </ul>
+              </div>
               <button type="button" class="btn btn-sm btn-danger" onclick="nrpPrint()"><i class="fas fa-print"></i> طباعة / PDF</button>
             </div>
           </div>
@@ -2734,7 +2742,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.37';
+    const APP_VERSION = '2026.10.09.38';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -7511,7 +7519,8 @@ else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender();
         <li>حدّد <b>من/إلى تاريخ</b> أو فعّل <b>كل الفترة</b>، أو اختر <b>مجموعة بلاغات محفوظة</b> لتصدير تقريرها فقط.</li>
         <li>حرّر اسم <b>مدير مديرية الأشغال</b> و<b>مدير مديرية الطوارئ</b>، وأدرج صور <b>الختم</b> و<b>التوقيع</b>.</li>
         <li>يُبنى الجدول بعمود <b>ملكية الآلية (حكومي/مستأجر)</b> المفرد لكل آلية، وساعات العمل <b>خلال/خارج الدوام</b>، والإحداثيات، وعدد صور البلاغ.</li>
-        <li>أزرار: <b>تصدير Excel</b> و<b>Word</b> و<b>طباعة/PDF</b> (الختم والتوقيع وصور البلاغ تُدرج في Word وPDF).</li>
+        <li>أزرار: <b>تصدير Excel</b> و<b>Word</b> و<b>طباعة/PDF</b> (الختم والتوقيع وصور البلاغ تُدرج في Word وPDF، وتُحفظ <b>الألوان والخلفيات</b> عند الطباعة).</li>
+        <li>زر <b>«تقرير رسمي»</b> يُصدر بلاغات النموذج الحالية <b>بنفس تصميم صفحة التقرير الرسمي</b> (ترويسة بخلفية داكنة + الشعار + مؤشرات + جدول موحّد + الختم/التواقيع): <b>Word</b> أو <b>معاينة/PDF</b> أو <b>Excel</b>.</li>
       </ul>
       <div class="tg-note"><i class="fas fa-truck"></i> حقل «ملكية الآلية» يُحدَّد لكل آلية عند إضافة الكادر في نموذج البلاغ.</div>`},
     analysis:{t:'<i class="fas fa-chart-pie"></i> تحليل البيانات',h:`
@@ -7624,18 +7633,19 @@ var NRP_DEF_MGR1='م. أحمد عطاالله الكساسبة';
 
 var NRP_CSS=`
 .nrp-preview{overflow:auto}
-.nrp table.nrp-main{border-collapse:collapse;width:100%;font-family:'Cairo',Tahoma,sans-serif;direction:rtl;font-size:11px;color:#1a2030;background:#fff}
+.nrp table.nrp-main{border-collapse:collapse;width:100%;font-family:'Cairo',Tahoma,sans-serif;direction:rtl;font-size:11px;color:#1a2030;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .nrp table.nrp-main td,.nrp table.nrp-main th{border:1px solid #555;padding:3px 4px;vertical-align:top;text-align:center;word-break:break-word}
 .nrp table.nrp-main th{background:#dbe4f3;color:#1a3a6b;font-weight:700}
 .nrp table.nrp-main td.nrp-l{text-align:right}
 .nrp table.nrp-main tbody tr:nth-child(even){background:#f6f9fe}
 .nrp .nrp-photo{max-width:70px;max-height:52px;object-fit:contain;display:block;margin:2px auto 0}
-.nrp .nrp-sign{display:flex;justify-content:space-between;gap:20px;margin-top:28px}
-.nrp .nrp-sign>div{flex:1;text-align:center;font-weight:700}
-.nrp .nrp-sign img{max-height:80px;max-width:170px;object-fit:contain;display:block;margin:4px auto}
-.nrp .nrp-sign .nrp-line{border-bottom:1px solid #999;margin:30px 24px 6px}
+.nrp table.nrp-sign{width:100%;border-collapse:collapse;margin-top:28px;table-layout:fixed}
+.nrp table.nrp-sign td{width:50%;text-align:center;font-weight:700;vertical-align:top;border:0;padding:6px 10px}
+.nrp table.nrp-sign .nrp-sig-title{font-weight:700}
+.nrp table.nrp-sign img{max-height:80px;max-width:170px;object-fit:contain;display:block;margin:4px auto}
+.nrp table.nrp-sign .nrp-line{border-bottom:1px solid #999;margin:30px 24px 6px}
 .nrp .nrp-credit{text-align:center;font-size:10px;color:#777;margin-top:16px;border-top:1px solid #ccc;padding-top:6px}
-@media print{.nrp table.nrp-main tbody tr{page-break-inside:avoid}.nrp table.nrp-main thead{display:table-header-group}}
+@media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.nrp table.nrp-main,.nrp table.nrp-main th,.nrp table.nrp-main td{-webkit-print-color-adjust:exact;print-color-adjust:exact}.nrp table.nrp-main tbody tr{page-break-inside:avoid}.nrp table.nrp-main thead{display:table-header-group}}
 `;
 function nrpEnsureCSS(){ if(document.getElementById('nrpStyle'))return; var s=document.createElement('style'); s.id='nrpStyle'; s.textContent=NRP_CSS; document.head.appendChild(s); }
 
@@ -7815,10 +7825,10 @@ function nrpTableHTML(rs){
     +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
     +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
     +'</tr></thead>';
-  var sign='<div class="nrp-sign">'
-    +'<div><div>مدير مديرية الأشغال</div>'+(_nrpSignImg?('<img src="'+_nrpSignImg+'" alt="التوقيع">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr1Val())+'</div></div>'
-    +'<div><div>مدير مديرية الطوارئ</div>'+(_nrpStampImg?('<img src="'+_nrpStampImg+'" alt="الختم">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr2Val())+'</div></div>'
-    +'</div>';
+  var sign='<table class="nrp-sign"><tr>'
+    +'<td><div class="nrp-sig-title">مدير مديرية الأشغال</div>'+(_nrpSignImg?('<img src="'+_nrpSignImg+'" alt="التوقيع">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr1Val())+'</div></td>'
+    +'<td><div class="nrp-sig-title">مدير مديرية الطوارئ</div>'+(_nrpStampImg?('<img src="'+_nrpStampImg+'" alt="الختم">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr2Val())+'</div></td>'
+    +'</tr></table>';
   var credit='<div class="nrp-credit">تقرير البلاغات ضمن مناطق الاختصاص — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ'+(ACTIVE_DIR.short?(' • '+esc(ACTIVE_DIR.short)):'')+'</div>';
   return '<div class="nrp"><table class="nrp-main">'+head+'<tbody>'+rows+'</tbody></table>'+sign+credit+'</div>';
 }
@@ -7886,19 +7896,73 @@ function nrpExportExcel(){
 }
 
 function nrpWordHTML(rs){
-  var style='@page{size:A4 landscape;margin:8mm}'
-    +'body{font-family:"Cairo",Tahoma,sans-serif;direction:rtl;font-size:8pt;color:#1a2030}'
-    +'table.nrp-main{border-collapse:collapse;width:100%}'
-    +'table.nrp-main td,table.nrp-main th{border:1px solid #555;padding:2pt 3pt;vertical-align:top;text-align:center}'
-    +'table.nrp-main th{background:#dbe4f3;color:#1a3a6b;text-align:center;font-weight:bold}'
-    +'table.nrp-main td.nrp-l{text-align:right}'
-    +'.nrp-photo{height:34pt}'
-    +'.nrp-sign{width:100%;margin-top:16pt}'
-    +'.nrp-sign>div{display:table-cell;width:50%;text-align:center;font-weight:bold}'
-    +'.nrp-sign img{height:56pt}'
-    +'.nrp-sign .nrp-line{border-bottom:1px solid #999;margin:20pt 18pt 4pt}'
-    +'.nrp-credit{text-align:center;font-size:8pt;color:#777;margin-top:10pt}';
-  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>'+style+'</style></head><body dir="rtl" style="direction:rtl">'+nrpTableHTML(rs)+'</body></html>';
+  var E=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+  var NL=function(s){return E(s).replace(/\n/g,'<br>').replace(/\r/g,'');};
+  var BS='border:1px solid #333333;padding:3px 4px;';
+  var HC=BS+'background:#dbe4f3;color:#1a3a6b;font-weight:bold;text-align:center;vertical-align:middle;';
+  var C=BS+'text-align:center;vertical-align:top;';
+  var L=BS+'text-align:right;vertical-align:top;';
+  var body=rs.map(function(r,i){
+    var v=nrpRow(r,i), ph=nrpPhotos(r);
+    var photoCell = ph.length?(E(ph.length+' صورة')+(ph[0]&&ph[0].data?('<br><img src="'+ph[0].data+'" width="70" height="52" alt="صورة البلاغ">'):'')):'';
+    return '<tr>'
+      +'<td style="'+C+'">'+(i+1)+'</td>'
+      +'<td style="'+C+'">'+E(v[1])+'</td>'
+      +'<td style="'+C+'">'+E(v[2])+'</td>'
+      +'<td style="'+C+'">'+E(v[3])+'</td>'
+      +'<td style="'+C+'">'+E(v[4])+'</td>'
+      +'<td style="'+L+'">'+NL(v[5])+'</td>'
+      +'<td style="'+L+'">'+NL(v[6])+'</td>'
+      +'<td style="'+C+'">'+E(v[7])+'</td>'
+      +'<td style="'+L+'">'+NL(v[8])+'</td>'
+      +'<td style="'+L+'">'+NL(v[9])+'</td>'
+      +'<td style="'+C+'">'+NL(v[10])+'</td>'
+      +'<td style="'+C+'">'+NL(v[11])+'</td>'
+      +'<td style="'+C+'">'+NL(v[12])+'</td>'
+      +'<td style="'+C+'">'+NL(v[13])+'</td>'
+      +'<td style="'+C+'">'+E(v[14])+'</td>'
+      +'<td style="'+C+'">'+NL(v[15])+'</td>'
+      +'<td style="'+C+'">'+NL(v[16])+'</td>'
+      +'<td style="'+C+'">'+E(v[17])+'</td>'
+      +'<td style="'+C+'">'+E(v[18])+'</td>'
+      +'<td style="'+C+'">'+E(v[19])+'</td>'
+      +'<td style="'+L+'">'+NL(v[20])+'</td>'
+      +'<td style="'+C+'">'+photoCell+'</td>'
+      +'</tr>';
+  }).join('')||('<tr><td colspan="22" style="'+BS+'text-align:center;color:#888888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>');
+  var head='<thead><tr>'
+    +'<th rowspan="2" style="'+HC+'">الرقم</th>'
+    +'<th rowspan="2" style="'+HC+'">اليوم</th>'
+    +'<th rowspan="2" style="'+HC+'">التاريخ</th>'
+    +'<th rowspan="2" style="'+HC+'">المحافظة</th>'
+    +'<th rowspan="2" style="'+HC+'">رقم البلاغ</th>'
+    +'<th rowspan="2" style="'+HC+'">نوع البلاغ</th>'
+    +'<th rowspan="2" style="'+HC+'">الإجراء المتخذ</th>'
+    +'<th rowspan="2" style="'+HC+'">رقم الفرقة</th>'
+    +'<th rowspan="2" style="'+HC+'">أسماء العاملين في الفرقة مع بيان الوظيفة (مهندس/ مراقب/ سائق/ سائق آليه...الخ)</th>'
+    +'<th colspan="3" style="'+HC+'">الآليات المستخدمة</th>'
+    +'<th colspan="3" style="'+HC+'">خلال أوقات العمل</th>'
+    +'<th colspan="3" style="'+HC+'">خارج أوقات العمل</th>'
+    +'<th rowspan="2" style="'+HC+'">حالة البلاغ (منتهي/ قيد الإجراء)</th>'
+    +'<th rowspan="2" style="'+HC+'">سرعة الاستجابة (خاص بمديرية الطوارئ)</th>'
+    +'<th rowspan="2" style="'+HC+'">إحداثيات الموقع</th>'
+    +'<th rowspan="2" style="'+HC+'">صور للبلاغ</th>'
+    +'</tr><tr>'
+    +'<th style="'+HC+'">نوع الآلية</th><th style="'+HC+'">(حكومي / مستأجر)</th><th style="'+HC+'">رقم الآلية</th>'
+    +'<th style="'+HC+'">وقت البدء</th><th style="'+HC+'">وقت الانتهاء</th><th style="'+HC+'">مدة العمل الكلي</th>'
+    +'<th style="'+HC+'">وقت البدء</th><th style="'+HC+'">وقت الانتهاء</th><th style="'+HC+'">مدة العمل الكلي</th>'
+    +'</tr></thead>';
+  var titleBlock='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:6pt"><tr><td style="text-align:center;font-weight:bold;font-size:14pt">وزارة الأشغال العامة والإسكان</td></tr><tr><td style="text-align:center;font-weight:bold;font-size:12pt">مديرية الطوارئ</td></tr><tr><td style="text-align:center;font-weight:bold;font-size:12pt">تقرير بلاغات المنخفضات ضمن مناطق الاختصاص</td></tr></table>';
+  var table='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:8pt">'+head+'<tbody>'+body+'</tbody></table>';
+  var sigLine='<div style="border-bottom:1px solid #999999;margin:20pt 18pt 4pt"></div>';
+  var sigTitle=function(t){return '<div style="font-weight:bold;color:#1a3a6b">'+t+'</div>';};
+  var sign='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:22pt"><tr>'
+    +'<td width="50%" style="text-align:center;vertical-align:top;padding:4pt 10pt">'+sigTitle('مدير مديرية الأشغال')+(_nrpSignImg?('<div><img src="'+_nrpSignImg+'" height="56" style="height:42pt" alt="التوقيع"></div>'):sigLine)+'<div>'+E(nrpMgr1Val())+'</div></td>'
+    +'<td width="50%" style="text-align:center;vertical-align:top;padding:4pt 10pt">'+sigTitle('مدير مديرية الطوارئ')+(_nrpStampImg?('<div><img src="'+_nrpStampImg+'" height="80" style="height:60pt" alt="الختم"></div>'):sigLine)+'<div>'+E(nrpMgr2Val())+'</div></td>'
+    +'</tr></table>';
+  var credit='<div style="text-align:center;font-size:8pt;color:#777777;margin-top:12pt;border-top:1px solid #cccccc;padding-top:4pt">تقرير البلاغات ضمن مناطق الاختصاص — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ'+(ACTIVE_DIR.short?(' • '+E(ACTIVE_DIR.short)):'')+'</div>';
+  var style='@page{size:29.7cm 21cm;mso-page-orientation:landscape;margin:0.6cm}body{font-family:"Cairo","Segoe UI",Tahoma,sans-serif;direction:rtl;font-size:8pt;color:#1a2030}table{border-collapse:collapse}td,th{vertical-align:top}';
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>'+style+'</style></head><body dir="rtl" style="direction:rtl">'+titleBlock+table+sign+credit+'</body></html>';
 }
 function nrpExportWord(){
   var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
@@ -7915,8 +7979,70 @@ function nrpExportWord(){
 function nrpPrint(){
   var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
   var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
-  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>@page{size:A4 landscape;margin:8mm 7mm}body{margin:0}'+NRP_CSS+'</style></head><body>'+nrpTableHTML(rs)+'<scr'+'ipt>setTimeout(function(){print()},600)<\/scr'+'ipt></body></html>');
+  w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>@page{size:A4 landscape;margin:8mm 7mm}body{margin:0}'+NRP_CSS+'</style></head><body>'+nrpTableHTML(rs)+'<scr'+'ipt>setTimeout(function(){print()},700)<\/scr'+'ipt></body></html>');
   w.document.close();
+}
+
+// --- تقرير رسمي بنفس تصميم صفحة «التقرير الرسمي» على بلاغات النموذج الحالية ---
+function nrpOfficialMeta(){
+  var all=!!(document.getElementById('nrpAllDates')||{}).checked;
+  var g=nrpGroupById(nrpGroup());
+  var saved={}; try{ saved=getLS(ORF_KEY,{}); }catch(e){}
+  return {prov:nrpProvVal(), dept:saved.dept||'', number:'',
+    mgr1:nrpMgr1Val(), mgr2:nrpMgr2Val(),
+    authors:(saved.authors&&saved.authors.length)?saved.authors:[],
+    all:all, from:nrpVal('nrpFrom'), to:nrpVal('nrpTo'), group:g?g.name:'',
+    stampImg:_nrpStampImg||'', signImg:'', signAuthImg:'', signMgr1Img:_nrpSignImg||'',
+    stampLabel:saved.stampLabel||'',
+    opts:{coords:true,staff:true,vehicles:true,speed:true,stamp:true,mgr1:true,mgr2:true}};
+}
+function nrpOfficialReports(){
+  var rs=nrpReports();
+  if(!rs.length){ showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning'); return null; }
+  return rs;
+}
+function nrpOfficialPrint(){
+  var rs=nrpOfficialReports(); if(!rs) return;
+  var html=buildOfficialReportHTML(rs,nrpOfficialMeta(),true);
+  var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
+  w.document.write(html); w.document.close();
+}
+function nrpOfficialWord(){
+  var rs=nrpOfficialReports(); if(!rs) return;
+  var meta=nrpOfficialMeta();
+  var fname='تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
+  function download(M,logo){
+    if(logo) _orfLogoData=logo;
+    var doc=orfWrapMHTML(buildOfficialReportWordHTML(rs,M));
+    try{
+      var blob=new Blob([doc],{type:'application/msword'});
+      var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+      showAlert('تم تنزيل التقرير الرسمي بصيغة Word.');
+    }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+  }
+  if(!orfShrinkSupported()){ download(meta,_orfLogoData); return; }
+  var logoP=(_orfLogoData?Promise.resolve(_orfLogoData):orfLoadLogo()).then(function(u){ return orfShrinkDataURL(u,67); });
+  Promise.all([
+    logoP,
+    orfShrinkDataURL(meta.stampImg,107),
+    orfShrinkDataURL(meta.signAuthImg,56),
+    orfShrinkDataURL(meta.signMgr1Img,56),
+    orfShrinkDataURL(meta.signImg,56)
+  ]).then(function(r){
+    var M=Object.assign({},meta,{stampImg:r[1],signAuthImg:r[2],signMgr1Img:r[3],signImg:r[4]});
+    download(M,r[0]);
+  });
+}
+function nrpOfficialExcel(){
+  var rs=nrpOfficialReports(); if(!rs) return;
+  var meta=nrpOfficialMeta();
+  var b=buildFinalWS(rs,{range:orfPeriodText(meta),title:'تقرير رسمي — البلاغات ضمن مناطق الاختصاص',group:meta.group});
+  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
+  XLSX.utils.book_append_sheet(wb,b.ws,'تقرير رسمي');
+  XLSX.writeFile(wb,'تقرير_رسمي_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showAlert('تم تصدير التقرير الرسمي بصيغة Excel.');
 }
 
 (function(){
