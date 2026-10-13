@@ -2795,7 +2795,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.41';
+    const APP_VERSION = '2026.10.09.42';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -7968,12 +7968,12 @@ function nrpDetailCellsHTML(r,i,O){
 }
 function nrpDetailHeadWord(O){
   var b=nrpDetailBlocks(O), r1='', r2='', n=0;
-  var H='style="border:1px solid #7c8db5;padding:2pt 3pt;background:#dbe4f3;color:#1a3a6b;text-align:center;font-weight:bold;font-size:7pt"';
+  var S=function(w){ return 'style="border:1px solid #7c8db5;padding:2pt 3pt;text-align:center;font-weight:bold;background:#dbe4f3;color:#1a3a6b;mso-shading:#dbe4f3'+(w?(';width:'+w):'')+'"'; };
   b.forEach(function(x){
-    if(x.type==='col'){ r1+='<th '+H+'>'+x.t+'</th>'; n++; return; }
+    if(x.type==='col'){ r1+='<th rowspan="2" '+S(x.w)+'>'+x.t+'</th>'; n++; return; }
     if(!x.on) return;
-    r1+='<th colspan="'+x.sub.length+'" '+H+'>'+x.label+'</th>';
-    x.sub.forEach(function(s){ r2+='<th '+H+'>'+s.t+'</th>'; n++; });
+    r1+='<th colspan="'+x.sub.length+'" '+S('')+'>'+x.label+'</th>';
+    x.sub.forEach(function(s){ r2+='<th '+S(s.w)+'>'+s.t+'</th>'; n++; });
   });
   return {head:'<tr>'+r1+'</tr><tr>'+r2+'</tr>', colCount:n};
 }
