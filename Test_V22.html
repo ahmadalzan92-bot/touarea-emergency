@@ -2795,7 +2795,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.42';
+    const APP_VERSION = '2026.10.09.43';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -6678,7 +6678,7 @@ function buildOfficialReportHTML(rs,meta,forPrint){
     +'.orf-table td.c{text-align:center}.orf-table td.l{text-align:right}.orf-table td.nowrap{white-space:nowrap}'
     +'.orf-table td.bad{background:#fde2e0;color:#b3261e;font-weight:700}'
     +'.orf-table td.muted{color:#888}'
-    +'.orf-photo{max-height:46px;max-width:64px;object-fit:cover;border-radius:3px;display:block;margin:2px auto}'
+    +'.orf-photo{width:64px;height:48px;object-fit:contain;background:#fff;border:1px solid #cdd8f0;border-radius:3px;display:block;margin:2px auto}'
     +'.orf-table tr{page-break-inside:avoid}.orf-table thead{display:table-header-group}'
     +'.orf-sign{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-top:26px}'
     +'.orf-sign-block{flex:1}'
@@ -7708,7 +7708,7 @@ var NRP_CSS=`
 .nrp table.nrp-main th{background:#dbe4f3;color:#1a3a6b;font-weight:700}
 .nrp table.nrp-main td.nrp-l{text-align:right}
 .nrp table.nrp-main tbody tr:nth-child(even){background:#f6f9fe}
-.nrp .nrp-photo{max-width:70px;max-height:52px;object-fit:contain;display:block;margin:2px auto 0}
+.nrp .nrp-photo{width:64px;height:48px;object-fit:contain;background:#fff;border:1px solid #cdd8f0;border-radius:3px;display:block;margin:2px auto 0}
 .nrp table.nrp-sign{width:100%;border-collapse:collapse;margin-top:28px;table-layout:fixed}
 .nrp table.nrp-sign td{width:50%;text-align:center;font-weight:700;vertical-align:top;border:0;padding:6px 10px}
 .nrp table.nrp-sign .nrp-sig-title{font-weight:700}
@@ -7845,6 +7845,38 @@ function nrpVehCols(r){
   return { types:veh.map(function(v){return v.type||'';}).join('\n'), owns:veh.map(function(v){return v.ownership||'';}).join('\n'), numbers:veh.map(function(v){return v.number==null?'':String(v.number);}).join('\n') };
 }
 function nrpPhotos(r){ return (r.attachments||[]).filter(function(a){return attachmentKind(a)==='image';}); }
+var _nrpThumbCache={};
+function nrpThumb(url){ return (url&&_nrpThumbCache[url])||url; }
+function orfThumbDataURL(url,W,H){
+  return new Promise(function(resolve){
+    if(!url||!/^data:image\//.test(url)||!orfShrinkSupported()){ resolve(url); return; }
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+        if(!iw||!ih){ resolve(url); return; }
+        var c=document.createElement('canvas'); c.width=W; c.height=H;
+        var g=c.getContext('2d'); g.fillStyle='#ffffff'; g.fillRect(0,0,W,H);
+        var s=Math.min(W/iw,H/ih), w=Math.round(iw*s), h=Math.round(ih*s);
+        g.drawImage(img,Math.round((W-w)/2),Math.round((H-h)/2),w,h);
+        resolve(c.toDataURL('image/jpeg',0.85));
+      }catch(e){ resolve(url); }
+    };
+    img.onerror=function(){ resolve(url); };
+    img.src=url;
+  });
+}
+function nrpPrepareThumbs(rs){
+  var jobs=[];
+  (rs||[]).forEach(function(r){
+    var ph=nrpPhotos(r); var p=ph[0];
+    if(p&&p.data&&!_nrpThumbCache[p.data]){
+      var d=p.data;
+      jobs.push(orfThumbDataURL(d,128,96).then(function(u){ _nrpThumbCache[d]=u; }));
+    }
+  });
+  return Promise.all(jobs);
+}
 function nrpRow(r,i){
   var d=nrpDuty(r), v=nrpVehCols(r), ph=nrpPhotos(r);
   var inT=nrpSegTxt(d.inSegs), outT=nrpSegTxt(d.outSegs);
@@ -7864,7 +7896,7 @@ function nrpDutyInfo(rs){ var inH=0,outH=0; rs.forEach(function(r){var d=nrpDuty
 function nrpTableHTML(rs){
   var rows=rs.map(function(r,i){
     var v=nrpRow(r,i), ph=nrpPhotos(r);
-    var photoCell = ph.length? (esc(ph.length+' صورة') + (ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+ph[0].data+'" alt="صورة البلاغ">'):'')) : '';
+    var photoCell = ph.length? (esc(ph.length+' صورة') + (ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')) : '';
     return '<tr>'
       +'<td>'+(i+1)+'</td>'
       +'<td>'+esc(v[1])+'</td>'
@@ -7946,7 +7978,7 @@ function nrpDetailHeadHTML(O){
 }
 function nrpDetailCellsHTML(r,i,O){
   var v=nrpRow(r,i), ph=nrpPhotos(r);
-  var photoCell= ph.length? (esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<img class="orf-photo" src="'+ph[0].data+'" alt="صورة البلاغ">'):'')) : '';
+  var photoCell= ph.length? (esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<img class="orf-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')) : '';
   var t='';
   t+='<td class="c">'+(i+1)+'</td>';
   t+='<td class="c">'+esc(v[1])+'</td>';
@@ -7979,7 +8011,7 @@ function nrpDetailHeadWord(O){
 }
 function nrpDetailCellsWord(r,i,O){
   var v=nrpRow(r,i), ph=nrpPhotos(r);
-  var photoCell= ph.length? (esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<br><img src="'+ph[0].data+'" height="40" style="height:30pt;max-width:60px" alt="صورة">'):'')) : '';
+  var photoCell= ph.length? (esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<br><img src="'+nrpThumb(ph[0].data)+'" width="64" height="48" style="width:64px;height:48px;border:1px solid #cdd8f0;background:#fff" alt="صورة">'):'')) : '';
   var Bd='border:1px solid #7c8db5', pad='padding:2pt 3pt;vertical-align:top;font-size:7pt';
   function td(txt,al){ return '<td style="'+Bd+';'+pad+';text-align:'+(al||'center')+'">'+txt+'</td>'; }
   var t='';
@@ -8243,10 +8275,10 @@ function nrpOrfOpen(){
   nrpOrfSet('nrpOrfStampLabel',saved.stampLabel!==undefined?saved.stampLabel:(orf.stampLabel||''));
   var aauth=(saved.authors&&saved.authors.length)?saved.authors:((orf.authors&&orf.authors.length)?orf.authors:[]);
   nrpOrfSet('nrpOrfAuthors',aauth.join('\n'));
-  _nrpOrfImgs.stamp=(saved.stamp!==undefined&&saved.stamp!=='')?saved.stamp:(orf.stamp||_nrpStampImg||'');
-  _nrpOrfImgs.sign=(saved.sign!==undefined&&saved.sign!=='')?saved.sign:(orf.sign||_nrpSignImg||'');
-  _nrpOrfImgs.signAuth=(saved.signAuth!==undefined&&saved.signAuth!=='')?saved.signAuth:(orf.signAuth||'');
-  _nrpOrfImgs.signMgr1=(saved.signMgr1!==undefined&&saved.signMgr1!=='')?saved.signMgr1:(orf.signMgr1||'');
+  _nrpOrfImgs.stamp=saved.stamp||'';
+  _nrpOrfImgs.sign=saved.sign||'';
+  _nrpOrfImgs.signAuth=saved.signAuth||'';
+  _nrpOrfImgs.signMgr1=saved.signMgr1||'';
   ['stamp','signAuth','signMgr1','sign'].forEach(function(k){ var el=document.getElementById(nrpOrfImgIds(k).file); if(el) el.value=''; nrpOrfPrev(k); });
   nrpOrfApplyOpts(saved.opts);
   nrpOrfInfo();
@@ -8270,9 +8302,11 @@ function nrpOfficialReports(){
 function nrpOfficialPrint(){
   var rs=nrpOfficialReports(); if(!rs) return;
   nrpOrfSave();
-  var html=buildOfficialReportHTML(rs,nrpOfficialMeta(),true);
+  var meta=nrpOfficialMeta();
   var w=window.open('','_blank'); if(!w) return showAlert('اسمح بالنوافذ المنبثقة لإتمام الطباعة.','warning');
-  w.document.write(html); w.document.close();
+  var go=function(){ try{ w.document.write(buildOfficialReportHTML(rs,meta,true)); w.document.close(); }catch(e){} };
+  if(!orfShrinkSupported()){ go(); return; }
+  nrpPrepareThumbs(rs).then(go).catch(go);
 }
 function nrpOfficialWord(){
   var rs=nrpOfficialReports(); if(!rs) return;
@@ -8297,7 +8331,8 @@ function nrpOfficialWord(){
     orfShrinkDataURL(meta.stampImg,107),
     orfShrinkDataURL(meta.signAuthImg,56),
     orfShrinkDataURL(meta.signMgr1Img,56),
-    orfShrinkDataURL(meta.signImg,56)
+    orfShrinkDataURL(meta.signImg,56),
+    nrpPrepareThumbs(rs)
   ]).then(function(r){
     var M=Object.assign({},meta,{stampImg:r[1],signAuthImg:r[2],signMgr1Img:r[3],signImg:r[4]});
     download(M,r[0]);
