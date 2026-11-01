@@ -2037,6 +2037,7 @@
             <span>قاعدة بيانات الكوادر</span>
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-sm btn-success" onclick="exportStaffToExcel()"><i class="fas fa-file-excel"></i> تصدير لإكسل</button>
+              <button type="button" class="btn btn-sm btn-warning" onclick="mergeDuplicateStaff()"><i class="fas fa-code-merge"></i> دمج الأسماء المتشابهة</button>
               <button type="button" class="btn btn-sm btn-danger" onclick="wipeStaff()"><i class="fas fa-trash"></i> حذف الكل</button>
             </div>
           </div>
@@ -2795,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.45';
+    const APP_VERSION = '2026.10.09.46';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3428,36 +3429,83 @@
 
     // الرقم الوظيفي بجانب اسم الكادر
     function staffTitleOf(x){ return normalizeArabic((x&&(x.title||x.role||x.job||''))||''); }
-    function staffNumber(s){
-      if(!s) return '';
-      if(s.number) return s.number;
-      const db = getLS(LS_KEYS.staff, []);
-      let f = (s.staffId!=null ? db.find(x=>x.id===s.staffId) : null) || db.find(x=>x.name===s.name);
-      if(!f && s.name){
-        // مطابقة فريدة فقط (ثنائي/ثلاثي لنفس الشخص) — تجنب الدمج عند وجود أكثر من مرشح
-        const cands = db.filter(x=>multiPrefixMatch(s.name,x.name)||multiPrefixMatch(x.name,s.name)||initialsMatch(s.name,x.name));
-        let pick = cands.length===1 ? cands[0] : null;
-        const rn = staffTitleOf(s);
-        // عند تعدد المرشحين: رجّح من يطابق المسمى الوظيفي (مثال: فراس / مراقب)
-        if(!pick && cands.length>1 && rn){
-          const byRole = cands.filter(x=>{ const t=staffTitleOf(x); return t && (t===rn || t.indexOf(rn)>-1 || rn.indexOf(t)>-1); });
-          if(byRole.length===1) pick = byRole[0];
-        }
-        // مطابقة الاسم الأول + المسمى عند اختلاف صيغة الاسم (فراس ← فراس أحمد / مراقب)
-        if(!pick && rn){
-          const fn = tokens(s.name)[0] || '';
-          if(fn){
-            const byFirstRole = db.filter(x=>{
-              const t=staffTitleOf(x);
-              return (tokens(x.name)[0]||'')===fn && t && (t===rn || t.indexOf(rn)>-1 || rn.indexOf(t)>-1);
-            });
-            if(byFirstRole.length===1) pick = byFirstRole[0];
-          }
-        }
-        if(pick) f = pick;
-      }
-      return f && f.number ? f.number : '';
+    // هل الاسمان لشخص واحد؟ (نفس الاسم الأول واسم العائلة، مع السماح باختلاف الاسم الأوسط)
+    function samePersonName(a,b){
+      const ta=tokens(a), tb=tokens(b);
+      if(!ta.length||!tb.length) return false;
+      if(ta[0]!==tb[0]) return false;
+      const sh=(ta.length<=tb.length)?ta:tb, lo=(ta.length<=tb.length)?tb:ta;
+      return sh.every(t=>lo.indexOf(t)>-1);
     }
+    // مجموعة سجلات الكادر التي تمثل الشخص نفسه + السجل المرجعي المعتمد
+    let _staffGroupCache=null,_staffGroupSig='';
+    function canonicalOfGroup(g){
+      const members=(g&&g.members)||[];
+      if(!members.length) return {id:null,name:'',title:'',number:''};
+      const counts={};
+      members.forEach(m=>{ const t=staffTitleOf(m); if(t) counts[t]=(counts[t]||0)+1; });
+      let bestT='',bestC=0;
+      Object.keys(counts).forEach(t=>{ if(counts[t]>bestC){bestC=counts[t];bestT=t;} });
+      const titled=members.filter(m=>staffTitleOf(m)===bestT);
+      const withNum=(titled.length?titled:members).filter(m=>String(m.number==null?'':m.number).trim());
+      const pool=withNum.length?withNum:(titled.length?titled:members);
+      const pick=pool.slice().sort((a,b)=>(tokens(b.name||'').length-tokens(a.name||'').length)||((a.id||0)-(b.id||0)))[0];
+      return {id:pick.id,name:pick.name||'',title:pick.title||'',number:(pick.number==null?'':String(pick.number))};
+    }
+    function staffGroups(){
+      const db=getLS(LS_KEYS.staff,[]);
+      let sig='';
+      try{ sig=db.map(x=>[x.id,x.number,x.name,x.title].join('~')).join('|'); }catch(e){ sig=''; }
+      if(_staffGroupCache && _staffGroupSig===sig) return _staffGroupCache;
+      const groups=[];
+      db.forEach(s=>{
+        let g=groups.find(x=>x.members.some(m=>samePersonName(m.name,s.name)));
+        if(!g){ g={members:[]}; groups.push(g); }
+        g.members.push(s);
+      });
+      groups.forEach(g=>{ g.canonical=canonicalOfGroup(g); });
+      _staffGroupCache=groups; _staffGroupSig=sig;
+      return groups;
+    }
+    function staffPickGroup(gs,s){
+      const rn=staffTitleOf(s);
+      if(rn){
+        const byRole=gs.filter(g=>g.members.some(m=>{ const t=staffTitleOf(m); return t && (t===rn||t.indexOf(rn)>-1||rn.indexOf(t)>-1); }));
+        if(byRole.length===1) return byRole[0];
+      }
+      return null;
+    }
+    function staffFindGroup(s){
+      if(!s) return null;
+      const groups=staffGroups();
+      if(s.staffId!=null){ const g=groups.find(g=>g.members.some(m=>m.id===s.staffId)); if(g) return g; }
+      if(s.number){
+        const gs=groups.filter(g=>g.members.some(m=>String(m.number==null?'':m.number).trim() && String(m.number).trim()===String(s.number).trim()));
+        if(gs.length===1) return gs[0];
+      }
+      const nm=normalizeArabic(s.name||'');
+      if(nm){
+        const exact=groups.filter(g=>g.members.some(m=>normalizeArabic(m.name||'')===nm));
+        if(exact.length===1) return exact[0];
+        if(exact.length>1) return staffPickGroup(exact,s);
+        const vars=groups.filter(g=>g.members.some(m=>samePersonName(m.name,s.name)));
+        if(vars.length===1) return vars[0];
+        if(vars.length>1) return staffPickGroup(vars,s);
+      }
+      const fn=tokens(s.name||'')[0]||'', rn=staffTitleOf(s);
+      if(fn&&rn){
+        const byFirst=groups.filter(g=>g.members.some(m=>(tokens(m.name||'')[0]||'')===fn));
+        if(byFirst.length){ const g=staffPickGroup(byFirst,s); if(g) return g; }
+      }
+      return null;
+    }
+    // الهوية المرجعية للشخص: الرقم والاسم والمسمى المعتمد (يُغلّب المسمى الأكثر تكراراً في القاعدة)
+    function staffCanonical(s){
+      const g=staffFindGroup(s);
+      if(g&&g.canonical){ return {number:g.canonical.number||'',name:g.canonical.name||'',title:g.canonical.title||''}; }
+      return {number:(s&&s.number!=null?String(s.number):'')||'',name:(s&&s.name)||'',title:(s&&(s.role||s.title))||''};
+    }
+    function staffNumber(s){ return staffCanonical(s).number; }
     function staffNameNo(s){ const n = staffNumber(s); return (s&&s.name||'') + (n ? ' ('+n+')' : ''); }
     function cmpNum(a,b){
       const sa=String(a==null?'':a).trim(), sb=String(b==null?'':b).trim();
@@ -3567,6 +3615,48 @@
         body.appendChild(tr);
       });
       populateSelectors();
+    }
+
+    // دمج سجلات الكادر المتشابهة (نفس الاسم الأول والعائلة) في سجل واحد مع توحيد البلاغات
+    function mergeDuplicateStaff(){
+      const db=getLS(LS_KEYS.staff,[]);
+      const groups=staffGroups().filter(g=>g.members.length>1);
+      if(!groups.length) return showAlert('لا توجد أسماء كادر متشابهة للدمج.','info');
+      const lines=groups.map(g=>{
+        const c=g.canonical;
+        return '• '+g.members.map(m=>(m.name||'')+' / '+(m.title||'')+' ('+(m.number||'')+')').join('  +  ')+'\n   ← المعتمد: '+c.name+' / '+c.title+' ('+c.number+')';
+      });
+      if(!confirm('سيتم دمج سجلات الكادر المتشابهة في سجل واحد، وتوحيد أسمائها وأرقامها في كل البلاغات:\n\n'+lines.join('\n\n')+'\n\nمتابعة؟')) return;
+      let removed=0, touched=0;
+      const reports=getLS(LS_KEYS.reports,[]);
+      reports.forEach(r=>{
+        const seen={};
+        (r.staff||[]).forEach(s=>{
+          const matches=groups.filter(g=>g.members.some(m=> m.id===s.staffId || (s.number && String(m.number==null?'':m.number).trim()===String(s.number).trim()) || samePersonName(m.name,s.name)));
+          if(matches.length!==1) return;
+          const c=matches[0].canonical;
+          if(s.name!==c.name||s.role!==c.title||String(s.number==null?'':s.number)!==String(c.number)||s.staffId!==c.id) touched++;
+          s.staffId=c.id; s.name=c.name; s.role=c.title; s.number=c.number;
+        });
+        r.staff=(r.staff||[]).filter(s=>{
+          const k=(s.staffId!=null)?('i'+s.staffId):('n'+normalizeArabic(s.name||''));
+          if(seen[k]) return false; seen[k]=1; return true;
+        });
+      });
+      setLS(LS_KEYS.reports,reports);
+      const keptDb=db.filter(s=>{
+        const g=groups.find(g=>g.members.some(m=>m.id===s.id));
+        if(!g) return true;
+        if(s.id===g.canonical.id) return true;
+        removed++; return false;
+      });
+      setLS(LS_KEYS.staff,keptDb);
+      try{ refreshStaffUI(); }catch(e){}
+      try{ refreshReportsUI(); }catch(e){}
+      try{ renderStaffHours(); }catch(e){}
+      try{ renderFinalReport(); }catch(e){}
+      try{ nrpRender(); }catch(e){}
+      showAlert('تم دمج '+groups.length+' مجموعة كادر: حُذف '+removed+' سجلاً مكرراً، ووُحّد '+touched+' إدخالاً في البلاغات.','success');
     }
 
     document.getElementById('staffForm').addEventListener('submit', (e)=>{
@@ -5661,7 +5751,12 @@ function staffHoursData(opts){
     return e;
   };
   // اسم القاعدة هو الاسم المرجعي (وزن أعلى) لضمان ثبات الاسم مع بقاء الأسماء الأخرى كـ"يظهر أيضاً"
-  getLS(LS_KEYS.staff,[]).forEach(s=>reg(s.number||'',s.name,s.title||'',1000));
+  const seenDb=new Set();
+  getLS(LS_KEYS.staff,[]).forEach(s=>{
+    const C=staffCanonical(s); const k=shKey(C.number,C.name);
+    if(seenDb.has(k)) return; seenDb.add(k);
+    reg(C.number,C.name,C.title,1000);
+  });
   const daily=[];
   reports.forEach(r=>{
     const h=hoursOf(r);
@@ -5669,11 +5764,12 @@ function staffHoursData(opts){
     const rdk=reportDayKind(r);
     const seenKeys=new Set();
     (r.staff||[]).forEach(s=>{
-      const num=staffNumber(s);
-      const key=shKey(num,s.name);
+      const C=staffCanonical(s);
+      const num=C.number;
+      const key=shKey(num,C.name);
       if(seenKeys.has(key)) return; // منع احتساب نفس الشخص مرتين في البلاغ نفسه بعد دمج الاسم بالرقم الوظيفي
       seenKeys.add(key);
-      const e=reg(num,s.name,s.role||'');
+      const e=reg(num,C.name,C.title);
       const office=(staffModeOf(s,r)==='مكتبي');
       if(office)e.office+=h;else e.field+=h;
       e.inH+=du.inH; e.outH+=du.outH;
@@ -5686,7 +5782,7 @@ function staffHoursData(opts){
         inH:du.inH,outH:du.outH,duty:du.state,dutyWhy:du.reason,kind:rdk.kind||'دوام',
         actions:r.actionsTaken||'',id:r.id};
       e.reports.push(item);
-      daily.push({key:e.key,date:item.date,number:num,name:s.name||'',role:e.roles[0]||'',
+      daily.push({key:e.key,date:item.date,number:num,name:C.name||'',role:e.roles[0]||'',
         mode:item.mode,hours:h,inH:du.inH,outH:du.outH,duty:du.state,kind:rdk.kind||'دوام',
         reportNumber:item.reportNumber,missionType:item.missionType,dayKind:r.dayKind||''});
     });
@@ -7888,7 +7984,17 @@ function nrpStatus(r){
   if(/قيد|جديد|تنفيذ/.test(s)) return 'قيد الإجراء';
   return s;
 }
-function nrpStaffText(r){ return (r.staff||[]).map(function(s){ return staffNameNo(s)+(s.role?(' / '+s.role):''); }).join('\n'); }
+function nrpStaffText(r){
+  var seen={}, out=[];
+  (r.staff||[]).forEach(function(s){
+    var C=staffCanonical(s);
+    var k=(C.number?('N:'+C.number):('M:'+normalizeArabic(C.name||'')));
+    if(seen[k]) return;
+    seen[k]=1;
+    out.push((C.name||'')+(C.number?(' ('+C.number+')'):'')+(C.title?(' / '+C.title):''));
+  });
+  return out.join('\n');
+}
 function nrpVehCols(r){
   var veh=reportVehicles(r);
   return { types:veh.map(function(v){return v.type||'';}).join('\n'), owns:veh.map(function(v){return v.ownership||'';}).join('\n'), numbers:veh.map(function(v){return v.number==null?'':String(v.number);}).join('\n') };
