@@ -2796,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.48';
+    const APP_VERSION = '2026.10.09.49';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3529,11 +3529,30 @@
 
     // الرقم الوظيفي بجانب اسم الكادر
     function staffTitleOf(x){ return normalizeArabic((x&&(x.title||x.role||x.job||''))||''); }
+    // اسم العائلة = آخر كلمة في الاسم بعد التنميط
+    function staffFamily(name){ const t=tokens(name||''); return t.length>=2 ? t[t.length-1] : ''; }
+    // تعارض بين الاسم المكتوب ومجموعة كادر في القاعدة (يمنع نسبة الشخص إلى غير اسمه)
+    function staffNameConflicts(name, g){
+      const t=tokens(name||'');
+      if(!t.length) return false;
+      const firsts=[], fams=[];
+      ((g&&g.members)||[]).forEach(m=>{
+        const mt=tokens(m.name||'');
+        if(!mt.length) return;
+        if(firsts.indexOf(mt[0])<0) firsts.push(mt[0]);
+        if(mt.length>=2){ const f=mt[mt.length-1]; if(fams.indexOf(f)<0) fams.push(f); }
+      });
+      if(firsts.length && firsts.indexOf(t[0])<0) return true;
+      if(t.length>=2 && fams.length && fams.indexOf(t[t.length-1])<0) return true;
+      return false;
+    }
     // هل الاسمان لشخص واحد؟ (نفس الاسم الأول واسم العائلة، مع السماح باختلاف الاسم الأوسط)
+    // لا نعتبر الاسم المجرد (كلمة واحدة) مطابقاً لأي اسم آخر حتى لا يُنسب لشخص خطأ
     function samePersonName(a,b){
       const ta=tokens(a), tb=tokens(b);
-      if(!ta.length||!tb.length) return false;
+      if(ta.length<2||tb.length<2) return false;
       if(ta[0]!==tb[0]) return false;
+      if(ta[ta.length-1]!==tb[tb.length-1]) return false;
       const sh=(ta.length<=tb.length)?ta:tb, lo=(ta.length<=tb.length)?tb:ta;
       return sh.every(t=>lo.indexOf(t)>-1);
     }
@@ -3578,32 +3597,40 @@
     function staffFindGroup(s){
       if(!s) return null;
       const groups=staffGroups();
-      if(s.staffId!=null){ const g=groups.find(g=>g.members.some(m=>m.id===s.staffId)); if(g) return g; }
+      const ok=g=>g && !staffNameConflicts(s.name,g);
+      if(s.staffId!=null){ const g=groups.find(g=>g.members.some(m=>m.id===s.staffId)); if(ok(g)) return g; }
       if(s.number){
         const gs=groups.filter(g=>g.members.some(m=>String(m.number==null?'':m.number).trim() && String(m.number).trim()===String(s.number).trim()));
-        if(gs.length===1) return gs[0];
+        if(gs.length===1 && ok(gs[0])) return gs[0];
       }
       const nm=normalizeArabic(s.name||'');
       if(nm){
         const exact=groups.filter(g=>g.members.some(m=>normalizeArabic(m.name||'')===nm));
         if(exact.length===1) return exact[0];
         if(exact.length>1) return staffPickGroup(exact,s);
+      }
+      // لا مطابقة بالاسم المتشابه إلا إذا كان الاسم يحتوي الاسم الأول واسم العائلة معاً
+      if(tokens(s.name||'').length>=2){
         const vars=groups.filter(g=>g.members.some(m=>samePersonName(m.name,s.name)));
         if(vars.length===1) return vars[0];
         if(vars.length>1) return staffPickGroup(vars,s);
-      }
-      const fn=tokens(s.name||'')[0]||'', rn=staffTitleOf(s);
-      if(fn&&rn){
-        const byFirst=groups.filter(g=>g.members.some(m=>(tokens(m.name||'')[0]||'')===fn));
-        if(byFirst.length){ const g=staffPickGroup(byFirst,s); if(g) return g; }
       }
       return null;
     }
     // الهوية المرجعية للشخص: الرقم والاسم والمسمى المعتمد (يُغلّب المسمى الأكثر تكراراً في القاعدة)
     function staffCanonical(s){
       const g=staffFindGroup(s);
-      if(g&&g.canonical){ return {number:g.canonical.number||'',name:g.canonical.name||'',title:g.canonical.title||''}; }
-      return {number:(s&&s.number!=null?String(s.number):'')||'',name:(s&&s.name)||'',title:(s&&(s.role||s.title))||''};
+      if(g&&g.canonical && !staffNameConflicts(s&&s.name,g)){
+        return {number:g.canonical.number||'',name:g.canonical.name||'',title:g.canonical.title||''};
+      }
+      const rawNum=(s&&s.number!=null?String(s.number):'').trim();
+      let num=rawNum;
+      if(num){
+        const gs=staffGroups().filter(g=>g.members.some(m=>String(m.number==null?'':m.number).trim()===num));
+        // الرقم مربوط في القاعدة باسم مختلف عن المكتوب: لا ننسبه لهذا الشخص
+        if(gs.length && gs.every(x=>staffNameConflicts(s&&s.name,x))) num='';
+      }
+      return {number:num,name:(s&&s.name)||'',title:(s&&(s.role||s.title))||''};
     }
     function staffNumber(s){ return staffCanonical(s).number; }
     function staffNameNo(s){ const n = staffNumber(s); return (s&&s.name||'') + (n ? ' ('+n+')' : ''); }
@@ -3653,16 +3680,21 @@
       const name = (nameInput ? nameInput.value : '').trim();
       if(!name) return;
       const db = getLS(LS_KEYS.staff, []);
-      let st = db.find(s => s.name === name);
+      const qn = normalizeArabic(name);
+      let st = db.find(s => normalizeArabic(s.name||'') === qn) || null;
       if(!st){
-        const cands = db.filter(s => multiPrefixMatch(name, s.name) || initialsMatch(name, s.name));
+        // لا نملأ الرقم تلقائياً من اسم مجرد أو باسم عائلة مختلف
+        const cands = db.filter(s => samePersonName(name, s.name));
         if(cands.length === 1) st = cands[0];
       }
-      if(!st) return;
-      const titleEl = document.getElementById('workTypeInput');
       const numEl = document.getElementById('staffNumberInput');
+      if(!st){
+        if(numEl && numEl.dataset.autofill === '1'){ numEl.value = ''; delete numEl.dataset.autofill; }
+        return;
+      }
+      const titleEl = document.getElementById('workTypeInput');
       if(titleEl && st.title) titleEl.value = st.title;
-      if(numEl && st.number) numEl.value = st.number;
+      if(numEl && st.number){ numEl.value = st.number; numEl.dataset.autofill = '1'; }
     }
 
     // ====== اقتراحات ديناميكية حسب ما يُكتب (حساسية عالية) ======
@@ -3732,7 +3764,7 @@
       reports.forEach(r=>{
         const seen={};
         (r.staff||[]).forEach(s=>{
-          const matches=groups.filter(g=>g.members.some(m=> m.id===s.staffId || (s.number && String(m.number==null?'':m.number).trim()===String(s.number).trim()) || samePersonName(m.name,s.name)));
+          const matches=groups.filter(g=>!staffNameConflicts(s.name,g) && g.members.some(m=> m.id===s.staffId || (s.number && String(m.number==null?'':m.number).trim()===String(s.number).trim()) || samePersonName(m.name,s.name)));
           if(matches.length!==1) return;
           const c=matches[0].canonical;
           if(s.name!==c.name||s.role!==c.title||String(s.number==null?'':s.number)!==String(c.number)||s.staffId!==c.id) touched++;
@@ -4413,10 +4445,15 @@
 
       if(!staffName) return showAlert('اكتب/اختر اسم الكادر.', 'warning');
 
-      // حاول مطابقة الكادر من القاعدة مع حساسية عالية
+      // مطابقة الكادر مع القاعدة بدقة: الاسم الكامل المطابق أو اسم يحتوي الاسم الأول واسم العائلة
       const staffDb = getLS(LS_KEYS.staff, []);
-      const st = staffDb.find(s => s.name === staffName) ||
-                 staffDb.find(s => multiPrefixMatch(staffName, s.name) || initialsMatch(staffName, s.name));
+      const qn = normalizeArabic(staffName);
+      let st = staffDb.find(s => normalizeArabic(s.name||'') === qn) || null;
+      if(!st){
+        // لا نربط اسماً مجرداً (كلمة واحدة) أو باسم عائلة مختلف
+        const cands = staffDb.filter(s => samePersonName(staffName, s.name));
+        if(cands.length === 1) st = cands[0];
+      }
       const staffId = st ? st.id : undefined;
       const finalRole = role || (st ? st.title : '');
 
@@ -4429,7 +4466,7 @@
       }
 
       // منع تكرار نفس الكادر بالاسم الظاهر
-      if(selectedStaffForMission.some(x=>x.name === staffName)){
+      if(selectedStaffForMission.some(x=>normalizeArabic(x.name||'')===qn || samePersonName(x.name, staffName))){
         return showAlert('تمت إضافة هذا الكادر مسبقاً.', 'danger');
       }
 
