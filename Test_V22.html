@@ -2796,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.46';
+    const APP_VERSION = '2026.10.09.47';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3115,6 +3115,9 @@
     }
     document.addEventListener('change', (ev)=>{
       if(ev.target && (ev.target.id==='startTime' || ev.target.id==='endTime')) calculateDuration();
+      if(ev.target && (ev.target.id==='startTime' || ev.target.id==='endTime' || ev.target.id==='reportDate')){
+        try{ if(typeof renderSelectedStaff==='function') renderSelectedStaff(); }catch(e){}
+      }
     });
 
     // ======================== الصفحة الرئيسية: غرف الطوارئ حسب المديريات ========================
@@ -4250,6 +4253,18 @@
     }
 
     // ======================== إضافة كادر إلى المهمة (يدعم الإدخال الحر) ========================
+    function currentFormOverlaps(){
+      try{
+        const data={reportDate:(document.getElementById('reportDate')||{}).value||'',
+          startTime:(document.getElementById('startTime')||{}).value||'',
+          endTime:(document.getElementById('endTime')||{}).value||'',
+          staff:selectedStaffForMission};
+        const list=reportOverlapCandidates(data, editingReportId);
+        const map={};
+        list.forEach(x=>{ (map[x.key]=map[x.key]||[]).push(x); });
+        return map;
+      }catch(e){ return {}; }
+    }
     function renderSelectedStaff(){
       const box = document.getElementById('selectedStaffList');
       box.innerHTML = '';
@@ -4258,6 +4273,7 @@
         return;
       }
       const rw = (document.getElementById('workMode')||{}).value || 'ميداني';
+      const ovm = currentFormOverlaps();
       selectedStaffForMission.forEach((x,idx)=>{
         if(!x.mode) x.mode = rw;
         const parts = [];
@@ -4265,12 +4281,15 @@
           parts.push([x.vehicleType, x.vehicleNumber].filter(Boolean).join(' / ')+(x.ownership?' ('+x.ownership+')':''));
         }
         if(x.movementOrder){ parts.push('أمر: '+x.movementOrder); }
+        const C=staffCanonical(x);
+        const conf=ovm[shKey(C.number,C.name)]||[];
+        const confTitle=conf.map(o=>'بلاغ '+(o.otherNumber||'—')+' ('+(o.otherTime||'')+') — '+o.minutes+' دقيقة').join(' | ');
 
         const div = document.createElement('div');
         div.className = 'staff-badge';
         const office = x.mode === 'مكتبي';
         div.innerHTML = `
-          <span><i class="fas fa-user"></i> ${staffNameNo(x)} — ${x.role || 'غير محدد'} ${parts.length ? ' — '+parts.join(' — ') : ''}</span>
+          <span><i class="fas fa-user"></i> ${staffNameNo(x)} — ${x.role || 'غير محدد'} ${parts.length ? ' — '+parts.join(' — ') : ''}${conf.length?` <span class="badge" style="background:#c0392b;color:#fff" title="${esc(confTitle)}"><i class="fas fa-triangle-exclamation"></i> تداخل أوقات ${conf.length}</span>`:''}</span>
           <select class="form-select form-select-sm staff-mode${office?' is-office':''}" onchange="setStaffMissionMode(${idx},this.value)" title="نوع عمل هذا الكادر">
             <option value="ميداني"${office?'':' selected'}>ميداني</option>
             <option value="مكتبي"${office?' selected':''}>مكتبي</option>
@@ -4458,6 +4477,7 @@ function compressImageFile(file){
       e.preventDefault();
       const data = collectIncidentForm();
       if(!data) return;
+      if(!confirmOverlapBeforeSave(data, editingReportId)) return;
       const reports = getLS(LS_KEYS.reports, []);
       if(editingReportId !== null){
         const idx = reports.findIndex(r=>r.id===editingReportId);
@@ -4999,7 +5019,98 @@ function hoursOf(r){
   if(s&&e){const a=+s[1]*60+ +s[2],b=+e[1]*60+ +e[2];if(b>a)return Math.round(b-a)/60;}
   return h;
 }
-// نوع العمل لكل شخص مشارك في البلاغ: يُعتمد على حقل الشخص، وإلا نوع عمل البلاغ العام
+// ======================== كشف تداخل أوقات الكادر بين البلاغات ========================
+function timeToMin(t){
+  const m=/^\s*(\d{1,2})\s*:\s*(\d{2})/.exec(String(t||''));
+  if(!m) return null;
+  const h=+m[1], mi=+m[2];
+  if(h>23||mi>59) return null;
+  return h*60+mi;
+}
+function fmtMinT(m){
+  m=((m%1440)+1440)%1440;
+  return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+}
+// فترة زمنية للبلاغ بالدقائق (تدعم عبور منتصف الليل والاشتقاق من المدة)
+function reportInterval(r){
+  if(!r) return null;
+  let s=timeToMin(r.startTime), e=timeToMin(r.endTime);
+  const dur=Math.round((hoursOf(r)||0)*60);
+  if(s==null&&e==null&&dur) return {s:0,e:dur,start:'',end:''};
+  if(s!=null&&e==null&&dur) e=s+dur;
+  if(s==null&&e!=null&&dur) s=e-dur;
+  if(s==null||e==null) return null;
+  if(e<=s) e+=1440;
+  return {s:s,e:e,start:r.startTime||fmtMinT(s),end:r.endTime||fmtMinT(e)};
+}
+// يحسب لكل شخص (برقمه المرجعي) البلاغات المتداخلة زمنياً في نفس اليوم
+function computeStaffOverlaps(reports){
+  const entries=new Map(), byKey={}, byReport={};
+  (reports||[]).forEach(r=>{
+    const iv=reportInterval(r);
+    if(!iv||!r.reportDate) return;
+    const seen={};
+    (r.staff||[]).forEach(st=>{
+      const C=staffCanonical(st);
+      const key=shKey(C.number,C.name);
+      if(!key||seen[key]) return;
+      seen[key]=1;
+      if(!entries.has(key)) entries.set(key,[]);
+      entries.get(key).push({id:r.id,reportNumber:r.reportNumber||'',date:r.reportDate||'',s:iv.s,e:iv.e,start:iv.start,end:iv.end});
+    });
+  });
+  entries.forEach((list,key)=>{
+    const rows=list.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))||a.s-b.s||a.e-b.e);
+    for(let i=0;i<rows.length;i++)for(let j=i+1;j<rows.length;j++){
+      const a=rows[i], b=rows[j];
+      if(a.date!==b.date) continue;
+      const st=Math.max(a.s,b.s), en=Math.min(a.e,b.e), mins=en-st;
+      if(mins<=0) continue;
+      const rec={date:a.date,minutes:mins,
+        a:{id:a.id,reportNumber:a.reportNumber,time:a.start+' - '+a.end},
+        b:{id:b.id,reportNumber:b.reportNumber,time:b.start+' - '+b.end}};
+      (byKey[key]=byKey[key]||[]).push(rec);
+      const add=(x,y)=>{
+        const rid=String(x.id);
+        byReport[rid]=byReport[rid]||{};
+        (byReport[rid][key]=byReport[rid][key]||[]).push({reportNumber:y.reportNumber,time:y.start+' - '+y.end,minutes:mins,date:a.date});
+      };
+      add(a,b); add(b,a);
+    }
+  });
+  return {byKey,byReport};
+}
+// تداخل بلاغ قيد الإدخال (أو تعديل) مع البلاغات المحفوظة — لإظهار التحذير قبل الحفظ
+function reportOverlapCandidates(data, excludeId){
+  const iv=reportInterval(data);
+  if(!iv||!data||!data.reportDate) return [];
+  const mine={};
+  (data.staff||[]).forEach(s=>{ const C=staffCanonical(s); mine[shKey(C.number,C.name)]=C; });
+  const out=[];
+  getLS(LS_KEYS.reports,[]).forEach(r=>{
+    if(excludeId!=null&&r.id===excludeId) return;
+    if((r.reportDate||'')!==(data.reportDate||'')) return;
+    const riv=reportInterval(r); if(!riv) return;
+    const st=Math.max(iv.s,riv.s), en=Math.min(iv.e,riv.e), mins=en-st;
+    if(mins<=0) return;
+    const seen={};
+    (r.staff||[]).forEach(s=>{
+      const C=staffCanonical(s); const k=shKey(C.number,C.name);
+      if(!mine[k]||seen[k]) return; seen[k]=1;
+      out.push({key:k,person:(mine[k].name||C.name||''),number:(mine[k].number||C.number||''),otherNumber:r.reportNumber||'',otherTime:(r.startTime||'')+' - '+(r.endTime||''),minutes:mins,date:data.reportDate});
+    });
+  });
+  return out;
+}
+function confirmOverlapBeforeSave(data, excludeId){
+  let list=[];
+  try{ list=reportOverlapCandidates(data,excludeId); }catch(e){ return true; }
+  if(!list.length) return true;
+  const txt='⚠️ تحذير: يوجد تداخل في أوقات الكادر مع بلاغات أخرى محفوظة في نفس اليوم:\n\n'+
+    list.map(x=>'• '+(x.person||'')+(x.number?' ('+x.number+')':'')+' — يتداخل مع البلاغ '+(x.otherNumber||'—')+' ('+(x.otherTime||'')+') — '+x.minutes+' دقيقة').join('\n')+
+    '\n\nهل تريد حفظ البلاغ رغم تداخل الأوقات؟';
+  try{ return confirm(txt); }catch(e){ return true; }
+}
 function staffModeOf(s,r){ return (s&&s.mode)||(r&&r.workMode)||'ميداني'; }
 // نوع العمل المعتمد للبلاغ ككل: مكتبي فقط إذا كان جميع المشاركين مكتبيين، وإلا ميداني
 function reportWorkMode(r){
@@ -5799,6 +5910,16 @@ function staffHoursData(opts){
       first:dates[0]||'',last:dates[dates.length-1]||'',reports:e.reports};
   });
   rows.sort((a,b)=>cmpNum(a.number,b.number)||String(a.name).localeCompare(String(b.name),'ar'));
+  // ربط تداخل الأوقات بكل شخص وبكل بلاغ في كشفه
+  const ovs=computeStaffOverlaps(reports);
+  rows.forEach(row=>{
+    row.overlaps=ovs.byKey[row.key]||[];
+    (row.reports||[]).forEach(rp=>{
+      const m=ovs.byReport[String(rp.id)];
+      rp.overlap=(m&&m[row.key])||[];
+    });
+  });
+  const allOverlaps=[]; Object.keys(ovs.byKey).forEach(k=>{ ovs.byKey[k].forEach(x=>{ allOverlaps.push(Object.assign({key:k},x)); }); });
   const byKey={}; rows.forEach(r=>byKey[r.key]=r);
   const dailyVisible=daily.filter(d=>byKey[d.key]);
   dailyVisible.forEach(d=>{ const rw=byKey[d.key]; d.name=rw.name||d.name; d.role=d.role||rw.role; delete d.key; });
@@ -5833,7 +5954,7 @@ function staffHoursData(opts){
       reports:g?g.reports:0,field:g?g.field:0,office:g?g.office:0,total:g?g.total:0,inH:g?g.inH:0,outH:g?g.outH:0});
   });
   days.sort((a,b)=>a.date.localeCompare(b.date));
-  return {rows,daily:dailyVisible,days,from,to,reportCount:reports.length};
+  return {rows,daily:dailyVisible,days,from,to,reportCount:reports.length,overlaps:allOverlaps,overlapCount:allOverlaps.length};
 }
   function shPeriodLabel(from,to){
   return (from||to)?`من ${from?fmtDMY(from):'…'} إلى ${to?fmtDMY(to):'…'}`:'كل الفترات';
@@ -5848,16 +5969,18 @@ function renderStaffHours(){
   const tin=roundH(D.rows.reduce((s,r)=>s+r.inH,0)),tout=roundH(D.rows.reduce((s,r)=>s+r.outH,0));
   const tfri=roundH(D.rows.reduce((s,r)=>s+r.friH,0)),tsat=roundH(D.rows.reduce((s,r)=>s+r.satH,0)),toff=roundH(D.rows.reduce((s,r)=>s+r.offH,0));
   const tcount=D.rows.reduce((s,r)=>s+r.count,0);
-  box.innerHTML=`
+  const tover=D.rows.reduce((s,r)=>s+((r.overlaps&&r.overlaps.length)||0),0);
+  const owarn=(D.overlaps&&D.overlaps.length)? `<div class="alert alert-warning py-2 mb-2 small" role="alert"><b><i class="fas fa-triangle-exclamation"></i> تحذير: يوجد تداخل في أوقات الكادر بين البلاغات (${D.overlaps.length})</b><ul class="mb-0 mt-1">${D.overlaps.slice(0,12).map(x=>{const rw=D.rows.filter(r=>r.key===x.key)[0];return `<li>${rw?esc(rw.name)+' ('+esc(rw.number||'—')+'): ':''}بلاغ ${esc(x.a.reportNumber||'—')} (${esc(x.a.time)}) يتداخل مع بلاغ ${esc(x.b.reportNumber||'—')} (${esc(x.b.time)}) — ${x.minutes} دقيقة</li>`;}).join('')}${D.overlaps.length>12?'<li>…</li>':''}</ul></div>` : '';
+  box.innerHTML=owarn+`
     <table class="table table-bordered table-striped table-sm align-middle">
       <thead class="table-light"><tr>
         <th>الرقم الوظيفي</th><th>الاسم</th><th>المسمى الوظيفي</th>
         <th>ساعات ميدانية</th><th>ساعات مكتبية</th><th>الإجمالي</th>
         <th>ضمن الدوام الرسمي</th><th>خارج الدوام الرسمي</th>
         <th>ساعات الجمعة</th><th>ساعات السبت</th><th>ساعات العطل الرسمية</th><th>تصنيف الدوام</th>
-        <th>عدد البلاغات</th><th>من تاريخ</th><th>إلى تاريخ</th>
+        <th>عدد البلاغات</th><th>تداخل الأوقات</th><th>من تاريخ</th><th>إلى تاريخ</th>
       </tr></thead>
-      <tbody>${D.rows.map(r=>`<tr>
+      <tbody>${D.rows.map(r=>`<tr${(r.overlaps&&r.overlaps.length)?' class="table-warning"':''}>
         <td><b>${esc(r.number||'—')}</b></td>
         <td>${esc(r.name)}${r.aliases.length?`<div class="small text-muted">(يظهر أيضاً: ${r.aliases.map(esc).join('، ')})</div>`:''}</td>
         <td>${esc(r.role||'')}</td>
@@ -5865,13 +5988,15 @@ function renderStaffHours(){
         <td>${fmtH(r.inH)}</td><td>${fmtH(r.outH)}</td>
         <td>${fmtH(r.friH)}</td><td>${fmtH(r.satH)}</td><td>${fmtH(r.offH)}</td>
         <td>${dutyBadge(r.duty)}<div class="small text-muted">${esc(r.duty)}</div></td>
-        <td>${r.count}</td><td>${r.first?fmtDMY(r.first):'—'}</td><td>${r.last?fmtDMY(r.last):'—'}</td>
-      </tr>`).join('')||'<tr><td colspan="15" class="text-center text-muted">لا توجد بيانات</td></tr>'}</tbody>
+        <td>${r.count}</td>
+        <td>${(r.overlaps&&r.overlaps.length)? `<span class="badge" style="background:#c0392b"><i class="fas fa-triangle-exclamation"></i> ${r.overlaps.length}</span>`:'—'}</td>
+        <td>${r.first?fmtDMY(r.first):'—'}</td><td>${r.last?fmtDMY(r.last):'—'}</td>
+      </tr>`).join('')||'<tr><td colspan="16" class="text-center text-muted">لا توجد بيانات</td></tr>'}</tbody>
       <tfoot><tr class="table-light fw-bold">
         <td colspan="3">الإجمالي</td><td>${fmtH(tf)}</td><td>${fmtH(tof)}</td><td>${fmtH(tt)}</td>
         <td>${fmtH(tin)}</td><td>${fmtH(tout)}</td>
         <td>${fmtH(tfri)}</td><td>${fmtH(tsat)}</td><td>${fmtH(toff)}</td><td></td>
-        <td>${tcount}</td><td colspan="2"></td>
+        <td>${tcount}</td><td>${tover||'—'}</td><td colspan="2"></td>
       </tr></tfoot>
     </table>`;
   renderStaffDays(D);
@@ -5982,12 +6107,13 @@ function renderStaffDetail(D){
       </div>
       <div class="card-body p-2">
         <div class="table-responsive"><table class="table table-sm table-bordered mb-0 align-middle">
-          <thead class="table-light"><tr><th>م</th><th>رقم البلاغ</th><th>التاريخ</th><th>اليوم</th><th>طبيعة المهمة</th><th>نوع العمل</th><th>الساعات</th><th>ضمن الدوام</th><th>خارج الدوام</th><th>تصنيف الدوام</th><th>الإجراء المتخذ</th></tr></thead>
-          <tbody>${e.reports.map((rp,i)=>`<tr>
+          <thead class="table-light"><tr><th>م</th><th>رقم البلاغ</th><th>التاريخ</th><th>اليوم</th><th>طبيعة المهمة</th><th>نوع العمل</th><th>الساعات</th><th>ضمن الدوام</th><th>خارج الدوام</th><th>تصنيف الدوام</th><th>تداخل الأوقات</th><th>الإجراء المتخذ</th></tr></thead>
+          <tbody>${e.reports.map((rp,i)=>`<tr${(rp.overlap&&rp.overlap.length)?' class="table-warning"':''}>
             <td>${i+1}</td><td>${esc(rp.reportNumber||'—')}</td><td>${rp.date?fmtDMY(rp.date):'—'}</td>
             <td>${esc(dayName(rp.date))}</td><td>${esc(rp.missionType)}</td><td>${esc(rp.mode)}</td>
             <td><b>${fmtH(rp.hours)}</b></td><td>${fmtH(rp.inH)}</td><td>${fmtH(rp.outH)}</td>
             <td>${dutyBadge(rp.duty)}<div class="small text-muted">${esc(rp.dutyWhy||'')}</div></td>
+            <td class="text-start small">${(rp.overlap&&rp.overlap.length)? rp.overlap.map(o=>`<span class="badge" style="background:#c0392b"><i class="fas fa-triangle-exclamation"></i> بلاغ ${esc(o.reportNumber||'—')}</span> <span class="small">${esc(o.time)} (${o.minutes} د)</span>`).join('<br>') : '<span class="text-muted">—</span>'}</td>
             <td class="text-start small">${esc(rp.actions)}</td>
           </tr>`).join('')}</tbody>
         </table></div>
@@ -6016,30 +6142,32 @@ function buildStaffHoursWB(opts){
   const wb=XLSX.utils.book_new();wb.Workbook={Views:[{RTL:true}]};
 
   // ===== ورقة 1: الكشف المفصل لكل موظف (مجمّع ومرتّب حسب الرقم الوظيفي) =====
-  const N=11,aoa=[],merges=[],bold=new Set(),bandFills=new Map();
+  const N=12,aoa=[],merges=[],bold=new Set(),bandFills=new Map();
   const blank=()=>Array(N).fill('');
   const put=(r,c,v)=>{while(aoa.length<=r)aoa.push(blank());aoa[r][c]=v;};
   const band=(r,txt,fill)=>{put(r,0,txt);merges.push({s:{r,c:0},e:{r,c:N-1}});bold.add(r);if(fill)bandFills.set(r,fill);};
   band(0,`كشف مفصل لساعات العمل لكل موظف — بتاريخ ${fmtDMY(today)} — الفترة: ${period} — الفرز حسب الرقم الوظيفي`);
-  ['رقم البلاغ','التاريخ','اليوم','طبيعة المهمة','نوع العمل','ساعات ميدانية','ساعات مكتبية','ساعات ضمن الدوام','ساعات خارج الدوام','تصنيف الدوام','الإجراء المتخذ'].forEach((t,c)=>put(1,c,t));
+  ['رقم البلاغ','التاريخ','اليوم','طبيعة المهمة','نوع العمل','ساعات ميدانية','ساعات مكتبية','ساعات ضمن الدوام','ساعات خارج الدوام','تصنيف الدوام','تداخل الأوقات','الإجراء المتخذ'].forEach((t,c)=>put(1,c,t));
   let r0=2,emps=0;
   D.rows.filter(e=>e.reports.length).forEach(e=>{
     emps++;
     const pal=SH_XL[(emps-1)%SH_XL.length];
     band(r0,`الرقم الوظيفي: ${e.number||'—'} — الاسم: ${e.name}${e.aliases.length?' — يظهر أيضاً: '+e.aliases.join(' ، '):''} — ${e.role||''}`,pal[1]);
-    band(r0+1,`الإجمالي: ${fmtH(e.total)} ساعة (ميداني ${fmtH(e.field)} / مكتبي ${fmtH(e.office)}) — عدد البلاغات: ${e.count} — من ${e.first?fmtDMY(e.first):'—'} إلى ${e.last?fmtDMY(e.last):'—'} — ضمن الدوام: ${fmtH(e.inH)} ساعة / خارج الدوام: ${fmtH(e.outH)} ساعة — التصنيف: ${e.duty}`,pal[0]);
+    band(r0+1,`الإجمالي: ${fmtH(e.total)} ساعة (ميداني ${fmtH(e.field)} / مكتبي ${fmtH(e.office)}) — عدد البلاغات: ${e.count} — من ${e.first?fmtDMY(e.first):'—'} إلى ${e.last?fmtDMY(e.last):'—'} — ضمن الدوام: ${fmtH(e.inH)} ساعة / خارج الدوام: ${fmtH(e.outH)} ساعة — التصنيف: ${e.duty}${(e.overlaps&&e.overlaps.length)?' — ⚠ تداخل أوقات: '+e.overlaps.length:''}`,pal[0]);
     let rr=r0+2;
     e.reports.forEach(rp=>{
       put(rr,0,rp.reportNumber||'');put(rr,1,rp.date?fmtDMY(rp.date):'');put(rr,2,dayName(rp.date));
       put(rr,3,rp.missionType);put(rr,4,rp.mode);put(rr,5,rp.field);put(rr,6,rp.office);
-      put(rr,7,rp.inH);put(rr,8,rp.outH);put(rr,9,rp.duty||'');put(rr,10,rp.actions);
+      put(rr,7,rp.inH);put(rr,8,rp.outH);put(rr,9,rp.duty||'');
+      put(rr,10,(rp.overlap&&rp.overlap.length)?'⚠ يتداخل مع بلاغ '+rp.overlap.map(o=>(o.reportNumber||'—')+' ('+o.time+') '+o.minutes+' د').join(' / '):'');
+      put(rr,11,rp.actions);
       rr++;
     });
     band(rr,`عدد ساعات ${e.name||e.number}: ${fmtH(e.total)} ساعة — ضمن الدوام: ${fmtH(e.inH)} / خارج الدوام: ${fmtH(e.outH)} (${e.duty})`,pal[0]);
     r0=rr+2;
   });
   const wsD=XLSX.utils.aoa_to_sheet(aoa);
-  wsD['!cols']=[14,13,12,34,12,14,14,14,14,24,42].map(w=>({wch:w}));
+  wsD['!cols']=[14,13,12,34,12,14,14,14,14,24,30,42].map(w=>({wch:w}));
   wsD['!merges']=merges;
   styleAOA(wsD,aoa,bold,1,bandFills);
   XLSX.utils.book_append_sheet(wb,wsD,'كشف مفصل لكل موظف');
@@ -6049,17 +6177,18 @@ function buildStaffHoursWB(opts){
   aoaS.push(['إحصائية ساعات العمل حسب الرقم الوظيفي']);
   aoaS.push(['تاريخ الإحصائية',fmtDMY(today),'الفترة',period,'عدد البلاغات',D.reportCount,'السجلات اليومية',D.daily.length]);
   aoaS.push([]);
-  aoaS.push(['الرقم الوظيفي','الاسم','المسمى الوظيفي','ساعات ميدانية','ساعات مكتبية','الإجمالي','ساعات ضمن الدوام','ساعات خارج الدوام','تصنيف الدوام','عدد البلاغات','من تاريخ','إلى تاريخ']);
+  aoaS.push(['الرقم الوظيفي','الاسم','المسمى الوظيفي','ساعات ميدانية','ساعات مكتبية','الإجمالي','ساعات ضمن الدوام','ساعات خارج الدوام','تصنيف الدوام','عدد البلاغات','تداخل الأوقات','من تاريخ','إلى تاريخ']);
   D.rows.forEach(r=>aoaS.push([numOrStr(r.number)||'',r.name+(r.aliases.length?' (يظهر أيضاً: '+r.aliases.join('، ')+')':''),r.role||'',
-    r.field,r.office,r.total,r.inH,r.outH,r.duty,r.count,r.first?fmtDMY(r.first):'',r.last?fmtDMY(r.last):'']));
+    r.field,r.office,r.total,r.inH,r.outH,r.duty,r.count,(r.overlaps&&r.overlaps.length)?('⚠ '+r.overlaps.length):'',r.first?fmtDMY(r.first):'',r.last?fmtDMY(r.last):'']));
   // المجاميع = مجموع الصفوف المعروضة حرفياً (لضمان تطابق سطر الإجمالي مع الأعمدة)
   const tf=roundH(D.rows.reduce((s,r)=>s+r.field,0)),tof=roundH(D.rows.reduce((s,r)=>s+r.office,0));
   const tAll=roundH(D.rows.reduce((s,r)=>s+r.total,0));
   const tin=roundH(D.rows.reduce((s,r)=>s+r.inH,0)),tout=roundH(D.rows.reduce((s,r)=>s+r.outH,0));
-  aoaS.push(['الإجمالي','','',tf,tof,tAll,tin,tout,'',D.rows.reduce((s,r)=>s+r.count,0),'','']);
+  const tover=D.rows.reduce((s,r)=>s+((r.overlaps&&r.overlaps.length)||0),0);
+  aoaS.push(['الإجمالي','','',tf,tof,tAll,tin,tout,'',D.rows.reduce((s,r)=>s+r.count,0),tover||'','','']);
   const ws=XLSX.utils.aoa_to_sheet(aoaS);
-  ws['!cols']=[14,34,20,14,14,12,16,17,24,12,13,13].map(w=>({wch:w}));
-  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:11}}];
+  ws['!cols']=[14,34,20,14,14,12,16,17,24,12,14,13,13].map(w=>({wch:w}));
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:12}}];
   styleAOA(ws,aoaS,new Set([aoaS.length-1]),3);
   XLSX.utils.book_append_sheet(wb,ws,'الإجمالي حسب الرقم الوظيفي');
 
@@ -6151,7 +6280,8 @@ function exportStaffHoursWord(){
       +' &nbsp;—&nbsp; <b>عدد البلاغات:</b> '+D.reportCount+' &nbsp;—&nbsp; <b>السجلات اليومية:</b> '+D.daily.length
       +' &nbsp;—&nbsp; <b>الفرز والفصل:</b> حسب الرقم الوظيفي<br><span style="font-size:7.5pt;color:'+MUT+'">'+E(DUTY_LABEL)+'</span>'
       +'</td></tr></table>';
-    const sumHead=['الرقم الوظيفي','الاسم','المسمى الوظيفي','ساعات ميدانية','ساعات مكتبية','الإجمالي','ضمن الدوام الرسمي','خارج الدوام الرسمي','ساعات الجمعة','ساعات السبت','ساعات العطل الرسمية','تصنيف الدوام','عدد البلاغات','من تاريخ','إلى تاريخ'];
+    const sumHead=['الرقم الوظيفي','الاسم','المسمى الوظيفي','ساعات ميدانية','ساعات مكتبية','الإجمالي','ضمن الدوام الرسمي','خارج الدوام الرسمي','ساعات الجمعة','ساعات السبت','ساعات العطل الرسمية','تصنيف الدوام','عدد البلاغات','تداخل الأوقات','من تاريخ','إلى تاريخ'];
+    const tover=D.rows.reduce(function(s,r){return s+((r.overlaps&&r.overlaps.length)||0);},0);
     const sum='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%"><thead><tr>'+sumHead.map(hc).join('')+'</tr></thead><tbody>'
       +D.rows.map(function(r,i){
         const bg=i%2?STRIPE:'#ffffff';
@@ -6163,14 +6293,16 @@ function exportStaffHoursWord(){
           +dc(fmtH(r.inH),'background:'+bg)+dc(fmtH(r.outH),'background:'+bg)
           +dc(fmtH(r.friH),'background:'+bg)+dc(fmtH(r.satH),'background:'+bg)+dc(fmtH(r.offH),'background:'+bg)
           +dc(badge(r.duty,dutyBg(r.duty),dutyFg(r.duty)),'background:'+bg)
-          +dc(r.count,'background:'+bg)+dc(r.first?fmtDMY(r.first):'—','background:'+bg)+dc(r.last?fmtDMY(r.last):'—','background:'+bg)
+          +dc(r.count,'background:'+bg)
+          +dc((r.overlaps&&r.overlaps.length)?badge('⚠ '+r.overlaps.length,'#c0392b'):'—','background:'+bg)
+          +dc(r.first?fmtDMY(r.first):'—','background:'+bg)+dc(r.last?fmtDMY(r.last):'—','background:'+bg)
           +'</tr>';
       }).join('')+'</tbody><tfoot><tr>'
       +'<td colspan="3" style="'+CB+';background:'+LIGHT+';font-weight:bold">الإجمالي</td>'
       +dc(fmtH(tf),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tof),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tt),'background:'+LIGHT+';font-weight:bold')
       +dc(fmtH(tin),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tout),'background:'+LIGHT+';font-weight:bold')
       +dc(fmtH(tfri),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tsat),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(toff),'background:'+LIGHT+';font-weight:bold')
-      +dc('','background:'+LIGHT)+dc(tcount,'background:'+LIGHT+';font-weight:bold')+'<td colspan="2" style="'+CB+';background:'+LIGHT+'"></td>'
+      +dc('','background:'+LIGHT)+dc(tcount,'background:'+LIGHT+';font-weight:bold')+dc(tover||'—','background:'+LIGHT+';font-weight:bold')+'<td colspan="2" style="'+CB+';background:'+LIGHT+'"></td>'
       +'</tr></tfoot></table>';
     const dHead=['التاريخ','اليوم','نوع اليوم','ساعات ميدانية','ساعات مكتبية','الإجمالي','ضمن الدوام','خارج الدوام','عدد البلاغات'];
     const tdt=roundH(D.days.reduce((s,g)=>roundH(s+g.total),0)),tdin=roundH(D.days.reduce((s,g)=>roundH(s+g.inH),0)),tdout=roundH(D.days.reduce((s,g)=>roundH(s+g.outH),0)),tdc=D.days.reduce((s,g)=>s+g.reports,0);
@@ -6187,7 +6319,7 @@ function exportStaffHoursWord(){
       +'<td style="'+CB+';background:'+LIGHT+'"></td><td style="'+CB+';background:'+LIGHT+'"></td>'+dc(fmtH(tdt),'background:'+LIGHT+';font-weight:bold')
       +dc(fmtH(tdin),'background:'+LIGHT+';font-weight:bold')+dc(fmtH(tdout),'background:'+LIGHT+';font-weight:bold')+dc(tdc,'background:'+LIGHT+';font-weight:bold')
       +'</tr></tfoot></table>';
-    const detHead=['م','رقم البلاغ','التاريخ','اليوم','طبيعة المهمة','نوع العمل','الساعات','ضمن الدوام','خارج الدوام','تصنيف الدوام','الإجراء المتخذ'];
+    const detHead=['م','رقم البلاغ','التاريخ','اليوم','طبيعة المهمة','نوع العمل','الساعات','ضمن الدوام','خارج الدوام','تصنيف الدوام','تداخل الأوقات','الإجراء المتخذ'];
     const detThead='<tr>'+detHead.map(hc).join('')+'</tr>';
     const detail=D.rows.filter(function(e){return e.reports.length;}).map(function(e,i){
       const p=SH_PALETTE[i%SH_PALETTE.length];
@@ -6202,6 +6334,7 @@ function exportStaffHoursWord(){
           +dc(E(dayName(rp.date)),'background:'+bg)+dc(E(rp.missionType),'background:'+bg)+dc(E(rp.mode),'background:'+bg)
           +dc('<b>'+fmtH(rp.hours)+'</b>','background:'+bg)+dc(fmtH(rp.inH),'background:'+bg)+dc(fmtH(rp.outH),'background:'+bg)
           +dc(badge(rp.duty,dutyBg(rp.duty),dutyFg(rp.duty)),'background:'+bg)
+          +dc((rp.overlap&&rp.overlap.length)?('<span style="color:#c0392b;font-weight:bold">⚠ بلاغ '+rp.overlap.map(function(o){return E(o.reportNumber||'—')+' ('+E(o.time)+') '+o.minutes+' د';}).join(' / ')+'</span>'):'—','background:'+bg)
           +dc(E(rp.actions),'background:'+bg+';text-align:right;font-size:7pt')
           +'</tr>';
       }).join('');
