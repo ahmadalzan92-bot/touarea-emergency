@@ -2795,7 +2795,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.43';
+    const APP_VERSION = '2026.10.09.44';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3401,6 +3401,7 @@
     function confirmDelete(msg){ return confirm(msg || 'تأكيد الحذف؟'); }
 
     // الرقم الوظيفي بجانب اسم الكادر
+    function staffTitleOf(x){ return normalizeArabic((x&&(x.title||x.role||x.job||''))||''); }
     function staffNumber(s){
       if(!s) return '';
       if(s.number) return s.number;
@@ -3409,7 +3410,25 @@
       if(!f && s.name){
         // مطابقة فريدة فقط (ثنائي/ثلاثي لنفس الشخص) — تجنب الدمج عند وجود أكثر من مرشح
         const cands = db.filter(x=>multiPrefixMatch(s.name,x.name)||multiPrefixMatch(x.name,s.name)||initialsMatch(s.name,x.name));
-        if(cands.length===1) f = cands[0];
+        let pick = cands.length===1 ? cands[0] : null;
+        const rn = staffTitleOf(s);
+        // عند تعدد المرشحين: رجّح من يطابق المسمى الوظيفي (مثال: فراس / مراقب)
+        if(!pick && cands.length>1 && rn){
+          const byRole = cands.filter(x=>{ const t=staffTitleOf(x); return t && (t===rn || t.indexOf(rn)>-1 || rn.indexOf(t)>-1); });
+          if(byRole.length===1) pick = byRole[0];
+        }
+        // مطابقة الاسم الأول + المسمى عند اختلاف صيغة الاسم (فراس ← فراس أحمد / مراقب)
+        if(!pick && rn){
+          const fn = tokens(s.name)[0] || '';
+          if(fn){
+            const byFirstRole = db.filter(x=>{
+              const t=staffTitleOf(x);
+              return (tokens(x.name)[0]||'')===fn && t && (t===rn || t.indexOf(rn)>-1 || rn.indexOf(t)>-1);
+            });
+            if(byFirstRole.length===1) pick = byFirstRole[0];
+          }
+        }
+        if(pick) f = pick;
       }
       return f && f.number ? f.number : '';
     }
@@ -5622,8 +5641,12 @@ function staffHoursData(opts){
     const h=hoursOf(r);
     const du=dutySplit(r);
     const rdk=reportDayKind(r);
+    const seenKeys=new Set();
     (r.staff||[]).forEach(s=>{
       const num=staffNumber(s);
+      const key=shKey(num,s.name);
+      if(seenKeys.has(key)) return; // منع احتساب نفس الشخص مرتين في البلاغ نفسه بعد دمج الاسم بالرقم الوظيفي
+      seenKeys.add(key);
       const e=reg(num,s.name,s.role||'');
       const office=(staffModeOf(s,r)==='مكتبي');
       if(office)e.office+=h;else e.field+=h;
