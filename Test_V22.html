@@ -2796,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.50';
+    const APP_VERSION = '2026.10.09.51';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3174,6 +3174,7 @@
         Object.keys(meta).forEach(k=>{ latest[k] = Math.max(latest[k]||0, meta[k]||0); });
         cloudMetaSet(latest);
         cloudSetOnline(true);
+        try{ repairReportStaffNumbers(); }catch(e){}
         if(changed){
           if(typeof refreshStaffUI === 'function'){ try{ refreshStaffUI(); }catch(e){} }
           if(typeof refreshVehiclesUI === 'function'){ try{ refreshVehiclesUI(); }catch(e){} }
@@ -3540,6 +3541,7 @@
       if(!getLS(LS_KEYS.reports,null)) setLS(LS_KEYS.reports, []);
       if(!getLS(LS_KEYS.workTypes,null)) setLS(LS_KEYS.workTypes, ["مدير","مراقب","عامل","سائق","سائق آلية","مهندس","ضابط ارتباط طوارئ"]);
       if(!getLS(LS_KEYS.vehicleTypes,null)) setLS(LS_KEYS.vehicleTypes, ["مركبة","جريدر","لودر","آلية","شاحنة","بك اب","ديانا"]);
+      try{ repairReportStaffNumbers(); }catch(e){}
       if(typeof refreshStaffUI==='function') refreshStaffUI();
       if(typeof refreshVehiclesUI==='function') refreshVehiclesUI();
       if(typeof refreshReportsUI==='function') refreshReportsUI();
@@ -3701,6 +3703,41 @@
       const gs=staffGroups().filter(g=>g.members.some(m=>String(m.number==null?'':m.number).trim()===num));
       if(gs.length && gs.every(g=>staffNameConflicts(x&&x.name,g))) return staffCanonical(x).number||'';
       return raw;
+    }
+    // إصلاح لمرة واحدة: أرقام وظيفية مخزّنة داخل البلاغات تنتمي لأشخاص آخرين
+    // (تُستبدل بالرقم الصحيح للاسم أو تُفرّغ، حفاظاً على دقة التقارير)
+    function repairReportStaffNumbers(){
+      const markKey = rawLSKey('staffNumFixV1');
+      try{ if(localStorage.getItem(markKey)==='1') return 0; }catch(e){ return 0; }
+      let list=[];
+      try{ list = JSON.parse(localStorage.getItem(rawLSKey(LS_KEYS.reports))||'[]'); }catch(e){ return 0; }
+      try{ localStorage.setItem(markKey,'1'); }catch(e){}
+      if(!Array.isArray(list) || !list.length) return 0;
+      const db = getLS(LS_KEYS.staff,[]);
+      let changed = 0;
+      list.forEach(r=>{
+        (r && Array.isArray(r.staff) ? r.staff : []).forEach(s=>{
+          if(!s) return;
+          const before = String(s.number==null?'':s.number).trim();
+          const after = String(staffNumberSanitized(s)||'').trim();
+          if(before !== after){ s.number = after; changed++; }
+          if(s.staffId!=null){
+            const rec = db.find(x=>String(x.id)===String(s.staffId));
+            if(rec){
+              const recNum = String(rec.number==null?'':rec.number).trim();
+              const curNum = String(s.number==null?'':s.number).trim();
+              if(recNum && recNum!==curNum) delete s.staffId;
+            }
+          }
+        });
+      });
+      if(changed){
+        try{ setLS(LS_KEYS.reports, list); }catch(e){}
+        try{ showAlert('✅ تم تصحيح '+changed+' رقم وظيفي خاطئ في البلاغات.','success'); }catch(e){}
+        try{ if(typeof refreshReportsUI === 'function') refreshReportsUI(); }catch(e){}
+        try{ scheduleAutoRefresh(); }catch(e){}
+      }
+      return changed;
     }
     function staffNameNo(s){ const n = staffNumber(s); return (s&&s.name||'') + (n ? ' ('+n+')' : ''); }
     function cmpNum(a,b){
