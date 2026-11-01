@@ -2796,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.51';
+    const APP_VERSION = '2026.10.09.53';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -6274,7 +6274,7 @@ function renderStaffHours(){
   const tfri=roundH(D.rows.reduce((s,r)=>s+r.friH,0)),tsat=roundH(D.rows.reduce((s,r)=>s+r.satH,0)),toff=roundH(D.rows.reduce((s,r)=>s+r.offH,0));
   const tcount=D.rows.reduce((s,r)=>s+r.count,0);
   const tover=D.rows.reduce((s,r)=>s+((r.overlaps&&r.overlaps.length)||0),0);
-  const owarn=(D.overlaps&&D.overlaps.length)? `<div class="alert alert-warning py-2 mb-2 small" role="alert"><b><i class="fas fa-triangle-exclamation"></i> تحذير: يوجد تداخل في أوقات الكادر بين البلاغات (${D.overlaps.length})</b><ul class="mb-0 mt-1">${D.overlaps.slice(0,12).map(x=>{const rw=D.rows.filter(r=>r.key===x.key)[0];return `<li>${rw?esc(rw.name)+' ('+esc(rw.number||'—')+'): ':''}بلاغ ${esc(x.a.reportNumber||'—')} (${esc(x.a.time)}) يتداخل مع بلاغ ${esc(x.b.reportNumber||'—')} (${esc(x.b.time)}) — ${x.minutes} دقيقة</li>`;}).join('')}${D.overlaps.length>12?'<li>…</li>':''}</ul></div>` : '';
+  const owarn=(D.overlaps&&D.overlaps.length)? `<div class="alert alert-warning py-2 mb-2 small" role="alert"><b><i class="fas fa-triangle-exclamation"></i> تنبيه — خطأ في تقدير الأوقات: يوجد تداخل في أوقات الكادر بين البلاغات (${D.overlaps.length})</b><div class="mt-1">الساعات محتسبة كما أُدخلت تماماً دون تعديل أو تأخير أو حذف. هذا التداخل خطأ في تسجيل الأوقات ويجب تصحيحه في البلاغ نفسه.</div><ul class="mb-0 mt-1">${D.overlaps.slice(0,12).map(x=>{const rw=D.rows.filter(r=>r.key===x.key)[0];return `<li>${rw?esc(rw.name)+' ('+esc(rw.number||'—')+'): ':''}بلاغ ${esc(x.a.reportNumber||'—')} (${esc(x.a.time)}) يتداخل مع بلاغ ${esc(x.b.reportNumber||'—')} (${esc(x.b.time)}) — ${x.minutes} دقيقة</li>`;}).join('')}${D.overlaps.length>12?'<li>…</li>':''}</ul></div>` : '';
   box.innerHTML=owarn+`
     <table class="table table-bordered table-striped table-sm align-middle">
       <thead class="table-light"><tr>
