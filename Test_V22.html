@@ -2796,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.49';
+    const APP_VERSION = '2026.10.09.50';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2972,7 +2972,8 @@
     const CLOUD_META_KEY = '__cloudSyncMeta';
     let _cloudOnline = false;
     let _cloudPollTimer = null;
-    function cloudAvailable(){ return typeof fetch === 'function'; }
+    // المزامنة السحابية تعمل فقط عند التشغيل من الموقع (http/https) — النسخ المحلية file:// لا تلمس بيانات الإنتاج
+    function cloudAvailable(){ return typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:$/.test(location.protocol||''); }
     function cloudMetaGet(){ try{ return JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}'); }catch(e){ return {}; } }
     function cloudMetaSet(meta){ try{ localStorage.setItem(CLOUD_META_KEY, JSON.stringify(meta)); }catch(e){} }
     // تعديلات محلية لم تُدفع للسحابة بعد — تمنع نسخة سحابية قديمة من إعادة البلاغ المحذوف
@@ -3038,6 +3039,49 @@
       cloudMarkPending(fullKey);
       cloudPushNow(fullKey, value).then(()=>cloudSetOnline(true)).catch(()=>cloudSetOnline(false));
     }
+    // دمج اتحادي لقوائم الكادر/البلاغات/الآليات بالمعرّف: لا تضيع أي سجلات موجودة في أحد الطرفين
+    function cloudMergeRowsById(localList, cloudList, localWins){
+      const map = new Map();
+      const putAll = arr => { (arr||[]).forEach(x=>{ if(x && x.id!=null) map.set(String(x.id), x); }); };
+      if(localWins){ putAll(cloudList); putAll(localList); } else { putAll(localList); putAll(cloudList); }
+      return [...map.values()].sort((a,b)=>(Number(a.id)||0)-(Number(b.id)||0));
+    }
+    // دمج الكادر: اتحاد بالمعرّف + إزالة تكرار الرقم الوظيفي (يبقى السجل السحابي المعتمد)
+    function cloudMergeStaffRows(localList, cloudList, localWins){
+      const merged = cloudMergeRowsById(localList, cloudList, localWins);
+      const cloudIds = new Set((cloudList||[]).map(x=>String(x.id)));
+      const chosen = new Map();
+      merged.forEach(s=>{
+        const n = String(s && s.number!=null ? s.number : '').trim();
+        if(!/^\d{3,}$/.test(n)) return;
+        const cur = chosen.get(n);
+        if(!cur){ chosen.set(n, s); return; }
+        const curCloud = cloudIds.has(String(cur.id)), sCloud = cloudIds.has(String(s.id));
+        if(sCloud && !curCloud) chosen.set(n, s);
+        else if(sCloud === curCloud && (Number(s.id)||0) > (Number(cur.id)||0)) chosen.set(n, s);
+      });
+      return merged.filter(s=>{
+        const n = String(s && s.number!=null ? s.number : '').trim();
+        if(!/^\d{3,}$/.test(n)) return true;
+        return chosen.get(n) === s;
+      });
+    }
+    // يُعيد نص القائمة المدموجة، أو null إذا لم تكن القيمة قائمة قابلة للدمج
+    function cloudMergeListValue(fullKey, raw, localRaw, cloudRaw, localWins){
+      let localList, cloudList;
+      try{ localList = JSON.parse(localRaw); }catch(e){ return null; }
+      try{ cloudList = JSON.parse(cloudRaw); }catch(e){ return null; }
+      if(!Array.isArray(localList) || !Array.isArray(cloudList)) return null;
+      if(raw===LS_KEYS.reports){
+        const dirKey = fullKey.split('__')[0];
+        const tombs = reportTombList(dirKey).map(String);
+        const merged = cloudMergeRowsById(localList, cloudList, localWins)
+          .filter(r=>r && r.id!=null && tombs.indexOf(String(r.id))<0);
+        return JSON.stringify(merged);
+      }
+      if(raw===LS_KEYS.staff) return JSON.stringify(cloudMergeStaffRows(localList, cloudList, localWins));
+      return JSON.stringify(cloudMergeRowsById(localList, cloudList, localWins));
+    }
     async function cloudPullAll(){
       if(!cloudAvailable()) return;
       try{
@@ -3077,6 +3121,22 @@
           const localRaw = localStorage.getItem(fullKey);
           const localTs = meta[fullKey] || 0;
           const cloudTs = rec.ts || 0;
+          // 2-أ) قوائم البلاغات والكادر والآليات: دمج اتحادي بدل الاستبدال.
+          // أي نسخة سحابية أقصر (جهاز آخر، نسخة قديمة، أو بيانات اختبار) لا تمحو ما هو موجود محلياً.
+          if(localRaw !== null && (raw===LS_KEYS.reports || raw===LS_KEYS.staff || raw===LS_KEYS.vehicles)){
+            const mergedText = cloudMergeListValue(fullKey, raw, localRaw, rec.value, pending[fullKey]!==undefined);
+            if(mergedText != null){
+              if(mergedText !== rec.value){
+                try{ await cloudPut(fullKey, mergedText); meta[fullKey]=Date.now(); cloudClearPending(fullKey); delete pending[fullKey]; }catch(e){}
+              }
+              if(mergedText !== localRaw){
+                try{ localStorage.setItem(fullKey, mergedText); }catch(e){}
+                meta[fullKey]=Date.now();
+                changed = true;
+              }
+              continue;
+            }
+          }
           if(localRaw !== null && pending[fullKey]!==undefined){
             try{ await cloudPut(fullKey, localRaw); cloudClearPending(fullKey); delete pending[fullKey]; meta[fullKey]=Date.now(); }catch(e){}
             continue;
@@ -3633,6 +3693,15 @@
       return {number:num,name:(s&&s.name)||'',title:(s&&(s.role||s.title))||''};
     }
     function staffNumber(s){ return staffCanonical(s).number; }
+    // رقم مخزّن ينتمي لشخص آخر → يُستبدل بالرقم الصحيح للاسم عند الحفظ (أو يُفرّغ)
+    function staffNumberSanitized(x){
+      const raw=(x&&x.number!=null)?x.number:'';
+      const num=String(raw).trim();
+      if(!num) return raw;
+      const gs=staffGroups().filter(g=>g.members.some(m=>String(m.number==null?'':m.number).trim()===num));
+      if(gs.length && gs.every(g=>staffNameConflicts(x&&x.name,g))) return staffCanonical(x).number||'';
+      return raw;
+    }
     function staffNameNo(s){ const n = staffNumber(s); return (s&&s.name||'') + (n ? ' ('+n+')' : ''); }
     function cmpNum(a,b){
       const sa=String(a==null?'':a).trim(), sb=String(b==null?'':b).trim();
@@ -4715,7 +4784,7 @@ function compressImageFile(file){
         reporter, reportMethod, reporterPhone,
         location: locationTxt, longitude, latitude,
         actionsTaken, reportStatus, teamNo, workMode, responseSpeed, dayKind,
-        staff: selectedStaffForMission.map(x=>Object.assign({},x,{mode:x.mode||workMode})),
+        staff: selectedStaffForMission.map(x=>{ const o=Object.assign({},x,{mode:x.mode||workMode}); o.number=staffNumberSanitized(x); return o; }),
         attachments: pendingAttachments.slice(),
         createdAt: new Date().toISOString()
       };
