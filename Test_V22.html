@@ -1681,7 +1681,8 @@
         <div class="card mt-4">
           <div class="card-header">
             <span>نموذج إبلاغ عن حادث</span>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="openCopyReportModal()" title="انسخ الكادر والمركبات وبيانات المهمة من بلاغ سابق"><i class="fas fa-copy"></i> نسخ بيانات بلاغ سابق</button>
               <button type="button" class="btn btn-sm btn-light" onclick="fillSampleData()"><i class="fas fa-flask"></i> بيانات نموذجية</button>
               <button type="button" class="btn btn-sm btn-warning" onclick="clearIncidentForm()"><i class="fas fa-eraser"></i> تفريغ الحقول</button>
             </div>
@@ -2635,7 +2636,24 @@
     <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button><button type="button" class="btn btn-success" onclick="pickConfirm()"><i class="fas fa-check"></i> اعتماد الموقع</button></div>
   </div></div></div>
 
-  <!-- نافذة تصدير تقرير من تاريخ إلى تاريخ مع مجموعات اختيارية -->
+  <!-- نافذة نسخ بيانات بلاغ سابق -->
+  <div class="modal fade" id="copyReportModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content" dir="rtl">
+    <div class="modal-header"><h5 class="modal-title"><i class="fas fa-copy"></i> نسخ بيانات بلاغ سابق</h5><button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="alert alert-info py-2 small mb-3"><i class="fas fa-circle-info"></i> <b>التاريخ والوقت ورقم البلاغ لا تُنسخ</b> — تبقى كما هي في النموذج الحالي، لتتمكن من تسجيل نفس الكادر في بلاغ آخر بوقت مختلف.</div>
+      <div class="row g-2 mb-3">
+        <div class="col-md-7"><input type="text" id="copyReportSearch" class="form-control" placeholder="ابحث برقم البلاغ أو التاريخ أو نوع المهمة أو الموقع…" oninput="renderCopyReportList()"></div>
+        <div class="col-md-5"><select id="copyReportMode" class="form-select">
+          <option value="all" selected>نسخ كل البيانات (الكادر + بيانات المهمة)</option>
+          <option value="staff">نسخ الكادر والمركبات فقط</option>
+        </select></div>
+      </div>
+      <div id="copyReportList" class="d-grid gap-2" style="max-height:52vh;overflow:auto"></div>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button></div>
+  </div></div></div>
+
+
   <div class="modal fade" id="exportRangeModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content" dir="rtl">
     <div class="modal-header"><h5 class="modal-title"><i class="fas fa-file-excel"></i> تصدير تقرير من تاريخ إلى تاريخ</h5><button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
@@ -2798,7 +2816,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.58';
+    const APP_VERSION = '2026.10.09.59';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -4789,6 +4807,89 @@ function compressImageFile(file){
       const sb=document.getElementById('reportSubmitBtn'); if(sb) sb.innerHTML = '<i class="fas fa-save"></i> حفظ البلاغ';
       const cb=document.getElementById('cancelEditReportBtn'); if(cb) cb.classList.add('d-none');
       clearIncidentForm();
+    }
+
+    // ======================== نسخ بيانات بلاغ سابق إلى النموذج الحالي ========================
+    // الغرض: عند تكرار نفس الكادر/المركبات في بلاغ آخر بوقت مختلف، يُنسخ الكادر والمركبات
+    // و(اختيارياً) بيانات المهمة، مع الإبقاء على التاريخ والوقت ورقم البلاغ الحالي كما هي.
+    function openCopyReportModal(){
+      const s=document.getElementById('copyReportSearch'); if(s) s.value='';
+      try{ renderCopyReportList(); }catch(e){}
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('copyReportModal')).show();
+    }
+
+    function copyReportSummary(r){
+      const staff=(r.staff||[]);
+      const veh=new Set(staff.map(x=>String((x&&x.vehicleNumber)||'').trim()).filter(Boolean));
+      return { staffCount: staff.length, vehCount: veh.size };
+    }
+
+    let _copyReportRows = [];
+
+    function renderCopyReportList(){
+      const box=document.getElementById('copyReportList'); if(!box) return;
+      const q=normalizeArabic(((document.getElementById('copyReportSearch')||{}).value||''));
+      const all=(getLS(LS_KEYS.reports,[])||[]).slice().sort((a,b)=>{
+        const d=String((b&&b.reportDate)||'').localeCompare(String((a&&a.reportDate)||''));
+        if(d) return d;
+        const n1=parseFloat(String((b&&b.reportNumber)||'').replace(/[^\d.]/g,''))||0;
+        const n2=parseFloat(String((a&&a.reportNumber)||'').replace(/[^\d.]/g,''))||0;
+        return n1-n2;
+      });
+      const list=q?all.filter(r=>normalizeArabic([
+        r.reportNumber, r.reportDate, r.missionType, r.location, r.reporter, r.reportDescription
+      ].join(' ')).includes(q)):all;
+      _copyReportRows=list;
+      if(!list.length){
+        box.innerHTML='<div class="text-muted text-center py-3">لا توجد بلاغات مطابقة.</div>';
+        return;
+      }
+      box.innerHTML=list.map((r,i)=>{
+        const s=copyReportSummary(r);
+        return `<div class="border rounded p-2 d-flex justify-content-between align-items-center gap-2 flex-wrap" style="background:#f8fafd">
+          <div class="small" style="flex:1 1 260px;min-width:0">
+            <div class="fw-bold">بلاغ ${esc(r.reportNumber||'—')} <span class="text-muted">· ${esc(r.reportDate||'')} · ${esc((r.startTime||'—')+' - '+(r.endTime||'—'))}</span></div>
+            <div class="text-muted">${esc(String(r.missionType||'—'))} — ${esc(String(r.location||'').slice(0,70))}</div>
+            <div class="text-muted"><i class="fas fa-users"></i> ${s.staffCount} كادر · <i class="fas fa-truck"></i> ${s.vehCount} مركبة${r.teamNo?(' · فرقة '+esc(r.teamNo)):''}</div>
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="copyReportIntoFormAt(${i})"><i class="fas fa-copy"></i> نسخ</button>
+        </div>`;
+      }).join('');
+    }
+
+    function copyReportIntoFormAt(index){
+      const r=_copyReportRows[index];
+      if(!r) return showAlert('تعذّر العثور على البلاغ المحدد.','warning');
+      const mode=((document.getElementById('copyReportMode')||{}).value||'all');
+      const cur=selectedStaffForMission.length;
+      if(cur && !window.confirm('سيتم استبدال الكادر المضاف حالياً ('+cur+' كادراً) بكادر البلاغ المنسوخ.\nهل تريد المتابعة؟')) return;
+
+      selectedStaffForMission=(r.staff||[]).map(x=>Object.assign({},x));
+      renderSelectedStaff();
+
+      if(mode==='all'){
+        setSelValue('weather', r.weather);
+        setSelValue('missionType', r.missionType);
+        setSelValue('dayKind', r.dayKind);
+        setSelValue('workMode', r.workMode);
+        setSelValue('reportStatus', r.status||r.reportStatus);
+        setSelValue('responseSpeed', r.responseSpeed);
+        const desc=document.getElementById('reportDescription'); if(desc) desc.value=r.reportDescription||'';
+        const rep=document.getElementById('reporter'); if(rep) rep.value=r.reporter||'';
+        const rm=document.getElementById('reportMethod'); if(rm) rm.value=r.reportMethod||'';
+        const rp=document.getElementById('reporterPhone'); if(rp) rp.value=r.reporterPhone||'';
+        const loc=document.getElementById('location'); if(loc) loc.value=r.location||'';
+        const lon=document.getElementById('longitude'); if(lon) lon.value=r.longitude||'';
+        const lat=document.getElementById('latitude'); if(lat) lat.value=r.latitude||'';
+        const tm=document.getElementById('teamNo'); if(tm) tm.value=r.teamNo||'';
+        const acts=String(r.actionsTaken||'').split('\n').map(x=>x.trim()).filter(Boolean);
+        try{ setActions(acts.length?acts:['']); }catch(e){}
+      }
+
+      const md=bootstrap.Modal.getInstance(document.getElementById('copyReportModal'));
+      if(md) md.hide();
+      showAlert('تم نسخ '+(mode==='all'?'بيانات البلاغ والكادر':'الكادر والمركبات')+
+        ' من البلاغ '+esc(r.reportNumber||'')+' ('+(r.staff||[]).length+' كادراً). عدّل التاريخ والوقت ثم اضغط «حفظ البلاغ».','success');
     }
 
     function collectIncidentForm(){
