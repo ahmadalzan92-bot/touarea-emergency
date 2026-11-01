@@ -2796,7 +2796,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.53';
+    const APP_VERSION = '2026.10.09.54';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -4827,14 +4827,64 @@ function compressImageFile(file){
       };
     }
 
+    // خريطة تداخل الأوقات لكل بلاغ (تُستخدم في سجل البلاغات)
+    function reportOverlapEntries(reports){
+      let map={};
+      try{ map=computeStaffOverlaps(reports||[]).byReport||{}; }catch(e){ map={}; }
+      return map;
+    }
+    function overlapEntriesOf(map,id){
+      const m=(map&&map[String(id)])||{}, out=[];
+      Object.keys(m).forEach(k=>{ (m[k]||[]).forEach(x=>out.push(Object.assign({personKey:k},x))); });
+      return out;
+    }
+    function toggleReportOverlap(btn){
+      const tr=(btn&&btn.closest)?btn.closest('tr'):null; if(!tr) return;
+      const nx=tr.nextElementSibling;
+      if(!nx||!nx.classList.contains('report-ov-row')) return;
+      const hidden=nx.classList.toggle('d-none');
+      btn.setAttribute('aria-expanded', hidden?'false':'true');
+      const c=btn.querySelector('.ov-caret');
+      if(c) c.className='fas ov-caret '+(hidden?'fa-chevron-down':'fa-chevron-up');
+    }
+    function overlapRowHtml(r,list){
+      const byPerson=new Map();
+      (list||[]).forEach(x=>{
+        const p=x.person||{};
+        const k=p.number?('N:'+p.number):('M:'+normalizeArabic(p.name||''));
+        if(!byPerson.has(k)) byPerson.set(k,{person:p,items:[]});
+        byPerson.get(k).items.push(x);
+      });
+      let lis='';
+      byPerson.forEach(g=>{
+        const who=(g.person.name||'')+(g.person.number?' ('+g.person.number+')':'');
+        const items=g.items.slice().sort((a,b)=>String(a.reportNumber).localeCompare(String(b.reportNumber),'ar'));
+        lis+='<li class="mb-1"><b>'+esc(who||'كادر')+'</b>: '+items.map(x=>
+          'يتداخل مع بلاغ <b>'+esc(x.reportNumber||'—')+'</b> ('+esc(x.time||'')+') — <b>'+x.minutes+'</b> دقيقة '+
+          '<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1 ms-1" onclick="previewReport('+x.id+')" title="عرض البلاغ المتداخل"><i class="fas fa-eye"></i> عرض</button> '+
+          '<button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" onclick="editReport('+x.id+')" title="تعديل البلاغ المتداخل"><i class="fas fa-pen"></i> تعديل</button>'
+        ).join(' <span class="text-muted">|</span> ')+'</li>';
+      });
+      return '<td colspan="7" class="bg-warning-subtle small">'+
+        '<div class="mb-1"><b><i class="fas fa-triangle-exclamation text-warning"></i> تداخل في وقت البلاغ '+esc(r.reportNumber||'—')+' ('+esc((r.startTime||'—')+' - '+(r.endTime||'—'))+'):</b></div>'+
+        '<ul class="mb-0 ps-3">'+lis+'</ul>'+
+        '<div class="text-muted mt-1">التداخل خطأ في تسجيل الأوقات — الساعات محتسبة كما أُدخلت دون تعديل أو حذف.</div></td>';
+    }
+
     function refreshReportsUI(){
       const reports = getLS(LS_KEYS.reports, []);
       const body = document.getElementById('reportsTableBody');
+      if(!body) return;
+      const ovMap = reportOverlapEntries(reports);
       body.innerHTML = '';
       reports.slice().reverse().forEach(r=>{
+        const ovList = overlapEntriesOf(ovMap, r.id);
+        const otherIds = {};
+        ovList.forEach(x=>{ otherIds[String(x.id)]=1; });
+        const otherCount = Object.keys(otherIds).length;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${esc(r.reportNumber)}</td>
+          <td>${esc(r.reportNumber)}${ovList.length?` <button type="button" class="btn btn-sm btn-warning py-0 px-1 ov-badge" onclick="toggleReportOverlap(this)" aria-expanded="false" title="يوجد تداخل في الوقت — اضغط لعرض البلاغات المتداخلة"><i class="fas fa-triangle-exclamation"></i> تداخل ${otherCount} <i class="fas fa-chevron-down ov-caret"></i></button>`:''}</td>
           <td>${r.reportDate}</td>
           <td>${r.duration||''}</td>
           <td>${esc(r.missionType)}</td>
@@ -4848,6 +4898,12 @@ function compressImageFile(file){
           </td>
         `;
         body.appendChild(tr);
+        if(ovList.length){
+          const det = document.createElement('tr');
+          det.className = 'report-ov-row d-none';
+          det.innerHTML = overlapRowHtml(r, ovList);
+          body.appendChild(det);
+        }
       });
       loadAnalysisData();
     }
@@ -5360,7 +5416,7 @@ function computeStaffOverlaps(reports){
       if(!key||seen[key]) return;
       seen[key]=1;
       if(!entries.has(key)) entries.set(key,[]);
-      entries.get(key).push({id:r.id,reportNumber:r.reportNumber||'',date:r.reportDate||'',s:iv.s,e:iv.e,start:iv.start,end:iv.end});
+      entries.get(key).push({id:r.id,reportNumber:r.reportNumber||'',date:r.reportDate||'',s:iv.s,e:iv.e,start:iv.start,end:iv.end,name:C.name||'',number:C.number||''});
     });
   });
   entries.forEach((list,key)=>{
@@ -5377,7 +5433,7 @@ function computeStaffOverlaps(reports){
       const add=(x,y)=>{
         const rid=String(x.id);
         byReport[rid]=byReport[rid]||{};
-        (byReport[rid][key]=byReport[rid][key]||[]).push({reportNumber:y.reportNumber,time:y.start+' - '+y.end,minutes:mins,date:a.date});
+        (byReport[rid][key]=byReport[rid][key]||[]).push({id:y.id,reportNumber:y.reportNumber,time:y.start+' - '+y.end,minutes:mins,date:a.date,person:{name:y.name||'',number:y.number||''}});
       };
       add(a,b); add(b,a);
     }
@@ -5608,7 +5664,7 @@ document.querySelector('#analysis .card-body').insertAdjacentHTML('afterbegin','
 document.querySelector('#history .card-body').insertAdjacentHTML('afterbegin','<input type="search" id="reportSearch" class="form-control mb-3" placeholder="بحث في السجل: رقم البلاغ، النوع، الموقع...">');
 document.getElementById('reportSearch').addEventListener('input',e=>{
   const q=normalizeArabic(e.target.value);
-  document.querySelectorAll('#reportsTableBody tr').forEach(tr=>{tr.style.display=normalizeArabic(tr.textContent).includes(q)?'':'none';});
+  document.querySelectorAll('#reportsTableBody tr:not(.report-ov-row)').forEach(tr=>{const show=normalizeArabic(tr.textContent).includes(q);tr.style.display=show?'':'none';const nx=tr.nextElementSibling;if(nx&&nx.classList.contains('report-ov-row')){if(show){if(nx.dataset.searchHide==='1'){nx.classList.remove('d-none');delete nx.dataset.searchHide;}}else if(!nx.classList.contains('d-none')){nx.classList.add('d-none');nx.dataset.searchHide='1';}}});
 });
 (function(){const S=frSettings();['prov','mgr1','mgr2'].forEach(k=>{document.getElementById('fr_'+k).value=S[k];});})();
 document.getElementById('final-tab').addEventListener('shown.bs.tab',renderFinalReport);
