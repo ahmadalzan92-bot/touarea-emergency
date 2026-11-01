@@ -2798,7 +2798,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.57';
+    const APP_VERSION = '2026.10.09.58';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2886,7 +2886,8 @@
       workTypes: 'workTypesDb',
       vehicleTypes: 'vehicleTypesDb',
       holidays: 'officialHolidays',
-      groups: 'incidentGroups'
+      groups: 'incidentGroups',
+      overlapBackup: 'overlapTimeBackupV1'
     };
 
     function rawLSKey(key){
@@ -5476,14 +5477,15 @@ function computeStaffOverlaps(reports){
 }
 // ===== إزالة التداخل بتعديل الأوقات فقط: لا يُحذف أي بلاغ ولا أي كادر =====
 const OVERLAP_TIME_BACKUP_KEY='overlapTimeBackupV1';
+// نسخة احتياطية متزامنة سحابياً لتعمل «تراجع عن تعديل الأوقات» من أي جهاز
 function overlapTimeBackupGet(){
-  try{ const t=localStorage.getItem(rawLSKey(OVERLAP_TIME_BACKUP_KEY)); return t?JSON.parse(t):null; }catch(e){ return null; }
+  let b=null;
+  try{ b=getLS(LS_KEYS.overlapBackup,null); }catch(e){ b=null; }
+  if(!b || b.clearedAt || !b.times || !b.times.length) return null;
+  return b;
 }
 function overlapTimeBackupSet(v){
-  try{
-    if(v) localStorage.setItem(rawLSKey(OVERLAP_TIME_BACKUP_KEY), JSON.stringify(v));
-    else localStorage.removeItem(rawLSKey(OVERLAP_TIME_BACKUP_KEY));
-  }catch(e){}
+  try{ setLS(LS_KEYS.overlapBackup, v || {clearedAt:Date.now()}); }catch(e){}
 }
 function fmtDurMin(m){
   m=Math.max(0,Math.round(m));
