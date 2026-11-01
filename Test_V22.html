@@ -2816,7 +2816,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.62';
+    const APP_VERSION = '2026.10.09.63';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -6489,6 +6489,8 @@ function dutyHM(s){const m=/^\s*(\d{1,2})\s*:\s*(\d{2})/.exec(s||'');return m?(+
 function dutySplit(r){
   const total0=hoursOf(r)||0, ds=r.reportDate||'';
   let s=dutyHM(r.startTime), e=dutyHM(r.endTime);
+  // البلاغات الليلية التي تتجاوز منتصف الليل (نهاية <= بداية): إضافة 24 ساعة
+  if(s!==null && e!==null && e<=s) e+=24*60;
   const timesOK=!(s===null||e===null||e<=s);
   if(!timesOK){ s=DUTY_START; e=DUTY_START+(total0>0?total0*60:0); }
   const total=(total0>0?total0*60:(timesOK?(e-s):0));
@@ -8779,6 +8781,7 @@ function nrpHM(s){ var m=/^\s*(\d{1,2})\s*:\s*(\d{2})/.exec(s||''); return m?((+
 function nrpSumH(segs){ return roundH(segs.reduce(function(a,g){return a+(g.e-g.s);},0)/60); }
 function nrpDuty(r){
   var s=nrpHM(r.startTime), e=nrpHM(r.endTime);
+  if(s!==null && e!==null && e<=s) e+=24*60;
   var kd=(typeof reportDayKind==='function')?reportDayKind(r):{holiday:false};
   if(s===null||e===null||e<=s){ var d=dutySplit(r); return {inH:d.inH,outH:d.outH,inSegs:[],outSegs:[]}; }
   if(kd.holiday) return {inH:0,outH:roundH((e-s)/60),inSegs:[],outSegs:[{s:s,e:e}]};
