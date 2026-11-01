@@ -2795,7 +2795,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.44';
+    const APP_VERSION = '2026.10.09.45';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2889,10 +2889,35 @@
       return (key==='opendirKey'||key==='opendirPasswordsV2') ? key : (ACTIVE_DIR&&ACTIVE_DIR.key||'madaba')+'__'+key;
     }
     function getLS(key, fallback){ try{ return JSON.parse(localStorage.getItem(rawLSKey(key)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
-    function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); }
+    const AUTO_REFRESH_KEYS = ['staffMembers','vehiclesDb','incidentReports','workTypesDb','vehicleTypesDb','officialHolidays','incidentGroups'];
+    let _autoRefreshTimer = null, _autoRefreshBusy = false;
+    function isAutoRefreshKey(k){ const s=String(k||''); const raw=s.indexOf('__')>-1?s.split('__').pop():s; return AUTO_REFRESH_KEYS.indexOf(raw)>-1; }
+    function scheduleAutoRefresh(){
+      if(_autoRefreshBusy) return;
+      try{ if(_autoRefreshTimer) clearTimeout(_autoRefreshTimer); }catch(e){}
+      _autoRefreshTimer = setTimeout(function(){
+        _autoRefreshTimer = null;
+        if(_autoRefreshBusy) return;
+        _autoRefreshBusy = true;
+        try{
+          if(typeof refreshReportsUI==='function'){ try{ refreshReportsUI(); }catch(e){} }
+          if(typeof refreshStaffUI==='function'){ try{ refreshStaffUI(); }catch(e){} }
+          if(typeof refreshVehiclesUI==='function'){ try{ refreshVehiclesUI(); }catch(e){} }
+          if(typeof populateSelectors==='function'){ try{ populateSelectors(); }catch(e){} }
+          if(typeof renderKpis==='function'){ try{ renderKpis(); }catch(e){} }
+          if(typeof renderFinalReport==='function'){ try{ renderFinalReport(); }catch(e){} }
+          if(typeof renderStaffHours==='function'){ try{ renderStaffHours(); }catch(e){} }
+          if(typeof renderCentral==='function' && document.getElementById('centralList')){ try{ renderCentral(); }catch(e){} }
+          if(typeof renderCentralGroups==='function'){ try{ renderCentralGroups(); }catch(e){} }
+          if(typeof nrpRender==='function' && document.getElementById('nrpPreview')){ try{ nrpRender(); }catch(e){} }
+        }finally{ _autoRefreshBusy = false; }
+      }, 350);
+    }
+    try{ window.addEventListener('storage', function(e){ if(e && e.key && isAutoRefreshKey(e.key)) scheduleAutoRefresh(); }); }catch(e){}
+    function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
     function lsKeyFor(key, dirKey){ return (key==='opendirKey'||key==='opendirPasswordsV2') ? key : dirKey+'__'+key; }
     function getLSFor(dirKey, key, fallback){ try{ return JSON.parse(localStorage.getItem(lsKeyFor(key,dirKey)) || JSON.stringify(fallback)); }catch(e){ return fallback; } }
-    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); }
+    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
 
     // ======================== المزامنة السحابية (Cloudflare Worker API) ========================
     const CLOUD_API_BASE = 'https://touarea-api.ahmadalzan92.workers.dev';
@@ -2996,6 +3021,7 @@
           if(typeof refreshVehiclesUI === 'function'){ try{ refreshVehiclesUI(); }catch(e){} }
           if(typeof refreshReportsUI === 'function'){ try{ refreshReportsUI(); }catch(e){} }
           if(typeof populateSelectors === 'function'){ try{ populateSelectors(); }catch(e){} }
+          try{ scheduleAutoRefresh(); }catch(e){}
           showAlert('☁️ تم تحديث البيانات من السحابة.', 'info');
         }
       }catch(e){
