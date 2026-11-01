@@ -2816,7 +2816,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.60';
+    const APP_VERSION = '2026.10.09.61';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -7583,7 +7583,7 @@ function buildOfficialReportHTML(rs,meta,forPrint){
     var tds='<td class="c">'+(i+1)+'</td>';
     tds+='<td class="c">'+esc(r.reportNumber||'—')+'</td>';
     tds+='<td class="c nowrap">'+esc(dayName(r.reportDate)||'')+'<br>'+esc(r.reportDate?fmtDMY(r.reportDate):'')+'</td>';
-    tds+='<td class="l">'+escBr(r.missionType||'')+'</td>';
+    tds+='<td class="l">'+escBr(nrpTypeText(r))+'</td>';
     tds+='<td class="l">'+escBr(r.actionsTaken||'')+'</td>';
     if(O.staff) tds+='<td class="l">'+staff+'</td>';
     if(O.vehicles) tds+='<td class="l">'+vehTxt+'</td>';
@@ -7704,7 +7704,7 @@ function buildOfficialReportWordHTML(rs,meta){
     var tds='<td style="'+Bd+';padding:3pt 4pt;text-align:center;vertical-align:top">'+(i+1)+'</td>'
       +'<td style="'+Bd+';padding:3pt 4pt;text-align:center;vertical-align:top">'+E(r.reportNumber||'—')+'</td>'
       +'<td style="'+Bd+';padding:3pt 4pt;text-align:center;vertical-align:top">'+E(dayName(r.reportDate)||'')+'<br>'+E(r.reportDate?fmtDMY(r.reportDate):'')+'</td>'
-      +'<td style="'+Bd+';padding:3pt 4pt;text-align:right;vertical-align:top">'+NL(r.missionType||'')+'</td>'
+      +'<td style="'+Bd+';padding:3pt 4pt;text-align:right;vertical-align:top">'+NL(nrpTypeText(r))+'</td>'
       +'<td style="'+Bd+';padding:3pt 4pt;text-align:right;vertical-align:top">'+NL(r.actionsTaken||'')+'</td>';
     if(O.staff) tds+='<td style="'+Bd+';padding:3pt 4pt;text-align:right;vertical-align:top">'+staff+'</td>';
     if(O.vehicles) tds+='<td style="'+Bd+';padding:3pt 4pt;text-align:right;vertical-align:top">'+veh+'</td>';
@@ -8848,12 +8848,20 @@ function nrpPrepareThumbs(rs){
   });
   return Promise.all(jobs);
 }
+// نص عمود «نوع البلاغ»: طبيعة المهمة + وصف البلاغ في الخلية نفسها
+function nrpTypeText(r){
+  var t=String((r&&r.missionType)||'').trim();
+  var d=String((r&&r.reportDescription)||'').trim();
+  if(!d) return t;
+  if(!t) return d;
+  return t+'\n'+d;
+}
 function nrpRow(r,i){
   var d=nrpDuty(r), v=nrpVehCols(r), ph=nrpPhotos(r);
   var inT=nrpSegTxt(d.inSegs), outT=nrpSegTxt(d.outSegs);
   return [
     i+1, dayName(r.reportDate)||'', r.reportDate?fmtDMY(r.reportDate):'', nrpProvVal(),
-    numOrStr(r.reportNumber)||'', r.missionType||'', r.actionsTaken||'', r.teamNo||'',
+    numOrStr(r.reportNumber)||'', nrpTypeText(r), r.actionsTaken||'', r.teamNo||'',
     nrpStaffText(r), v.types, v.owns, v.numbers,
     inT.start, inT.end, d.inH?numOrStr(fmtH(d.inH)):'',
     outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
