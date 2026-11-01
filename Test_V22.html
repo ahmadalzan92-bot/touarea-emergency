@@ -2182,6 +2182,8 @@
           <div class="card-header">
             <span>سجل البلاغات السابقة</span>
             <div class="d-flex gap-2 flex-wrap">
+              <button type="button" class="btn btn-sm btn-warning" onclick="resolveReportOverlapsByTime()" title="تعديل أوقات البلاغات المتداخلة فقط — دون حذف أي بلاغ أو أي كادر"><i class="fas fa-clock"></i> إزالة التداخل بتعديل الأوقات</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="undoOverlapTimeFix()" title="استعادة أوقات البلاغات كما كانت قبل آخر تعديل"><i class="fas fa-rotate-left"></i> تراجع عن تعديل الأوقات</button>
               <button type="button" class="btn btn-sm btn-primary" onclick="openExportRange()" title="تصدير تقرير من تاريخ إلى تاريخ مع تجميع اختياري للمجموعات"><i class="fas fa-calendar-range"></i> تصدير من تاريخ إلى تاريخ</button>
               <button type="button" class="btn btn-sm btn-success" onclick="exportReportsToExcel()"><i class="fas fa-file-excel"></i> تصدير لإكسل</button>
               <button type="button" class="btn btn-sm btn-danger" onclick="wipeReports()"><i class="fas fa-trash"></i> حذف الكل</button>
@@ -2796,7 +2798,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.55';
+    const APP_VERSION = '2026.10.09.56';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -5471,6 +5473,125 @@ function computeStaffOverlaps(reports){
     }
   });
   return {byKey,byReport};
+}
+// ===== إزالة التداخل بتعديل الأوقات فقط: لا يُحذف أي بلاغ ولا أي كادر =====
+const OVERLAP_TIME_BACKUP_KEY='overlapTimeBackupV1';
+function overlapTimeBackupGet(){
+  try{ const t=localStorage.getItem(rawLSKey(OVERLAP_TIME_BACKUP_KEY)); return t?JSON.parse(t):null; }catch(e){ return null; }
+}
+function overlapTimeBackupSet(v){
+  try{
+    if(v) localStorage.setItem(rawLSKey(OVERLAP_TIME_BACKUP_KEY), JSON.stringify(v));
+    else localStorage.removeItem(rawLSKey(OVERLAP_TIME_BACKUP_KEY));
+  }catch(e){}
+}
+// يبني خطة إزاحة أوقات البلاغات المتداخلة: يبحث لكل بلاغ عن أقرب وقت لا يتداخل مع بلاغات نفس الكادر في نفس اليوم
+function planOverlapTimeShifts(reports){
+  const days=new Map();
+  (reports||[]).forEach(r=>{
+    if(!r||!r.reportDate) return;
+    if(!days.has(r.reportDate)) days.set(r.reportDate,[]);
+    days.get(r.reportDate).push(r);
+  });
+  const changes=[], unresolved=[];
+  const keysOf=r=>{
+    const out=[], seen={};
+    (r.staff||[]).forEach(s=>{ const C=staffCanonical(s); const k=shKey(C.number,C.name); if(k&&!seen[k]){ seen[k]=1; out.push(k); } });
+    return out;
+  };
+  [...days.keys()].sort().forEach(date=>{
+    const list=days.get(date).slice().sort((a,b)=>(timeToMin(a.startTime)||0)-(timeToMin(b.startTime)||0)||((Number(a.id)||0)-(Number(b.id)||0)));
+    const committed=new Map();
+    list.forEach(r=>{
+      const iv=reportInterval(r);
+      if(!iv) return;
+      const keys=keysOf(r);
+      if(!keys.length) return;
+      const dur=Math.max(1,iv.e-iv.s);
+      const origS=iv.s;
+      const hitsAt=s=>{
+        const hits=[];
+        keys.forEach(k=>{
+          (committed.get(k)||[]).forEach(x=>{
+            const st=Math.max(s,x.s), en=Math.min(s+dur,x.e);
+            if(en>st) hits.push({reportNumber:x.reportNumber||'',minutes:en-st,s:x.s,e:x.e});
+          });
+        });
+        return hits;
+      };
+      let hits=hitsAt(origS);
+      let newS=origS;
+      if(hits.length){
+        const cands=new Set([0,origS]);
+        hits.forEach(h=>{ cands.add(h.e); cands.add(h.s-dur); });
+        keys.forEach(k=>(committed.get(k)||[]).forEach(x=>{ cands.add(x.e); cands.add(x.s-dur); }));
+        const free=[...cands].map(x=>Math.round(x))
+          .filter(x=>x>=0 && x+dur<=1440+240 && hitsAt(x).length===0)
+          .sort((a,b)=>Math.abs(a-origS)-Math.abs(b-origS)||a-b);
+        if(free.length){ newS=free[0]; hits=[]; }
+      }
+      if(hits.length){
+        unresolved.push({id:r.id,reportNumber:r.reportNumber||'',date,start:iv.start,end:iv.end,conflicts:hits.map(h=>h.reportNumber)});
+        keys.forEach(k=>{ if(!committed.has(k)) committed.set(k,[]); committed.get(k).push({s:origS,e:origS+dur,reportNumber:r.reportNumber||''}); });
+        return;
+      }
+      if(newS!==origS){
+        changes.push({id:r.id,reportNumber:r.reportNumber||'',date,
+          oldStart:iv.start,oldEnd:iv.end,newStart:fmtMinT(newS),newEnd:fmtMinT(newS+dur),
+          shiftMin:newS-origS,durationMin:dur});
+      }
+      keys.forEach(k=>{ if(!committed.has(k)) committed.set(k,[]); committed.get(k).push({s:newS,e:newS+dur,reportNumber:r.reportNumber||''}); });
+    });
+  });
+  return {changes,unresolved};
+}
+// تنفيذ الخطة: تعديل startTime/endTime فقط، مع نسخة احتياطية للإرجاع
+function resolveReportOverlapsByTime(auto){
+  const reports=getLS(LS_KEYS.reports,[]);
+  let before={};
+  try{ before=computeStaffOverlaps(reports); }catch(e){}
+  const pairCount=Object.keys(before.byKey||{}).reduce((a,k)=>a+(before.byKey[k]||[]).length,0);
+  if(!pairCount){ showAlert('لا يوجد تداخل في أوقات الكادر حالياً.','success'); return {applied:0,left:0}; }
+  const plan=planOverlapTimeShifts(reports);
+  if(!plan.changes.length){
+    showAlert('تعذّر إيجاد أوقات بديلة لهذه التداخلات دون حذف أطرافها. لم يتم تعديل أي شيء.','warning');
+    return {applied:0,left:pairCount,unresolved:plan.unresolved.length};
+  }
+  const lines=plan.changes.slice(0,20).map(c=>'• '+c.reportNumber+' ('+c.date+'): '+c.oldStart+' - '+c.oldEnd+' ← '+c.newStart+' - '+c.newEnd);
+  const txt='سيتم تعديل أوقات '+plan.changes.length+' بلاغاً فقط لتصبح غير متداخلة:\n\n'+lines.join('\n')+
+    (plan.changes.length>20?'\n…':'')+
+    (plan.unresolved.length?('\n\nتعذّر إيجاد وقت بديل لـ '+plan.unresolved.length+' بلاغاً: '+plan.unresolved.slice(0,8).map(u=>u.reportNumber).join('، ')+(plan.unresolved.length>8?'…':'')):'')+
+    '\n\nلن يُحذف أي بلاغ ولن يُحذف أي كادر. هل تريد المتابعة؟';
+  if(!auto){ let ok=true; try{ ok=confirm(txt); }catch(e){ ok=true; } if(!ok) return {cancelled:true}; }
+  const backup={at:new Date().toISOString(),times:plan.changes.map(c=>({id:c.id,startTime:c.oldStart,endTime:c.oldEnd}))};
+  overlapTimeBackupSet(backup);
+  const byId={}; plan.changes.forEach(c=>byId[String(c.id)]=c);
+  const upd=reports.map(r=>{
+    const c=byId[String(r.id)];
+    if(!c) return r;
+    return Object.assign({},r,{startTime:c.newStart,endTime:c.newEnd});
+  });
+  setLS(LS_KEYS.reports,upd);
+  try{ if(typeof refreshAllReportsUI==='function') refreshAllReportsUI({}); else refreshReportsUI(); }catch(e){}
+  let left=0;
+  try{ const after=computeStaffOverlaps(upd); left=Object.keys(after.byKey||{}).reduce((a,k)=>a+(after.byKey[k]||[]).length,0); }catch(e){}
+  showAlert('تم تعديل أوقات '+plan.changes.length+' بلاغاً لإزالة التداخل. التداخلات المتبقية: '+left+'. لم يُحذف أي بلاغ أو كادر.','success');
+  return {applied:plan.changes.length,left,changes:plan.changes,unresolved:plan.unresolved};
+}
+function undoOverlapTimeFix(){
+  const b=overlapTimeBackupGet();
+  if(!b||!b.times||!b.times.length){ showAlert('لا يوجد تعديل أوقات سابق يمكن التراجع عنه.','info'); return {restored:0}; }
+  let ok=true;
+  try{ ok=confirm('استعادة أوقات '+b.times.length+' بلاغاً كما كانت قبل تعديل التداخل؟'); }catch(e){ ok=true; }
+  if(!ok) return {cancelled:true};
+  const map={}; b.times.forEach(t=>map[String(t.id)]=t);
+  const reports=getLS(LS_KEYS.reports,[]);
+  const upd=reports.map(r=>{ const t=map[String(r.id)]; return t?Object.assign({},r,{startTime:t.startTime,endTime:t.endTime}):r; });
+  setLS(LS_KEYS.reports,upd);
+  try{ if(typeof refreshAllReportsUI==='function') refreshAllReportsUI({}); else refreshReportsUI(); }catch(e){}
+  overlapTimeBackupSet(null);
+  showAlert('تمت استعادة الأوقات السابقة ('+b.times.length+' بلاغاً).','success');
+  return {restored:b.times.length};
 }
 // تداخل بلاغ قيد الإدخال (أو تعديل) مع البلاغات المحفوظة — لإظهار التحذير قبل الحفظ
 function reportOverlapCandidates(data, excludeId){
