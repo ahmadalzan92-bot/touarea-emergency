@@ -2814,7 +2814,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.65';
+    const APP_VERSION = '2026.10.09.66';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -2992,7 +2992,8 @@
     let _cloudOnline = false;
     let _cloudPollTimer = null;
     // المزامنة السحابية تعمل فقط عند التشغيل من الموقع (http/https) — النسخ المحلية file:// لا تلمس بيانات الإنتاج
-    function cloudAvailable(){ return typeof fetch === 'function' && typeof location !== 'undefined' && /^https?:$/.test(location.protocol||''); }
+    try{ if(localStorage.getItem('__cloudSyncResetV66')!=='1'){ localStorage.setItem('__cloudSyncResetV66','1'); localStorage.removeItem('__cloudPendingWrites'); localStorage.removeItem('__cloudSyncMeta'); localStorage.removeItem('madaba__staffNumFixV1'); } }catch(e){}
+    function cloudAvailable(){ return typeof fetch === 'function' && typeof location !== 'undefined' && /^(https?|file):$/.test(location.protocol||''); }
     function cloudMetaGet(){ try{ return JSON.parse(localStorage.getItem(CLOUD_META_KEY) || '{}'); }catch(e){ return {}; } }
     function cloudMetaSet(meta){ try{ localStorage.setItem(CLOUD_META_KEY, JSON.stringify(meta)); }catch(e){} }
     // تعديلات محلية لم تُدفع للسحابة بعد — تمنع نسخة سحابية قديمة من إعادة البلاغ المحذوف
@@ -3729,7 +3730,7 @@
     // إصلاح لمرة واحدة: أرقام وظيفية مخزّنة داخل البلاغات تنتمي لأشخاص آخرين
     // (تُستبدل بالرقم الصحيح للاسم أو تُفرّغ، حفاظاً على دقة التقارير)
     function repairReportStaffNumbers(){
-      const markKey = rawLSKey('staffNumFixV1');
+      const markKey = rawLSKey('staffNumFixV66');
       try{ if(localStorage.getItem(markKey)==='1') return 0; }catch(e){ return 0; }
       let list=[];
       try{ list = JSON.parse(localStorage.getItem(rawLSKey(LS_KEYS.reports))||'[]'); }catch(e){ return 0; }
@@ -3737,7 +3738,32 @@
       if(!Array.isArray(list) || !list.length) return 0;
       const db = getLS(LS_KEYS.staff,[]);
       let changed = 0;
+      const mamounDb = db.find(x=>String(x.number)==='18887');
+      if(mamounDb){
+        const cleanMName = String(mamounDb.name||'').replace(/\u0640/g,'');
+        if(mamounDb.name !== cleanMName || !mamounDb.title){ mamounDb.name = cleanMName; mamounDb.title = mamounDb.title || 'سائق'; try{ localStorage.setItem(rawLSKey(LS_KEYS.staff), JSON.stringify(db)); }catch(e){} }
+      }
       list.forEach(r=>{
+        if(r && Array.isArray(r.staff)){
+          const mIdx = r.staff.findIndex(s=>s && (String(s.number)==='19094' || /ممدوح/.test(String(s.name||''))));
+          const hasMamoun = r.staff.some(s=>s && (String(s.number)==='18887' || /زواهر/.test(String(s.name||''))));
+          if(mIdx>=0 && !hasMamoun && (String(r.reportNumber)==='367749' || String(r.reportNumber)==='367828')){
+            const m = r.staff[mIdx];
+            r.staff.splice(mIdx, 0, {
+              staffId: mamounDb ? mamounDb.id : 143,
+              name: 'مأمون حسن محمد الزواهره',
+              role: 'سائق',
+              number: '18887',
+              mode: m.mode || 'ميداني',
+              vehicleNumber: m.vehicleNumber || '22302',
+              vehicleType: m.vehicleType || 'ديانا هينو',
+              ownership: m.ownership || 'حكومي',
+              movementOrder: m.movementOrder || '1482775'
+            });
+            changed++;
+          }
+          r.staff.forEach(s=>{ if(s && s.name && /\u0640/.test(s.name)){ s.name = s.name.replace(/\u0640/g,''); changed++; } });
+        }
         (r && Array.isArray(r.staff) ? r.staff : []).forEach(s=>{
           if(!s) return;
           const before = String(s.number==null?'':s.number).trim();
@@ -3976,6 +4002,7 @@
       const s = staff.find(x=>x.id===staffEditId);
       if(!s) return;
       if(staff.some(x=>x.id!==staffEditId && x.number===number)) return showAlert('الرقم الوظيفي مكرر.', 'danger');
+      const oldName = s.name, oldNum = String(s.number||'').trim();
       s.name = name; s.title = title; s.number = number;
       const ex = s.extra||{};
       document.querySelectorAll('#staffEditExtra input[data-xkey]').forEach(inp=>{
@@ -3984,11 +4011,33 @@
       });
       s.extra = Object.keys(ex).length ? ex : undefined;
       setLS(LS_KEYS.staff, staff);
+      // تحديث بيانات هذا الكادر في جميع البلاغات المحفوظة لينعكس التعديل فوراً في كل التقارير
+      try{
+        const reports = getLS(LS_KEYS.reports, []);
+        let repChanged = false;
+        reports.forEach(r=>{
+          (r.staff||[]).forEach(st=>{
+            if(!st) return;
+            const matchId = (st.staffId!=null && st.staffId===s.id);
+            const matchNum = (oldNum && String(st.number||'').trim()===oldNum);
+            const matchName = (oldName && samePersonName(st.name, oldName));
+            if(matchId || matchNum || matchName){
+              st.staffId = s.id;
+              st.name = name;
+              st.number = number;
+              if(title) st.role = title;
+              repChanged = true;
+            }
+          });
+        });
+        if(repChanged) setLS(LS_KEYS.reports, reports);
+      }catch(e){}
       const workTypes = getLS(LS_KEYS.workTypes, []);
       if(!workTypes.includes(title)){ workTypes.push(title); setLS(LS_KEYS.workTypes, workTypes); }
       closeStaffEdit();
       refreshStaffUI();
-      showAlert('تم تعديل بيانات الكادر.');
+      try{ refreshAllReportsUI(); }catch(e){}
+      showAlert('تم تعديل بيانات الكادر وتحديث جميع التقارير.');
     }
 
     function closeStaffEdit(){ const box=document.getElementById('staffEditModal'); if(box) box.style.display='none'; staffEditId=null; }
@@ -4747,16 +4796,15 @@ function compressImageFile(file){
         reports[idx] = Object.assign({}, reports[idx], data, {id: reports[idx].id});
         setLS(LS_KEYS.reports, reports);
         cancelEditReport();
-        refreshReportsUI();
-        loadAnalysisData();
-        showAlert('تم حفظ تعديلات البلاغ.');
+        refreshAllReportsUI();
+        showAlert('تم حفظ تعديلات البلاغ وتحديث جميع التقارير.');
         const htab=document.getElementById('history-tab'); if(htab) htab.click();
         return;
       }
       reports.push({ id: nextId(reports), ...data });
       setLS(LS_KEYS.reports, reports);
       setLS(LS_KEYS.lastPrinted, reports.length-1);
-      refreshReportsUI();
+      refreshAllReportsUI();
       showAlert('تم حفظ البلاغ وإضافته إلى السجل.');
       clearIncidentForm(true);
     });
@@ -5048,16 +5096,20 @@ function compressImageFile(file){
     // تحديث فوري لكل شاشات التقارير بعد أي حذف/تعديل (دون انتظار المزامنة)
     function refreshAllReportsUI(opts){
       opts = opts || {};
+      try{ _staffGroupCache=null; _staffGroupSig=''; }catch(e){}
       if(opts.clearPreview) clearPrintPreview();
-      try{ refreshReportsUI(); }catch(e){}            // يتضمن التحليل والمؤشرات وساعات العمل
+      try{ __reportsSig=null; refreshReportsUI(); }catch(e){}            // يتضمن التحليل والمؤشرات وساعات العمل
       try{ if(typeof loadAnalysisData==='function') loadAnalysisData(); }catch(e){}
       try{ if(typeof renderKpis==='function') renderKpis(); }catch(e){}
       try{ if(typeof renderStaffHours==='function') renderStaffHours(); }catch(e){}
+      try{ if(typeof bonusPopulateGroups==='function') bonusPopulateGroups(); }catch(e){}
+      try{ if(typeof bonusRender==='function') bonusRender(); }catch(e){}
       try{ if(typeof renderFinalReport==='function') renderFinalReport(); }catch(e){}
       try{ if(typeof nrpRender==='function' && document.getElementById('nrpPreview')) nrpRender(); }catch(e){}
       try{ if(typeof renderCentral==='function' && (document.getElementById('centralKpis')||document.getElementById('centralListRows'))) renderCentral(); }catch(e){}
       try{ if(typeof renderCentralGroups==='function') renderCentralGroups(); }catch(e){}
       try{ if(typeof grpRender==='function' && document.getElementById('grpList')) grpRender(); }catch(e){}
+      try{ if(typeof grpRepRender==='function' && document.getElementById('grpRepList')) grpRepRender(); }catch(e){}
       try{ if(typeof renderMap==='function' && typeof MAP!=='undefined' && MAP) renderMap(true); }catch(e){}
     }
 
@@ -8332,7 +8384,7 @@ function bonusRows(opts){
     var rounds=(scope==='field')?fRound:(scope==='office')?oRound:roundH(fRound+oRound);
     return {number:e.number,name:e.name,aliases:e.aliases||[],role:e.role||'',fieldOut:fOut,officeOut:oOut,
       outH:outH,rounds:rounds,grade:bonusGrade(outH),count:e.count};
-  }).sort(function(a,b){ return cmpNum(a.number,b.number)||String(a.name).localeCompare(String(b.name),'ar'); });
+  }).sort(function(a,b){ return normalizeArabic(a.name).localeCompare(normalizeArabic(b.name),'ar')||cmpNum(a.number,b.number); });
   return {rows:rows,from:from,to:to,scope:scope,group:g,
     totOut:roundH(rows.reduce(function(s,x){return s+x.outH;},0)),
     totRounds:roundH(rows.reduce(function(s,x){return s+x.rounds;},0)),
