@@ -2816,7 +2816,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.59';
+    const APP_VERSION = '2026.10.09.60';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3056,8 +3056,11 @@
       cloudClearPending(fullKey);
     }
     function cloudPush(fullKey, value){
-      if(!cloudAvailable() || !fullKey || !cloudSyncableKey(fullKey)) return;
+      if(!fullKey || !cloudSyncableKey(fullKey)) return;
+      // يُسجَّل التعديل المحلي كـ«غير مدفوع» حتى لو كنا دون اتصال الآن،
+      // كي لا تمحوه نسخة سحابية أقدم عند أول اتصال لاحق.
       cloudMarkPending(fullKey);
+      if(!cloudAvailable()) return;
       cloudPushNow(fullKey, value).then(()=>cloudSetOnline(true)).catch(()=>cloudSetOnline(false));
     }
     // دمج اتحادي لقوائم الكادر/البلاغات/الآليات بالمعرّف: لا تضيع أي سجلات موجودة في أحد الطرفين
