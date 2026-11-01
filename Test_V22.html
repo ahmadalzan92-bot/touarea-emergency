@@ -2183,8 +2183,6 @@
           <div class="card-header">
             <span>سجل البلاغات السابقة</span>
             <div class="d-flex gap-2 flex-wrap">
-              <button type="button" class="btn btn-sm btn-warning" onclick="resolveReportOverlapsByTime()" title="تعديل أوقات البلاغات المتداخلة فقط — دون حذف أي بلاغ أو أي كادر"><i class="fas fa-clock"></i> إزالة التداخل بتعديل الأوقات</button>
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="undoOverlapTimeFix()" title="استعادة أوقات البلاغات كما كانت قبل آخر تعديل"><i class="fas fa-rotate-left"></i> تراجع عن تعديل الأوقات</button>
               <button type="button" class="btn btn-sm btn-primary" onclick="openExportRange()" title="تصدير تقرير من تاريخ إلى تاريخ مع تجميع اختياري للمجموعات"><i class="fas fa-calendar-range"></i> تصدير من تاريخ إلى تاريخ</button>
               <button type="button" class="btn btn-sm btn-success" onclick="exportReportsToExcel()"><i class="fas fa-file-excel"></i> تصدير لإكسل</button>
               <button type="button" class="btn btn-sm btn-danger" onclick="wipeReports()"><i class="fas fa-trash"></i> حذف الكل</button>
@@ -2816,7 +2814,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.63';
+    const APP_VERSION = '2026.10.09.64';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3707,7 +3705,7 @@
     function staffCanonical(s){
       const g=staffFindGroup(s);
       if(g&&g.canonical && !staffNameConflicts(s&&s.name,g)){
-        return {number:g.canonical.number||'',name:g.canonical.name||'',title:g.canonical.title||''};
+        return {number:g.canonical.number||'',name:g.canonical.name||'',title:g.canonical.title||(s&&(s.role||s.title))||''};
       }
       const rawNum=(s&&s.number!=null?String(s.number):'').trim();
       let num=rawNum;
@@ -5809,11 +5807,11 @@ function coordOk(lon,lat){const x=parseFloat(lon),y=parseFloat(lat);return x>=34
 function coordBad(r){if(reportWorkMode(r)==='مكتبي'&&!r.longitude&&!r.latitude)return false;return !coordOk(r.longitude,r.latitude);}
 function reportVehicles(r){
   if(r.vehicles&&r.vehicles.length)return r.vehicles;
-  const seen=new Set(),out=[];
-  (r.staff||[]).forEach(s=>{if(s.vehicleType||s.vehicleNumber){const k=s.vehicleType+'|'+s.vehicleNumber;if(!seen.has(k)){seen.add(k);out.push({type:s.vehicleType||'',number:s.vehicleNumber||'',ownership:s.ownership||''});}}});
+  const byKey=new Map(),out=[];
+  (r.staff||[]).forEach(s=>{if(s.vehicleType||s.vehicleNumber){const num=String(s.vehicleNumber||'').trim();const typ=String(s.vehicleType||'').trim();const k=num?('N:'+num):('T:'+typ);if(!byKey.has(k)){const item={type:typ,number:num,ownership:s.ownership||''};byKey.set(k,item);out.push(item);}else{const cur=byKey.get(k);if(typ.length>(cur.type||'').length)cur.type=typ;if(!cur.ownership&&s.ownership)cur.ownership=s.ownership;}}});
   return out;
 }
-function numOrStr(v){const t=String(v==null?'':v).trim();return /^[\d.]+$/.test(t)&&!isNaN(+t)?+t:t;}
+function numOrStr(v){const t=String(v==null?'':v).trim().replace(/^\.+|\.+$/g,'');return /^\d+(?:\.\d+)?$/.test(t)&&!isNaN(+t)?+t:t;}
 function frSettings(){return Object.assign({prov:ACTIVE_DIR.short,mgr1:'م. عبدالناصر الكلباني',mgr2:'م. خالد إبراهيم الجزازي'},getLS(FR_KEY,{}));}
 function frSave(){setLS(FR_KEY,{prov:document.getElementById('fr_prov').value.trim()||ACTIVE_DIR.short,mgr1:document.getElementById('fr_mgr1').value.trim(),mgr2:document.getElementById('fr_mgr2').value.trim()});renderFinalReport();}
 function frReports(all){
@@ -6186,7 +6184,8 @@ function applyAutoNumber(){
   document.getElementById('manualNo').addEventListener('change',e=>{el.readOnly=!e.target.checked;if(!e.target.checked)applyAutoNumber();});
   document.getElementById('reportDate').addEventListener('change',applyAutoNumber);
 })();
-function fmtActions(a){return a.length>1?a.map((x,i)=>`${i+1}- ${x}`).join('\n'):(a[0]||'');}
+function stripActPrefix(s){return String(s||'').replace(/^(?:\s*\d+\s*-\s*)+/,'').trim();}
+function fmtActions(a){const cl=a.map(stripActPrefix).filter(Boolean);return cl.length>1?cl.map((x,i)=>`${i+1}- ${x}`).join('\n'):(cl[0]||'');}
 function syncActions(){
   document.querySelectorAll('#actionsList .act-n').forEach((e,i)=>{e.textContent=i+1;});
   const v=[...document.querySelectorAll('#actionsList .act-input')].map(i=>i.value.trim()).filter(Boolean);
@@ -6199,7 +6198,7 @@ function addActionRow(v){
   d.querySelector('button').onclick=()=>{if(document.querySelectorAll('#actionsList .act-input').length>1)d.remove();else d.querySelector('input').value='';syncActions();};
   document.getElementById('actionsList').appendChild(d);syncActions();
 }
-function setActions(arr){document.getElementById('actionsList').innerHTML='';(arr.length?arr:['']).forEach(x=>addActionRow(x));}
+function setActions(arr){document.getElementById('actionsList').innerHTML='';const cl=(arr||[]).map(stripActPrefix).filter(Boolean);(cl.length?cl:['']).forEach(x=>addActionRow(x));}
 document.getElementById('actionsList').addEventListener('input',syncActions);
 setActions(['']);applyAutoNumber();
 const _clr=clearIncidentForm;
