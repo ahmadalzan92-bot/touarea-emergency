@@ -3189,7 +3189,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.67';
+    const APP_VERSION = '2026.10.09.68';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9836,6 +9836,12 @@ function showHQ(){
   p.style.display='flex';
   loadCustomDirectorates();
   hqFillDirSelectors();
+  var fd=hqEl('hqFormDate'); if(fd && !fd.value) fd.value=new Date().toISOString().slice(0,10);
+  var fs=hqEl('hqFormStart'); if(fs && !fs.value) fs.value='08:00';
+  var fe=hqEl('hqFormEnd'); if(fe && !fe.value) fe.value='09:00';
+  hqCalcFormDur();
+  hqOnFormDirChange();
+  hqInitMap();
   hqRenderAll(true);
   hqRenderDirsList();
   setTimeout(function(){
@@ -9874,23 +9880,25 @@ function hqOpenSideTab(id){ hqSwitchSideTab(id); }
 
 /* ---------------------------- الخريطة ---------------------------- */
 function hqInitMap(){
-  if(HQMAP) return;
+  if(HQMAP && HQ_LAYER) return;
   if(typeof L==='undefined') return;
   var box=hqEl('hqMapBox'); if(!box) return;
   var street=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
   var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
-  HQMAP=L.map('hqMapBox',{layers:[street],zoomControl:true}).setView([31.55,36.05],8);
-  L.control.layers({'خريطة':street,'أقمار صناعية':sat},{position:'topright'}).addTo(HQMAP);
-  HQ_LAYER=L.layerGroup().addTo(HQMAP);
-  HQMAP.on('click',function(ev){
-    if(!HQ_PICKING) return;
-    var lat=Math.round(ev.latlng.lat*1e7)/1e7, lon=Math.round(ev.latlng.lng*1e7)/1e7;
-    var lo=hqEl('hqFormLon'), la=hqEl('hqFormLat');
-    if(lo) lo.value=String(lon);
-    if(la) la.value=String(lat);
-    hqTogglePickCoord(false);
-    try{ showAlert('تم التقاط إحداثيات الموقع: '+lon+' / '+lat,'success'); }catch(e){}
-  });
+  if(!HQMAP){
+    HQMAP=L.map('hqMapBox',{layers:[street],zoomControl:true}).setView([31.55,36.05],8);
+    L.control.layers({'خريطة':street,'أقمار صناعية':sat},null,{position:'topright'}).addTo(HQMAP);
+    HQMAP.on('click',function(ev){
+      if(!HQ_PICKING) return;
+      var lat=Math.round(ev.latlng.lat*1e7)/1e7, lon=Math.round(ev.latlng.lng*1e7)/1e7;
+      var lo=hqEl('hqFormLon'), la=hqEl('hqFormLat');
+      if(lo) lo.value=String(lon);
+      if(la) la.value=String(lat);
+      hqTogglePickCoord(false);
+      try{ showAlert('تم التقاط إحداثيات الموقع: '+lon+' / '+lat,'success'); }catch(e){}
+    });
+  }
+  if(!HQ_LAYER) HQ_LAYER=L.layerGroup().addTo(HQMAP);
 }
 function hqTogglePickCoord(force){
   HQ_PICKING=(force===undefined)?!HQ_PICKING:!!force;
