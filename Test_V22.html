@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.87';
+    const APP_VERSION = '2026.10.09.88';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11054,46 +11054,54 @@ function hqReadZip(bytes){
 }
 function hqWriteZip(entries){
   var td = new TextEncoder();
-  var entriesArr = Array.from(entries);
-  var n = entriesArr.length;
-  // Build local headers + data, tracking offsets
-  var locals = [];
-  var offsetList = [];
+  // Convert entries to array
+  var arr = [];
+  entries.forEach(function(v, k){ arr.push([k, v]); });
+  var total = arr.length;
+  // Compute sizes and offsets
+  var sizes = [];
+  var offs = [];
   var pos = 0;
-  var idx1;
-  for (idx1 = 0; idx1 < n; idx1++) {
-    var pair1 = entriesArr[idx1];
-    var name1 = pair1[0];
-    var data1 = pair1[1];
-    var nb1 = td.encode(name1);
-    var local = new Uint8Array(30 + nb1.length);
+  var ii;
+  for (ii = 0; ii < total; ii++) {
+    var nm = arr[ii][0];
+    var dt = arr[ii][1];
+    var nb = td.encode(nm);
+    var localSize = 30 + nb.length + dt.length;
+    offs[ii] = pos;
+    sizes[ii] = localSize;
+    pos = pos + localSize;
+  }
+  // Build local parts
+  var localParts = [];
+  for (ii = 0; ii < total; ii++) {
+    var nm2 = arr[ii][0];
+    var dt2 = arr[ii][1];
+    var nb2 = td.encode(nm2);
+    var local = new Uint8Array(30 + nb2.length);
     var ldv = new DataView(local.buffer);
     ldv.setUint32(0, 0x04034b50, true);
     ldv.setUint16(4, 20, true);
     ldv.setUint16(6, 0, true);
     ldv.setUint16(8, 0, true);
     ldv.setUint32(10, 0, true);
-    ldv.setUint32(14, hqCrc32(data1), true);
-    ldv.setUint32(18, data1.length, true);
-    ldv.setUint32(22, data1.length, true);
-    ldv.setUint16(26, nb1.length, true);
+    ldv.setUint32(14, hqCrc32(dt2), true);
+    ldv.setUint32(18, dt2.length, true);
+    ldv.setUint32(22, dt2.length, true);
+    ldv.setUint16(26, nb2.length, true);
     ldv.setUint16(28, 0, true);
-    local.set(nb1, 30);
-    offsetList[idx1] = pos;
-    locals.push(local);
-    locals.push(data1);
-    pos = pos + local.length + data1.length;
+    local.set(nb2, 30);
+    localParts.push(local);
+    localParts.push(dt2);
   }
   // Build central directory
-  var cds = [];
+  var cdParts = [];
   var cdSize = 0;
-  var idx2;
-  for (idx2 = 0; idx2 < n; idx2++) {
-    var pair2 = entriesArr[idx2];
-    var name2 = pair2[0];
-    var data2 = pair2[1];
-    var nb2 = td.encode(name2);
-    var cd = new Uint8Array(46 + nb2.length);
+  for (ii = 0; ii < total; ii++) {
+    var nm3 = arr[ii][0];
+    var dt3 = arr[ii][1];
+    var nb3 = td.encode(nm3);
+    var cd = new Uint8Array(46 + nb3.length);
     var cdv = new DataView(cd.buffer);
     cdv.setUint32(0, 0x02014b50, true);
     cdv.setUint16(4, 20, true);
@@ -11102,38 +11110,37 @@ function hqWriteZip(entries){
     cdv.setUint16(10, 0, true);
     cdv.setUint16(12, 0, true);
     cdv.setUint16(14, 0, true);
-    cdv.setUint32(16, hqCrc32(data2), true);
-    cdv.setUint32(20, data2.length, true);
-    cdv.setUint32(24, data2.length, true);
-    cdv.setUint16(28, nb2.length, true);
+    cdv.setUint32(16, hqCrc32(dt3), true);
+    cdv.setUint32(20, dt3.length, true);
+    cdv.setUint32(24, dt3.length, true);
+    cdv.setUint16(28, nb3.length, true);
     cdv.setUint16(30, 0, true);
     cdv.setUint16(32, 0, true);
     cdv.setUint16(34, 0, true);
     cdv.setUint32(36, 0, true);
-    cdv.setUint32(40, offsetList[idx2], true);
-    cd.set(nb2, 46);
-    cds.push(cd);
+    cdv.setUint32(40, offs[ii], true);
+    cd.set(nb3, 46);
+    cdParts.push(cd);
     cdSize = cdSize + cd.length;
   }
   // Assemble
   var cdStart = pos;
-  var allParts = locals.slice();
-  var idx3;
-  for (idx3 = 0; idx3 < cds.length; idx3++) { allParts.push(cds[idx3]); }
+  var allParts = localParts.slice();
+  for (ii = 0; ii < cdParts.length; ii++) { allParts.push(cdParts[ii]); }
   var eocd = new Uint8Array(22);
   var edv = new DataView(eocd.buffer);
   edv.setUint32(0, 0x06054b50, true);
-  edv.setUint16(8, cds.length, true);
-  edv.setUint16(10, cds.length, true);
+  edv.setUint16(8, cdParts.length, true);
+  edv.setUint16(10, cdParts.length, true);
   edv.setUint32(12, cdSize, true);
   edv.setUint32(16, cdStart, true);
   edv.setUint16(20, 0, true);
   allParts.push(eocd);
   var total = 0;
-  for (idx3 = 0; idx3 < allParts.length; idx3++) total += allParts[idx3].length;
+  for (ii = 0; ii < allParts.length; ii++) total += allParts[ii].length;
   var out = new Uint8Array(total);
   var o = 0;
-  for (idx3 = 0; idx3 < allParts.length; idx3++) { out.set(allParts[idx3], o); o += allParts[idx3].length; }
+  for (ii = 0; ii < allParts.length; ii++) { out.set(allParts[ii], o); o += allParts[ii].length; }
   return out;
 }
 

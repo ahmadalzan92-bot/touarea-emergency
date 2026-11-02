@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.87",
+  "version": "2026.10.09.88",
   "released": "2026-11-02",
-  "notes": "إعادة كتابة writer ZIP (idx1/idx2 variables) لضمان offsets صحيحة وفتح ملف Excel في Excel/openpyxl."
+  "notes": "إعادة كتابة writer ZIP (entries.forEach with Map) لضمان offsets صحيحة وفتح ملف Excel في Excel/openpyxl."
 }
