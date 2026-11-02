@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.77';
+    const APP_VERSION = '2026.10.09.78';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11055,6 +11055,7 @@ function hqReadZip(bytes){
 function hqWriteZip(entries){
   var parts=[]; var cdEntries=[]; var offset=0; var td=new TextEncoder();
   for(const [name,data] of entries){
+    var localOffset = offset;
     var nameBytes=td.encode(name);
     var local=new Uint8Array(30+nameBytes.length);
     var ldv=new DataView(local.buffer);
@@ -11082,13 +11083,11 @@ function hqWriteZip(entries){
     cdv.setUint16(28,nameBytes.length,true);
     cdv.setUint16(30,0,true);
     cdv.setUint16(32,0,true);
-    cdv.setUint16(32,0,true);
     cdv.setUint16(34,0,true);
     cdv.setUint32(36,0,true);
     cdv.setUint32(40,localOffset,true);
     cd.set(nameBytes,46);
     cdEntries.push({cd:cd});
-    var localOffset = offset;
     parts.push(local,data);
     offset += local.length + data.length;
   }
