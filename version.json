@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.79",
+  "version": "2026.10.09.80",
   "released": "2026-11-02",
-  "notes": "إصلاح offsets حقول CRC/size في central directory (كانت مزاحة بـ2 بايت) لضمان فتح ملف Excel في Excel/openpyxl."
+  "notes": "إعادة كتابة writer ZIP (two-pass offset tracking) لضمان فتح ملف Excel في Excel/openpyxl بدون BadZipFile."
 }
