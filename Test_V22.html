@@ -3296,7 +3296,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.116';
+    const APP_VERSION = '2026.10.09.117';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3514,14 +3514,15 @@
     }
     async function cloudReq(path, opts){
       opts = opts || {};
-      var _tok = sessionStorage.getItem('gov_auth_token') || '';
+      var _tok = sessionStorage.getItem('gov_auth_token') || localStorage.getItem('gov_auth_token') || '';
       opts.headers = Object.assign({'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}, opts.headers || {});
       if(_tok) opts.headers['Authorization'] = 'Bearer ' + _tok;
       const res = await fetch(CLOUD_API_BASE + path, opts);
       if(res.status === 401){
-        sessionStorage.removeItem('gov_auth_token');
-        sessionStorage.removeItem('gov_auth_user');
-        sessionStorage.removeItem('gov_auth_role');
+        ['gov_auth_token','gov_auth_user','gov_auth_role','gov_session_version','gov_auth_gov'].forEach(function(k){
+          sessionStorage.removeItem(k);
+          localStorage.removeItem(k);
+        });
         var m = document.getElementById('govLoginModal'); if(m) m.style.display = 'flex';
         var msg = document.getElementById('govLoginMsg'); if(msg){msg.textContent='انتهت جلسة العمل. يرجى تسجيل الدخول مجدداً.';msg.style.display='block';}
         throw new Error('Unauthorized');
@@ -11377,18 +11378,21 @@ function govLogin(){
     .then(function(res){
       if(!res.ok && res.data && res.data.requires2FA){ var f2=document.getElementById('govLogin2FA'); if(f2) f2.style.display='block'; var inp=document.getElementById('govLoginTOTP'); if(inp) inp.focus(); if(msg){msg.textContent='أدخل رمز المصادقة (2FA).';msg.style.display='block';} return; }
       if(!res.ok){ if(msg){msg.textContent=res.data.error||'بيانات الدخول غير صحيحة.';msg.style.display='block';} return; }
+      sessionStorage.setItem('gov_auth_token', res.data.token);
+      sessionStorage.setItem('gov_auth_user', res.data.username);
+      sessionStorage.setItem('gov_auth_role', res.data.role);
+      sessionStorage.setItem('gov_auth_gov', res.data.governorate || '');
+      if(res.data.sessionVersion !== undefined) sessionStorage.setItem('gov_session_version', res.data.sessionVersion);
       if(remember){
         localStorage.setItem('gov_auth_token', res.data.token);
         localStorage.setItem('gov_auth_user', res.data.username);
         localStorage.setItem('gov_auth_role', res.data.role);
         localStorage.setItem('gov_auth_gov', res.data.governorate || '');
         if(res.data.sessionVersion !== undefined) localStorage.setItem('gov_session_version', res.data.sessionVersion);
+        localStorage.setItem('gov_remember_user', u);
+        localStorage.setItem('gov_remember_checked', '1');
       } else {
-        sessionStorage.setItem('gov_auth_token', res.data.token);
-        sessionStorage.setItem('gov_auth_user', res.data.username);
-        sessionStorage.setItem('gov_auth_role', res.data.role);
-        sessionStorage.setItem('gov_auth_gov', res.data.governorate || '');
-        if(res.data.sessionVersion !== undefined) sessionStorage.setItem('gov_session_version', res.data.sessionVersion);
+        ['gov_auth_token','gov_auth_user','gov_auth_role','gov_session_version','gov_auth_gov','gov_remember_user','gov_remember_checked'].forEach(function(k){ localStorage.removeItem(k); });
       }
       sessionStorage.setItem('gov_auth_gov', res.data.governorate || '');
       // Set ACTIVE_DIR to user's governorate immediately
@@ -11436,7 +11440,7 @@ function govShowSecurityAlerts(){
   modal.style.display = 'flex';
   var content = document.getElementById('govAlertsContent');
   if(content) content.innerHTML = 'جارٍ التحميل...';
-  fetch(CLOUD_API_BASE+'/api/security/alerts',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+  fetch(CLOUD_API_BASE+'/api/security/alerts',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
     .then(function(r){return r.json();})
     .then(function(d){
       if(!d.alerts || !d.alerts.length){ content.innerHTML = '<p class="text-muted text-center">لا توجد تنبيهات أمنية.</p>'; return; }
@@ -11466,7 +11470,7 @@ function govShowAuditLog(){
   modal.style.display = 'flex';
   var content = document.getElementById('govAuditContent');
   if(content) content.innerHTML = 'جارٍ التحميل...';
-  fetch(CLOUD_API_BASE+'/api/audit-log?limit=100', {headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+  fetch(CLOUD_API_BASE+'/api/audit-log?limit=100', {headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
     .then(function(r){return r.json();})
     .then(function(d){
       if(!d.logs || !d.logs.length){ content.innerHTML = '<p class="text-muted text-center">لا توجد سجلات تدقيق.</p>'; return; }
@@ -11484,7 +11488,7 @@ function govShowAuditLog(){
 function govClose2FAModal(){ var m=document.querySelector('div[data-2fa-modal]'); if(m) m.remove(); }
 function govSetup2FA(){
   if(!govIsAuth()){ showAlert('يجب تسجيل الدخول أولاً.','warning'); return; }
-  fetch(CLOUD_API_BASE+'/api/auth/setup-2fa',{method:'POST',headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+  fetch(CLOUD_API_BASE+'/api/auth/setup-2fa',{method:'POST',headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
     .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
     .then(function(res){
       if(!res.ok){ showAlert(res.data.error||'تعذّر إعداد 2FA.','danger'); return; }
@@ -11509,7 +11513,7 @@ function govSetup2FA(){
 function govVerify2FA(){
   var code = (document.getElementById('gov2FAVerifyCode')||{}).value||'';
   if(code.length!==6){ showAlert('أدخل رمز 6 أرقام.','warning'); return; }
-  fetch(CLOUD_API_BASE+'/api/auth/verify-2fa',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'},body:JSON.stringify({code:code})})
+  fetch(CLOUD_API_BASE+'/api/auth/verify-2fa',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'},body:JSON.stringify({code:code})})
     .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
     .then(function(res){
       if(!res.ok){ showAlert(res.data.error||'رمز غير صحيح.','danger'); return; }
@@ -11520,7 +11524,7 @@ function govVerify2FA(){
 }
 function govCreateBackup(){
   if(govGetRole()!=='admin'){ showAlert('صلاحيات المدير مطلوبة.','warning'); return; }
-  fetch(CLOUD_API_BASE+'/api/backup',{method:'POST',headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+  fetch(CLOUD_API_BASE+'/api/backup',{method:'POST',headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
     .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
     .then(function(res){
       if(!res.ok){ showAlert(res.data.error||'تعذّر إنشاء نسخة احتياطية.','danger'); return; }
@@ -11530,7 +11534,7 @@ function govCreateBackup(){
 }
 // Show backup button for admin
 document.addEventListener('DOMContentLoaded', function(){
-  var rl = sessionStorage.getItem('gov_auth_role')||'';
+  var rl = govGetRole();
   var ab = document.getElementById('govBackupBtn');
   if(ab && rl==='admin') ab.style.display='';
 });
@@ -11552,19 +11556,20 @@ function govLogout(){
 function govIsAuth(){
   var tok = sessionStorage.getItem('gov_auth_token') || localStorage.getItem('gov_auth_token');
   if(!tok) return false;
-  // Check session version (invalidate on password change)
+  // Check session version at most once every 60s (invalidate on password change)
   try {
-    var sv = sessionStorage.getItem('gov_session_version');
-    if(sv){
+    var sv = sessionStorage.getItem('gov_session_version') || localStorage.getItem('gov_session_version');
+    var now = Date.now();
+    if(sv && (!window._lastSvCheck || now - window._lastSvCheck > 60000)){
+      window._lastSvCheck = now;
       fetch(CLOUD_API_BASE+'/api/auth/me',{headers:{'Authorization':'Bearer '+tok,'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
-        .then(function(r){return r.json();})
+        .then(function(r){ return r.ok ? r.json() : null; })
         .then(function(d){
           if(d && d.sessionVersion !== undefined && String(d.sessionVersion) !== String(sv)){
-            // Session invalidated
-            sessionStorage.removeItem('gov_auth_token');
-            sessionStorage.removeItem('gov_auth_user');
-            sessionStorage.removeItem('gov_auth_role');
-            sessionStorage.removeItem('gov_session_version');
+            ['gov_auth_token','gov_auth_user','gov_auth_role','gov_session_version','gov_auth_gov'].forEach(function(k){
+              sessionStorage.removeItem(k);
+              localStorage.removeItem(k);
+            });
             var m = document.getElementById('govLoginModal'); if(m) m.style.display = 'flex';
             var msg = document.getElementById('govLoginMsg'); if(msg){msg.textContent='تم تغيير كلمة المرور. يرجى تسجيل الدخول مجدداً.';msg.style.display='block';}
           }
@@ -11579,14 +11584,19 @@ function govGetGovernorate(){ return sessionStorage.getItem('gov_auth_gov') || l
 window.govGetGovernorate = govGetGovernorate;
 // Check auth on page load
 document.addEventListener('DOMContentLoaded', function(){
+  var remUser = localStorage.getItem('gov_remember_user') || '';
+  var remChk = localStorage.getItem('gov_remember_checked') === '1';
+  if(remUser){ var uInp=document.getElementById('govLoginUser'); if(uInp) uInp.value=remUser; }
+  if(remChk){ var cInp=document.getElementById('govRememberMe'); if(cInp) cInp.checked=true; }
   if(!govIsAuth()){
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='flex';
   } else {
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
-    var ui=document.getElementById('govUserInfo'); var un=sessionStorage.getItem('gov_auth_user')||''; var rl=sessionStorage.getItem('gov_auth_role')||''; var gv=sessionStorage.getItem('gov_auth_gov')||''; if(ui && un) ui.innerHTML='<i class="fas fa-user-shield"></i> '+un+' ('+rl+')'+(gv?' — '+gv:'');
+    var ui=document.getElementById('govUserInfo'); var un=govGetUser(); var rl=govGetRole(); var gv=govGetGovernorate(); if(ui && un) ui.innerHTML='<i class="fas fa-user-shield"></i> '+un+' ('+rl+')'+(gv?' — '+gv:'');
     var ab=document.getElementById('govAuditBtn'); if(ab && rl==='admin') ab.style.display='';
     var al=document.getElementById('govAlertsBtn'); if(al && rl==='admin') al.style.display='';
     var abw=document.getElementById('homeAdminBtnWrap'); if(abw) abw.style.display = (rl==='admin') ? '' : 'none';
+    try{ buildHomeGrid(); govApplyRBAC(); }catch(e){}
   }
 });
 // Enter key on password field
@@ -11606,7 +11616,7 @@ document.addEventListener('keydown', function(e){
 function govSecurityCheck(){
   // Check if session is still valid
   if(govIsAuth()){
-    fetch(CLOUD_API_BASE+'/api/auth/me',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+    fetch(CLOUD_API_BASE+'/api/auth/me',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
       .then(function(r){ if(r.status===401){ govLogout(); } })
       .catch(function(){});
   }
