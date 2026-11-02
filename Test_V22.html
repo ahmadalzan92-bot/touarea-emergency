@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.72';
+    const APP_VERSION = '2026.10.09.73';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -10756,7 +10756,7 @@ function hqOfficialRowArrays(entries){
       inT.start, inT.end, d.inH?numOrStr(fmtH(d.inH)):'',
       outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
       nrpStatus(r), r.responseSpeed||'', [r.longitude,r.latitude].filter(Boolean).join('\n'),
-      ph.length?(ph.length+' صورة'):''
+      ''
     ];
   });
 }
@@ -10784,7 +10784,7 @@ function hqOfficialTable(entries){
     var e=entries[i], ph=nrpPhotos(e.r);
     return '<tr>'+a.map(function(c,j){
       if(j===22){
-        return '<td>'+(ph.length?(esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')):'')+'</td>';
+        return '<td>'+(ph.length&&(ph[0]&&ph[0].data)?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')+'</td>';
       }
       return '<td'+(left[j]?' class="nrp-l"':'')+'>'+escBr(c)+'</td>';
     }).join('')+'</tr>';
@@ -10940,7 +10940,34 @@ function hqReportExcel(){
     var wb=XLSX.utils.book_new();
     wb.Workbook={Views:[{RTL:true}]};
     var ws=XLSX.utils.aoa_to_sheet(HQ_LAST_REPORT.aoa);
-    ws['!cols']=HQ_LAST_REPORT.aoa[0].map(function(){ return {wch:16}; });
+    ws['!cols']=HQ_LAST_REPORT.aoa[0].map(function(c,ci){
+      if(ci===8) return {wch:30};   // أسماء العاملين
+      if(ci===9) return {wch:14};   // الرقم الوظيفي
+      if(ci===5) return {wch:24};   // نوع البلاغ
+      if(ci===6) return {wch:34};   // الإجراء المتخذ
+      if(ci===22) return {wch:12};  // صور
+      return {wch:15};
+    });
+    // تنسيق: التفاف النص + محاذاة يمين + خط
+    var N=HQ_LAST_REPORT.aoa[0].length;
+    for(var R=0;R<HQ_LAST_REPORT.aoa.length;R++)for(var C=0;C<N;C++){
+      var addr=XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[addr]) ws[addr]={t:'s',v:''};
+      var isHead=(R===0);
+      ws[addr].s={alignment:{wrapText:true,vertical:'top',horizontal:'right',readingOrder:2},
+        font:{name:'Arial',sz:isHead?10:10,bold:isHead},
+        border:{top:{style:'thin',color:{rgb:'999999'}},bottom:{style:'thin',color:{rgb:'999999'}},left:{style:'thin',color:{rgb:'999999'}},right:{style:'thin',color:{rgb:'999999'}}}};
+      if(isHead){ ws[addr].s.fill={fgColor:{rgb:'D9E1F2'}}; ws[addr].s.alignment.horizontal='center'; }
+    }
+    // ارتفاعات صفوف مناسبة للصور
+    if(HQ_LAST_REPORT.kind==='official22'){
+      var rowH=[];
+      HQ_LAST_REPORT.aoa.forEach(function(row,i){
+        if(i===0) rowH.push({hpt:30});
+        else rowH.push({hpt:60});
+      });
+      ws['!rows']=rowH;
+    }
     XLSX.utils.book_append_sheet(wb,ws,HQ_LAST_REPORT.sheet||'تقرير');
     if(HQ_LAST_REPORT.kind==='official22'){
       var S=hqSummaryData(hqRepFiltered());
