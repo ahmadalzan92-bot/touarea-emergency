@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.110",
+  "version": "2026.10.09.111",
   "released": "2026-11-02",
-  "notes": "Option A (SSO) complete: Government login bypasses directorate password. Non-assigned directorate cards are faded/disabled for non-admin users. RBAC enforcement (viewer=read-only, staff=read+write, admin=full). Auto-enter directorate for single-governorate users."
+  "notes": "Option A (SSO) complete + disable non-assigned directorate cards for non-admin users. Admin sees all cards enabled. Staff/Viewer see only their governorate card enabled, others faded/disabled."
 }
