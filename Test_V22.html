@@ -1600,7 +1600,7 @@
           <img src="logo-web.png" alt="شعار الوزارة">
           <div>
             <div class="hq-brand-title"><i class="fas fa-satellite-dish"></i> مديرية الطوارئ — الوزارة (المركز)</div>
-            <div class="hq-brand-sub">غرفة العمليات المركزية — الخريطة الشاملة وتوجيه البلاغات</div>
+            <div class="hq-brand-sub">غرفة العمليات المركزية — الخريطة الشاملة وتوجيه البلاغات — إعداد وتصميم م. أحمد الزن</div>
           </div>
         </div>
         <div class="hq-kpis">
@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.71';
+    const APP_VERSION = '2026.10.09.72';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9431,7 +9431,7 @@ function nrpTableHTML(rs){
       +'<td>'+escBr(v[20])+'</td>'
       +'<td>'+photoCell+'</td>'
       +'</tr>';
-  }).join('')||'<tr><td colspan="22" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
+  }).join('')||'<tr><td colspan="23" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
   var head='<thead><tr>'
     +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
     +'<th rowspan="2">رقم البلاغ</th><th rowspan="2" style="width:8%">نوع البلاغ</th><th rowspan="2" style="width:13%">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
@@ -9676,7 +9676,7 @@ function nrpWordHTML(rs){
       +'<td style="'+L+'">'+NL(v[20])+'</td>'
       +'<td style="'+C+'">'+photoCell+'</td>'
       +'</tr>';
-  }).join('')||('<tr><td colspan="22" style="'+BS+'text-align:center;color:#888888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>');
+  }).join('')||('<tr><td colspan="23" style="'+BS+'text-align:center;color:#888888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>');
   var head='<thead><tr>'
     +'<th rowspan="2" style="'+HC+'">الرقم</th>'
     +'<th rowspan="2" style="'+HC+'">اليوم</th>'
@@ -10724,13 +10724,34 @@ function hqSimpleTable(headers,rows,leftCols,foot){
   var tfoot=foot?('<tfoot><tr>'+foot.map(function(c){ return '<td style="background:#eef3fb;font-weight:800">'+escBr(c)+'</td>'; }).join('')+'</tr></tfoot>'):'';
   return '<table class="nrp-main">'+head+'<tbody>'+body+'</tbody>'+tfoot+'</table>';
 }
+
+function hqStaffNamesText(r){
+  var seen={}, out=[];
+  (r.staff||[]).forEach(function(s){
+    var C=staffCanonical(s);
+    var k=(C.number?('N:'+C.number):('M:'+normalizeArabic(C.name||'')));
+    if(seen[k]) return; seen[k]=1;
+    out.push((C.name||'')+(C.title?(' / '+C.title):''));
+  });
+  return out.join('\n');
+}
+function hqStaffNumbersText(r){
+  var seen={}, out=[];
+  (r.staff||[]).forEach(function(s){
+    var C=staffCanonical(s);
+    var k=(C.number?('N:'+C.number):('M:'+normalizeArabic(C.name||'')));
+    if(seen[k]) return; seen[k]=1;
+    out.push(C.number||'');
+  });
+  return out.join('\n');
+}
 function hqOfficialRowArrays(entries){
   return entries.map(function(e,i){
     var r=e.r, d=nrpDuty(r), v=nrpVehCols(r), ph=nrpPhotos(r);
     var inT=nrpSegTxt(d.inSegs), outT=nrpSegTxt(d.outSegs);
     return [
       i+1, dayName(r.reportDate)||'', r.reportDate?fmtDMY(r.reportDate):'', e.d.short||'', numOrStr(r.reportNumber)||'',
-      nrpTypeText(r), r.actionsTaken||'', r.teamNo||'', nrpStaffText(r),
+      nrpTypeText(r), r.actionsTaken||'', r.teamNo||'', hqStaffNamesText(r), hqStaffNumbersText(r),
       v.types, v.owns, v.numbers,
       inT.start, inT.end, d.inH?numOrStr(fmtH(d.inH)):'',
       outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
@@ -10740,17 +10761,18 @@ function hqOfficialRowArrays(entries){
   });
 }
 var HQ_OFFICIAL_HEADERS=['الرقم','اليوم','التاريخ','المحافظة','رقم البلاغ','نوع البلاغ','الإجراء المتخذ','رقم الفرقة',
-  'أسماء العاملين في الفرقة مع بيان الوظيفة','نوع الآلية','(حكومي / مستأجر)','رقم الآلية',
+  'أسماء العاملين في الفرقة مع بيان الوظيفة','الرقم الوظيفي','نوع الآلية','(حكومي / مستأجر)','رقم الآلية',
   'وقت البدء (خلال الدوام)','وقت الانتهاء (خلال الدوام)','مدة العمل الكلي (خلال الدوام)',
   'وقت البدء (خارج الدوام)','وقت الانتهاء (خارج الدوام)','مدة العمل الكلي (خارج الدوام)',
   'حالة البلاغ','سرعة الاستجابة','إحداثيات الموقع','صور للبلاغ'];
 function hqOfficialTable(entries){
   var arrs=hqOfficialRowArrays(entries);
-  var left={5:1,6:1,8:1,9:1,10:1,11:1,12:1,13:1,15:1,16:1,20:1};
+  var left={5:1,6:1,8:1,9:1,10:1,11:1,12:1,13:1,14:1,16:1,17:1,21:1};
   var head='<thead><tr>'
     +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
     +'<th rowspan="2">رقم البلاغ</th><th rowspan="2" style="width:8%">نوع البلاغ</th><th rowspan="2" style="width:13%">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
     +'<th rowspan="2" style="width:16%">أسماء العاملين في الفرقة مع بيان الوظيفة<br><small>(مهندس/ مراقب/ سائق/ سائق آلية...الخ)</small></th>'
+    +'<th rowspan="2" style="width:11%">الرقم الوظيفي</th>'
     +'<th colspan="3">الآليات المستخدمة</th>'
     +'<th colspan="3">خلال أوقات العمل</th>'
     +'<th colspan="3">خارج أوقات العمل</th>'
@@ -10761,12 +10783,12 @@ function hqOfficialTable(entries){
   var rows=arrs.map(function(a,i){
     var e=entries[i], ph=nrpPhotos(e.r);
     return '<tr>'+a.map(function(c,j){
-      if(j===21){
+      if(j===22){
         return '<td>'+(ph.length?(esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')):'')+'</td>';
       }
       return '<td'+(left[j]?' class="nrp-l"':'')+'>'+escBr(c)+'</td>';
     }).join('')+'</tr>';
-  }).join('')||'<tr><td colspan="22" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
+  }).join('')||'<tr><td colspan="23" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
   return '<table class="nrp-main">'+head+'<tbody>'+rows+'</tbody></table>';
 }
 function hqSummaryData(entries){
@@ -10925,8 +10947,24 @@ function hqReportExcel(){
       var ws2=XLSX.utils.aoa_to_sheet([S.headers].concat(S.rows,[S.foot]));
       XLSX.utils.book_append_sheet(wb,ws2,'ملخص المديريات');
     }
-    XLSX.writeFile(wb,'تقرير_المركز_'+new Date().toISOString().slice(0,10)+'.xlsx');
-    showAlert('تم تصدير التقرير بصيغة Excel.','success');
+    // تضمين صور البلاغات داخل خلايا Excel (فقط للتقرير الرسمي 22/23 عموداً)
+    var specs=[];
+    if(HQ_LAST_REPORT.kind==='official22'){
+      var entries=hqRepFiltered();
+      var photoCol=HQ_LAST_REPORT.aoa[0].length-1;
+      entries.forEach(function(e,i){
+        var ph=nrpPhotos(e.r);
+        if(ph.length && ph[0] && ph[0].data){
+          specs.push({row:i+2, col:photoCol, dataUrl:ph[0].data, w:64, h:48});
+        }
+      });
+    }
+    var bytes=new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array',compression:false}));
+    if(specs.length){
+      try{ bytes=hqEmbedImagesInXlsx(bytes,specs); }catch(e){ console.warn('image embed failed',e); }
+    }
+    hqDownloadXlsxWithImages(bytes,'تقرير_المركز_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    showAlert('تم تصدير التقرير بصيغة Excel'+(specs.length?(' (مع '+specs.length+' صورة)'):'')+'.','success');
   }catch(e){ showAlert('تعذّر تصدير Excel: '+e.message,'danger'); }
 }
 
@@ -10935,6 +10973,220 @@ try{ loadCustomDirectorates(); }catch(e){}
 try{
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ try{ loadCustomDirectorates(); }catch(e){} });
 }catch(e){}
+
+</script>
+
+<script>
+/* =====================================================================
+   تضمين صور البلاغات داخل ملف Excel (OOXML drawing) — صفحة المركز
+   ===================================================================== */
+function hqCrc32(buf){
+  var t=hqCrc32.t; if(!t){ t=new Uint32Array(256); for(var i=0;i<256;i++){var c=i;for(var k=0;k<8;k++) c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1); t[i]=c>>>0;} hqCrc32.t=t; }
+  var c=0xFFFFFFFF;
+  for(var i=0;i<buf.length;i++) c=t[(c^buf[i])&0xFF]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0;
+}
+function hqReadZip(bytes){
+  var dv=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+  var td=new TextDecoder();
+  var entries=new Map();
+  // find EOCD
+  var eocd=-1;
+  for(var i=bytes.length-22;i>=0;i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd<0) return entries;
+  var num=dv.getUint16(eocd+10,true);
+  var cdOff=dv.getUint32(eocd+16,true);
+  var p=cdOff;
+  for(var i=0;i<num;i++){
+    if(dv.getUint32(p,true)!==0x02014b50) break;
+    var fnLen=dv.getUint16(p+28,true);
+    var extraLen=dv.getUint16(p+30,true);
+    var cmtLen=dv.getUint16(p+32,true);
+    var method=dv.getUint16(p+10,true);
+    var compSize=dv.getUint32(p+20,true);
+    var uncompSize=dv.getUint32(p+24,true);
+    var localOff=dv.getUint32(p+42,true);
+    var name=td.decode(bytes.subarray(p+46,p+46+fnLen));
+    var lfn=dv.getUint16(localOff+26,true);
+    var lextra=dv.getUint16(localOff+28,true);
+    var dataStart=localOff+30+lfn+lextra;
+    var data;
+    if(method===0){
+      data=bytes.subarray(dataStart,dataStart+compSize);
+    } else {
+      // deflate-raw via DecompressionStream (sync not possible) — skip; base uses stored
+      data=bytes.subarray(dataStart,dataStart+compSize);
+    }
+    entries.set(name,data);
+    p += 46+fnLen+extraLen+cmtLen;
+  }
+  return entries;
+}
+function hqWriteZip(entries){
+  var parts=[]; var cdEntries=[]; var offset=0; var td=new TextEncoder();
+  for(const [name,data] of entries){
+    var nameBytes=td.encode(name);
+    var local=new Uint8Array(30+nameBytes.length);
+    var ldv=new DataView(local.buffer);
+    ldv.setUint32(0,0x04034b50,true);
+    ldv.setUint16(4,20,true);
+    ldv.setUint16(6,0,true);
+    ldv.setUint16(8,0,true);
+    ldv.setUint32(10,0,true);
+    ldv.setUint32(14,hqCrc32(data),true);
+    ldv.setUint32(18,data.length,true);
+    ldv.setUint32(22,data.length,true);
+    ldv.setUint16(26,nameBytes.length,true);
+    ldv.setUint16(28,0,true);
+    local.set(nameBytes,30);
+    var cd=new Uint8Array(46+nameBytes.length);
+    var cdv=new DataView(cd.buffer);
+    cdv.setUint32(0,0x02014b50,true);
+    cdv.setUint16(4,20,true);
+    cdv.setUint16(6,20,true);
+    cdv.setUint16(8,0,true);
+    cdv.setUint32(10,0,true);
+    cdv.setUint32(14,hqCrc32(data),true);
+    cdv.setUint32(18,data.length,true);
+    cdv.setUint32(22,data.length,true);
+    cdv.setUint16(26,nameBytes.length,true);
+    cdv.setUint16(28,0,true);
+    cdv.setUint16(30,0,true);
+    cdv.setUint16(32,0,true);
+    cdv.setUint16(34,0,true);
+    cdv.setUint32(36,0,true);
+    cdv.setUint32(40,offset,true);
+    cd.set(nameBytes,46);
+    cdEntries.push({cd:cd});
+    parts.push(local,data);
+    offset += local.length + data.length;
+  }
+  var cdStart=offset; var cdSize=0;
+  for(const c of cdEntries){ parts.push(c.cd); cdSize += c.cd.length; offset += c.cd.length; }
+  var eocd=new Uint8Array(22);
+  var edv=new DataView(eocd.buffer);
+  edv.setUint32(0,0x06054b50,true);
+  edv.setUint16(8,cdEntries.length,true);
+  edv.setUint16(10,cdEntries.length,true);
+  edv.setUint32(12,cdSize,true);
+  edv.setUint32(16,cdStart,true);
+  edv.setUint16(20,0,true);
+  parts.push(eocd);
+  var total=parts.reduce(function(a,b){return a+b.length;},0);
+  var out=new Uint8Array(total);
+  var o=0;
+  for(const part of parts){ out.set(part,o); o+=part.length; }
+  return out;
+}
+function hqDataUrlToBytes(dataUrl){
+  var b64=dataUrl.split(',')[1]||'';
+  var bin=atob(b64);
+  var bytes=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return bytes;
+}
+function hqEmbedImagesInXlsx(baseBytes, specs){
+  // specs: [{row (1-based), col (0-based), dataUrl, w, h}]
+  var entries=hqReadZip(baseBytes);
+  var td=new TextEncoder();
+  var td2=new TextDecoder();
+  // collect image bytes
+  var imgs=[];
+  specs.forEach(function(sp, idx){
+    if(!sp.dataUrl) return;
+    imgs.push({idx:idx+1, sp:sp, bytes:hqDataUrlToBytes(sp.dataUrl)});
+  });
+  if(!imgs.length) return baseBytes;
+
+  // next rId for sheet rels
+  // parse existing sheet1.xml.rels if any
+  var relsName='xl/worksheets/_rels/sheet1.xml.rels';
+  var existingRels = entries.get(relsName);
+  var relsXml = existingRels ? td2.decode(existingRels) : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+  // find max rId
+  var maxRid=0;
+  var ridMatches=relsXml.match(/Id="rId(\d+)"/g)||[];
+  ridMatches.forEach(function(m){ var n=parseInt(m.match(/\d+/)[0]); if(n>maxRid) maxRid=n; });
+  var drawingRid = 'rId'+(maxRid+1);
+
+  // drawing xml
+  var drawingXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  imgs.forEach(function(im, i){
+    var r = im.sp.row; // 1-based
+    var c = im.sp.col; // 0-based
+    var w = im.sp.w || 64;
+    var h = im.sp.h || 48;
+    // convert px to EMU (1px ~ 9525 EMU at 96dpi)
+    var wEmu = w*9525, hEmu = h*9525;
+    var rid = 'rId'+(i+1);
+    drawingXml += '<xdr:twoCellAnchor editAs="oneCell">'
+      + '<xdr:from><xdr:col>'+c+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+(r-1)+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
+      + '<xdr:to><xdr:col>'+(c+1)+'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>'+r+'</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>'
+      + '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'+(i+2)+'" name="Picture'+(i+1)+'"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>'
+      + '<xdr:blipFill><a:blip r:embed="'+rid+'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+      + '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+wEmu+'" cy="'+hEmu+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>'
+      + '</xdr:pic><xdr:clientData/></xdr:twoCellAnchor>';
+  });
+  drawingXml += '</xdr:wsDr>';
+
+  // drawing rels
+  var drawingRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+  imgs.forEach(function(im,i){
+    var ext = (im.sp.dataUrl.match(/data:image\/([a-zA-Z0-9.+-]+)/)||[])[1]||'png';
+    ext = ext.toLowerCase().replace('jpeg','jpg');
+    drawingRelsXml += '<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image'+(i+1)+'.'+ext+'"/>';
+  });
+  drawingRelsXml += '</Relationships>';
+
+  // add media files
+  imgs.forEach(function(im,i){
+    var ext = ((im.sp.dataUrl.match(/data:image\/([a-zA-Z0-9.+-]+)/)||[])[1]||'png').toLowerCase().replace('jpeg','jpg');
+    entries.set('xl/media/image'+(i+1)+'.'+ext, im.bytes);
+  });
+  entries.set('xl/drawings/drawing1.xml', td.encode(drawingXml));
+  entries.set('xl/drawings/_rels/drawing1.xml.rels', td.encode(drawingRelsXml));
+
+  // update sheet1.xml.rels: add drawing relationship
+  var drawingRelEntry = '<Relationship Id="'+drawingRid+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>';
+  if (relsXml.indexOf('</Relationships>') >= 0) {
+    relsXml = relsXml.replace('</Relationships>', drawingRelEntry + '</Relationships>');
+  } else {
+    relsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + drawingRelEntry + '</Relationships>';
+  }
+  entries.set(relsName, td.encode(relsXml));
+
+  // update sheet1.xml: add <drawing r:id="..."/> before </worksheet>
+  var sheetName = 'xl/worksheets/sheet1.xml';
+  var sheetXml = td2.decode(entries.get(sheetName));
+  if (sheetXml.indexOf('<drawing ') < 0) {
+    sheetXml = sheetXml.replace('</worksheet>', '<drawing r:id="'+drawingRid+'"/></worksheet>');
+  }
+  entries.set(sheetName, td.encode(sheetXml));
+
+  // update [Content_Types].xml
+  var ctName = '[Content_Types].xml';
+  var ct = td2.decode(entries.get(ctName));
+  if (ct.indexOf('image/png') < 0 && ct.indexOf('image/jpeg') < 0) {
+    // add Default for png and jpeg
+    ct = ct.replace('</Types>', '<Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="jpeg" ContentType="image/jpeg"/></Types>');
+  }
+  if (ct.indexOf('drawingml') < 0 && ct.indexOf('drawing+xml') < 0) {
+    ct = ct.replace('</Types>', '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>');
+  }
+  entries.set(ctName, td.encode(ct));
+
+  return hqWriteZip(entries);
+}
+
+function hqDownloadXlsxWithImages(baseBytes, filename){
+  var blob = new Blob([baseBytes], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+}
 
 </script>
 </body>
