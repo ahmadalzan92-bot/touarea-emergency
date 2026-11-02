@@ -9622,6 +9622,7 @@ function nrpRender(){
 }
 
 function nrpBuildWS(rs){
+  window.__nrpPhotoRows=[];
   var N=23, aoa=[], merges=[], heights={};
   var blank=function(){return new Array(N).fill('');};
   var put=function(r,c,v){ while(aoa.length<=r) aoa.push(blank()); aoa[r][c]=v; };
@@ -9666,6 +9667,7 @@ function nrpBuildWS(rs){
       put(row,11,vehOwn);
       put(row,12,vehNum);
     });
+    window.__nrpPhotoRows.push(r0+1);
     r0 += n;
   });
   var bodyEnd=r0; r0+=1;
@@ -9702,8 +9704,28 @@ function nrpExportExcel(){
     var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
     var ws=nrpBuildWS(rs);
     XLSX.utils.book_append_sheet(wb,ws,'نموذج تقرير');
-    XLSX.writeFile(wb,'نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
-    showAlert('تم تصدير النموذج بصيغة Excel.','success');
+    // تضمين صور البلاغات (64×48)
+    var specs=[];
+    var photoRows=window.__nrpPhotoRows||[];
+    (rs||[]).forEach(function(r,ri){
+      var ph=nrpPhotos(r);
+      if(ph.length && ph[0] && ph[0].data){
+        var er=photoRows[ri];
+        if(er) specs.push({row:er, col:22, dataUrl:nrpThumb(ph[0].data), w:64, h:48});
+      }
+    });
+    var bytes=new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array',compression:false}));
+    if(specs.length){
+      try{ bytes=hqEmbedImagesInXlsx(bytes,specs); }catch(e){ console.warn('image embed failed',e); }
+    }
+    // download
+    var blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
+    showAlert('تم تصدير النموذج بصيغة Excel'+(specs.length?(' (مع '+specs.length+' صورة)'):'')+'.','success');
   }catch(e){ showAlert('تعذّر تصدير Excel: '+e.message,'danger'); }
 }
 function nrpPrint(){

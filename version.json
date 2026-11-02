@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.95",
+  "version": "2026.10.09.96",
   "released": "2026-11-02",
-  "notes": "تصدير NRP Excel بصيغة .xlsx (row-per-staff layout مع merged cells) — صور 64×48 في خلية الصورة، إحداثيات في عمود موقع البلاغ."
+  "notes": "تصدير NRP Excel بصيغة .xlsx (row-per-staff, merged cells) مع صور 64×48 مضمّنة (zip writer fixed). إصدار 2026.10.09.96."
 }
