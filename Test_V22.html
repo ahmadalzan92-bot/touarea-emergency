@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.90';
+    const APP_VERSION = '2026.10.09.91';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9663,93 +9663,79 @@ function nrpBuildWS(rs){
 }
 function nrpExportExcel(){
   var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
-  var ws=nrpBuildWS(rs);
-  var wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
-  XLSX.utils.book_append_sheet(wb,ws,'نموذج تقرير');
-  XLSX.writeFile(wb,'نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  showAlert('تم تصدير النموذج بصيغة Excel.');
-}
-
-function nrpWordHTML(rs){
-  var E=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
-  var NL=function(s){return E(s).replace(/\n/g,'<br>').replace(/\r/g,'');};
-  var BS='border:1px solid #333333;padding:3px 4px;';
-  var HC=BS+'background:#dbe4f3;color:#1a3a6b;font-weight:bold;text-align:center;vertical-align:middle;';
-  var C=BS+'text-align:center;vertical-align:top;';
-  var L=BS+'text-align:right;vertical-align:top;';
-  var body=rs.map(function(r,i){
-    var v=nrpRow(r,i), ph=nrpPhotos(r);
-    var photoCell = ph.length?(E(ph.length+' صورة')+(ph[0]&&ph[0].data?('<br><img src="'+ph[0].data+'" width="70" height="52" alt="صورة البلاغ">'):'')):'';
-    return '<tr>'
-      +'<td style="'+C+'">'+(i+1)+'</td>'
-      +'<td style="'+C+'">'+E(v[1])+'</td>'
-      +'<td style="'+C+'">'+E(v[2])+'</td>'
-      +'<td style="'+C+'">'+E(v[3])+'</td>'
-      +'<td style="'+C+'">'+E(v[4])+'</td>'
-      +'<td style="'+L+'">'+NL(v[5])+'</td>'
-      +'<td style="'+L+'">'+NL(v[6])+'</td>'
-      +'<td style="'+C+'">'+E(v[7])+'</td>'
-      +'<td style="'+L+'">'+NL(v[8])+'</td>'
-      +'<td style="'+L+'">'+NL(v[9])+'</td>'
-      +'<td style="'+C+'">'+NL(v[10])+'</td>'
-      +'<td style="'+C+'">'+NL(v[11])+'</td>'
-      +'<td style="'+C+'">'+NL(v[12])+'</td>'
-      +'<td style="'+C+'">'+NL(v[13])+'</td>'
-      +'<td style="'+C+'">'+E(v[14])+'</td>'
-      +'<td style="'+C+'">'+NL(v[15])+'</td>'
-      +'<td style="'+C+'">'+NL(v[16])+'</td>'
-      +'<td style="'+C+'">'+E(v[17])+'</td>'
-      +'<td style="'+C+'">'+E(v[18])+'</td>'
-      +'<td style="'+C+'">'+E(v[19])+'</td>'
-      +'<td style="'+L+'">'+NL(v[20])+'</td>'
-      +'<td style="'+C+'">'+photoCell+'</td>'
-      +'</tr>';
-  }).join('')||('<tr><td colspan="23" style="'+BS+'text-align:center;color:#888888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>');
-  var head='<thead><tr>'
-    +'<th rowspan="2" style="'+HC+'">الرقم</th>'
-    +'<th rowspan="2" style="'+HC+'">اليوم</th>'
-    +'<th rowspan="2" style="'+HC+'">التاريخ</th>'
-    +'<th rowspan="2" style="'+HC+'">المحافظة</th>'
-    +'<th rowspan="2" style="'+HC+'">رقم البلاغ</th>'
-    +'<th rowspan="2" style="'+HC+'">نوع البلاغ</th>'
-    +'<th rowspan="2" style="'+HC+'">الإجراء المتخذ</th>'
-    +'<th rowspan="2" style="'+HC+'">رقم الفرقة</th>'
-    +'<th rowspan="2" style="'+HC+'">أسماء العاملين في الفرقة مع بيان الوظيفة (مهندس/ مراقب/ سائق/ سائق آليه...الخ)</th>'
-    +'<th colspan="3" style="'+HC+'">الآليات المستخدمة</th>'
-    +'<th colspan="3" style="'+HC+'">خلال أوقات العمل</th>'
-    +'<th colspan="3" style="'+HC+'">خارج أوقات العمل</th>'
-    +'<th rowspan="2" style="'+HC+'">حالة البلاغ (منتهي/ قيد الإجراء)</th>'
-    +'<th rowspan="2" style="'+HC+'">سرعة الاستجابة (خاص بمديرية الطوارئ)</th>'
-    +'<th rowspan="2" style="'+HC+'">إحداثيات الموقع</th>'
-    +'<th rowspan="2" style="'+HC+'">صور للبلاغ</th>'
-    +'</tr><tr>'
-    +'<th style="'+HC+'">نوع الآلية</th><th style="'+HC+'">(حكومي / مستأجر)</th><th style="'+HC+'">رقم الآلية</th>'
-    +'<th style="'+HC+'">وقت البدء</th><th style="'+HC+'">وقت الانتهاء</th><th style="'+HC+'">مدة العمل الكلي</th>'
-    +'<th style="'+HC+'">وقت البدء</th><th style="'+HC+'">وقت الانتهاء</th><th style="'+HC+'">مدة العمل الكلي</th>'
-    +'</tr></thead>';
-  var titleBlock='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:6pt"><tr><td style="text-align:center;font-weight:bold;font-size:14pt">وزارة الأشغال العامة والإسكان</td></tr><tr><td style="text-align:center;font-weight:bold;font-size:12pt">مديرية الطوارئ</td></tr><tr><td style="text-align:center;font-weight:bold;font-size:12pt">تقرير بلاغات المنخفضات ضمن مناطق الاختصاص</td></tr></table>';
-  var table='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;font-size:8pt">'+head+'<tbody>'+body+'</tbody></table>';
-  var sigLine='<div style="border-bottom:1px solid #999999;margin:20pt 18pt 4pt"></div>';
-  var sigTitle=function(t){return '<div style="font-weight:bold;color:#1a3a6b">'+t+'</div>';};
-  var sign='<table dir="rtl" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:22pt"><tr>'
-    +'<td width="50%" style="text-align:center;vertical-align:top;padding:4pt 10pt">'+sigTitle('مدير مديرية الأشغال')+(_nrpSignImg?('<div><img src="'+_nrpSignImg+'" height="56" style="height:42pt" alt="التوقيع"></div>'):sigLine)+'<div>'+E(nrpMgr1Val())+'</div></td>'
-    +'<td width="50%" style="text-align:center;vertical-align:top;padding:4pt 10pt">'+sigTitle('مدير مديرية الطوارئ')+(_nrpStampImg?('<div><img src="'+_nrpStampImg+'" height="80" style="height:60pt" alt="الختم"></div>'):sigLine)+'<div>'+E(nrpMgr2Val())+'</div></td>'
-    +'</tr></table>';
-  var credit='<div style="text-align:center;font-size:8pt;color:#777777;margin-top:12pt;border-top:1px solid #cccccc;padding-top:4pt">تقرير البلاغات ضمن مناطق الاختصاص — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ'+(ACTIVE_DIR.short?(' • '+E(ACTIVE_DIR.short)):'')+'</div>';
-  var style='@page{size:29.7cm 21cm;mso-page-orientation:landscape;margin:0.6cm}body{font-family:"Cairo","Segoe UI",Tahoma,sans-serif;direction:rtl;font-size:8pt;color:#1a2030}table{border-collapse:collapse}td,th{vertical-align:top}';
-  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>نموذج تقرير — تقرير البلاغات ضمن مناطق الاختصاص</title><style>'+style+'</style></head><body dir="rtl" style="direction:rtl">'+titleBlock+table+sign+credit+'</body></html>';
-}
-function nrpExportWord(){
-  var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
-  try{
-    var doc=orfWrapMHTML(nrpWordHTML(rs));
-    var blob=new Blob([doc],{type:'application/msword'});
-    var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download='نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.doc';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){URL.revokeObjectURL(a.href);},3000);
-    showAlert('تم تنزيل النموذج بصيغة Word.');
-  }catch(e){ showAlert('تعذّر إنشاء ملف Word.','danger'); }
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">'
+    +'<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
+    +'<style>table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:9pt;direction:rtl}'
+    +'td,th{border:1px solid #7c8db5;padding:3px;vertical-align:top;text-align:right;white-space:pre-wrap}'
+    +'th{background:#D9E1F2;color:#1a3a6b;font-weight:bold;text-align:center;vertical-align:middle}'
+    +'img{width:64px;height:48px;object-fit:contain}</style></head><body><table>';
+  html += '<tr>'
+    +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
+    +'<th rowspan="2">رقم البلاغ</th><th rowspan="2">نوع البلاغ</th><th rowspan="2">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
+    +'<th rowspan="2">أسماء العاملين في الفرقة</th><th rowspan="2">الرقم الوظيفي</th>'
+    +'<th colspan="3">الآليات المستخدمة</th><th colspan="3">خلال أوقات العمل</th><th colspan="3">خارج أوقات العمل</th>'
+    +'<th rowspan="2">حالة البلاغ</th><th rowspan="2">سرعة الاستجابة</th><th rowspan="2">إحداثيات الموقع</th><th rowspan="2">صور للبلاغ</th></tr>';
+  html += '<tr>'
+    +'<th>نوع الآلية</th><th>(حكومي/مستأجر)</th><th>رقم الآلية</th>'
+    +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
+    +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th></tr>';
+  var idx = 0;
+  (rs||[]).forEach(function(r){
+    var v = nrpRow(r, idx);
+    var ph = nrpPhotos(r);
+    var photoCell = ph.length&&(ph[0]&&ph[0].data)?('<img src="'+nrpThumb(ph[0].data)+'" width="64" height="48" alt="صورة">') : (ph.length?(ph.length+' صورة'):'');
+    var staff = (r.staff||[]);
+    var seen = {}, uniq = [];
+    staff.forEach(function(s){
+      var C = staffCanonical(s);
+      var k = C.number ? ('N:'+C.number) : ('M:'+normalizeArabic(C.name||''));
+      if(seen[k]) return; seen[k]=1; uniq.push({s:s,C:C});
+    });
+    if(!uniq.length) uniq = [{s:null,C:{name:'',number:'',title:''}}];
+    var n = uniq.length;
+    uniq.forEach(function(u, ui){
+      html += '<tr>';
+      if(ui===0){
+        html += '<td rowspan="'+n+'">'+esc(idx+1)+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[1])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[2])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[3])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[4])+'</td>';
+        html += '<td rowspan="'+n+'" style="text-align:right">'+escBr(v[5])+'</td>';
+        html += '<td rowspan="'+n+'" style="text-align:right">'+escBr(v[6])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[7])+'</td>';
+      }
+      var nameTxt = u.s ? (esc(staffCanonical(u.s).name||'')+(staffCanonical(u.s).title?(' / '+esc(staffCanonical(u.s).title)):'')) : '';
+      var numTxt = u.s ? esc(staffCanonical(u.s).number||'') : '';
+      html += '<td style="text-align:right">'+nameTxt+'</td>';
+      html += '<td>'+numTxt+'</td>';
+      if(ui===0){
+        html += '<td rowspan="'+n+'" style="text-align:right">'+escBr(v[10])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[11])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[12])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[13])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[14])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[15])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[16])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[17])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[18])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[19])+'</td>';
+        html += '<td rowspan="'+n+'">'+esc(v[20])+'</td>';
+        html += '<td rowspan="'+n+'">'+escBr(v[21])+'</td>';
+        html += '<td rowspan="'+n+'">'+photoCell+'</td>';
+      }
+      html += '</tr>';
+    });
+    idx++;
+  });
+  html += '</table></body></html>';
+  var blob = new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'نموذج_تقرير_'+ACTIVE_DIR.short+'_'+new Date().toISOString().slice(0,10)+'.xls';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
+  showAlert('تم تصدير النموذج بصيغة Excel (مع الصور).','success');
 }
 function nrpPrint(){
   var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
