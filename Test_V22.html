@@ -1308,6 +1308,10 @@
       <div class="home-grid" id="homeGrid"></div>
       <div style="text-align:center"><span class="home-admin" onclick="openAdmin()"><i class="fas fa-user-shield"></i> التحكم الرئيسي — إعادة ضبط كلمات المرور</span></div>
       <div class="home-foot">إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ 2025-2026</div>
+  <div style="text-align:center;margin-top:10px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+    <button type="button" class="btn btn-sm btn-outline-info" onclick="govSetup2FA()" style="font-size:.75rem"><i class="fas fa-shield-alt"></i> إعداد المصادقة (2FA)</button>
+    <button type="button" class="btn btn-sm btn-outline-warning" onclick="govCreateBackup()" id="govBackupBtn" style="font-size:.75rem;display:none"><i class="fas fa-database"></i> نسخة احتياطية</button>
+  </div>
   <div style="text-align:center;margin-top:8px;font-size:.8rem;color:#64748b">
     <span id="govUserInfo"></span>
     <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="govLogout()" style="font-size:.75rem"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
@@ -11279,9 +11283,13 @@ function hqDownloadXlsxWithImages(baseBytes, filename){
       <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">اسم المستخدم</label>
       <input type="text" id="govLoginUser" class="form-control" placeholder="أدخل اسم المستخدم" style="border-radius:8px;padding:10px 12px" autocomplete="username">
     </div>
-    <div style="text-align:right;margin-bottom:18px">
+    <div style="text-align:right;margin-bottom:12px">
       <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">كلمة المرور</label>
       <input type="password" id="govLoginPass" class="form-control" placeholder="أدخل كلمة المرور" style="border-radius:8px;padding:10px 12px" autocomplete="current-password">
+    </div>
+    <div id="govLogin2FA" style="text-align:right;margin-bottom:18px;display:none">
+      <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">رمز المصادقة (2FA)</label>
+      <input type="text" id="govLoginTOTP" class="form-control" placeholder="أدخل رمز 6 أرقام" style="border-radius:8px;padding:10px 12px;text-align:center;letter-spacing:8px;font-size:1.2rem" maxlength="6" autocomplete="one-time-code">
     </div>
     <button type="button" class="btn btn-primary w-100 fw-bold" style="border-radius:8px;padding:10px" onclick="govLogin()"><i class="fas fa-key"></i> دخول</button>
     <p style="font-size:.72rem;color:#94a3b8;margin-top:16px;margin-bottom:0"><i class="fas fa-shield-halved"></i> نظام آمن — جميع العمليات مسجّلة (Audit Log)</p>
@@ -11296,9 +11304,11 @@ function govLogin(){
   var p=(document.getElementById('govLoginPass')||{}).value||'';
   var msg=document.getElementById('govLoginMsg');
   if(!u||!p){ if(msg){msg.textContent='أدخل اسم المستخدم وكلمة المرور.';msg.style.display='block';} return; }
-  fetch(CLOUD_API_BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})
+  var totp = (document.getElementById('govLoginTOTP')||{}).value||'';
+  fetch(CLOUD_API_BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,totpCode:totp})})
     .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
     .then(function(res){
+      if(!res.ok && res.data && res.data.requires2FA){ var f2=document.getElementById('govLogin2FA'); if(f2) f2.style.display='block'; var inp=document.getElementById('govLoginTOTP'); if(inp) inp.focus(); if(msg){msg.textContent='أدخل رمز المصادقة (2FA).';msg.style.display='block';} return; }
       if(!res.ok){ if(msg){msg.textContent=res.data.error||'بيانات الدخول غير صحيحة.';msg.style.display='block';} return; }
       sessionStorage.setItem('gov_auth_token', res.data.token);
       sessionStorage.setItem('gov_auth_user', res.data.username);
@@ -11321,6 +11331,7 @@ function govShowAuditLog(){
     modal = document.createElement('div');
     modal.id = 'govAuditModal';
     modal.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.setAttribute('data-2fa-modal','1');
     modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:95vw;max-width:900px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden"><div style="background:#0f2c52;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><b><i class="fas fa-clipboard-list"></i> سجل التدقيق (Audit Log)</b><button class="btn btn-sm btn-light" onclick="govCloseAuditModal()">إغلاق</button></div><div style="padding:12px;overflow:auto;flex:1"><div id="govAuditContent">جارٍ التحميل...</div></div></div>';
     modal.addEventListener('click', function(ev){ if(ev.target===modal) modal.style.display='none'; });
     document.body.appendChild(modal);
@@ -11341,6 +11352,60 @@ function govShowAuditLog(){
     })
     .catch(function(e){ content.innerHTML = '<p class="text-danger">تعذّر تحميل سجل التدقيق: '+esc(e.message)+'</p>'; });
 }
+
+
+function govClose2FAModal(){ var m=document.querySelector('div[data-2fa-modal]'); if(m) m.remove(); }
+function govSetup2FA(){
+  if(!govIsAuth()){ showAlert('يجب تسجيل الدخول أولاً.','warning'); return; }
+  fetch(CLOUD_API_BASE+'/api/auth/setup-2fa',{method:'POST',headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+    .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+    .then(function(res){
+      if(!res.ok){ showAlert(res.data.error||'تعذّر إعداد 2FA.','danger'); return; }
+      var secret = res.data.secret;
+      var qrUri = res.data.qrUri;
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:95vw;max-width:480px;padding:24px;text-align:center">'
+        +'<h3 style="font-size:1.1rem;font-weight:800;color:#0f2c52;margin-bottom:12px"><i class="fas fa-shield-alt"></i> إعداد المصادقة (2FA)</h3>'
+        +'<p style="font-size:.82rem;color:#64748b;margin-bottom:12px">امسح رمز QR في تطبيق المصادقة (Google Authenticator, Authy, etc.)</p>'
+        +'<div style="background:#f1f5f9;padding:12px;border-radius:8px;margin-bottom:12px;font-family:monospace;font-size:.9rem;word-break:break-all">'+secret+'</div>'
+        +'<p style="font-size:.75rem;color:#94748b;margin-bottom:12px">أو أدخل المفتاح يدوياً في تطبيق المصادقة</p>'
+        +'<div style="text-align:right;margin-bottom:12px"><label style="font-size:.82rem;font-weight:700">أدخل رمز 6 أرقام للتأكيد</label><input type="text" id="gov2FAVerifyCode" class="form-control" maxlength="6" style="text-align:center;letter-spacing:8px;font-size:1.2rem" placeholder="000000"></div>'
+        +'<div style="display:flex;gap:8px"><button class="btn btn-primary flex-fill" onclick="govVerify2FA()">تأكيد</button><button class="btn btn-secondary flex-fill" onclick="govClose2FAModal()">إلغاء</button></div>'
+        +'</div>';
+      modal.addEventListener('click', function(ev){ if(ev.target===modal) modal.remove(); });
+      document.body.appendChild(modal);
+    })
+    .catch(function(e){ showAlert('تعذّر إعداد 2FA: '+e.message,'danger'); });
+}
+function govVerify2FA(){
+  var code = (document.getElementById('gov2FAVerifyCode')||{}).value||'';
+  if(code.length!==6){ showAlert('أدخل رمز 6 أرقام.','warning'); return; }
+  fetch(CLOUD_API_BASE+'/api/auth/verify-2fa',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'},body:JSON.stringify({code:code})})
+    .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+    .then(function(res){
+      if(!res.ok){ showAlert(res.data.error||'رمز غير صحيح.','danger'); return; }
+      showAlert('تم تفعيل المصادقة (2FA) بنجاح.','success');
+      var m = document.querySelector('div[style*="position:fixed"][style*="z-index:99998"]'); if(m) m.remove();
+    })
+    .catch(function(e){ showAlert('تعذّر التحقق: '+e.message,'danger'); });
+}
+function govCreateBackup(){
+  if(govGetRole()!=='admin'){ showAlert('صلاحيات المدير مطلوبة.','warning'); return; }
+  fetch(CLOUD_API_BASE+'/api/backup',{method:'POST',headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+    .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+    .then(function(res){
+      if(!res.ok){ showAlert(res.data.error||'تعذّر إنشاء نسخة احتياطية.','danger'); return; }
+      showAlert('تم إنشاء نسخة احتياطية: '+res.data.backupKey,'success');
+    })
+    .catch(function(e){ showAlert('تعذّر إنشاء نسخة احتياطية: '+e.message,'danger'); });
+}
+// Show backup button for admin
+document.addEventListener('DOMContentLoaded', function(){
+  var rl = sessionStorage.getItem('gov_auth_role')||'';
+  var ab = document.getElementById('govBackupBtn');
+  if(ab && rl==='admin') ab.style.display='';
+});
 
 function govLogout(){
   sessionStorage.removeItem('gov_auth_token');
