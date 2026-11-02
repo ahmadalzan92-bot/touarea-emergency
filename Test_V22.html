@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.82';
+    const APP_VERSION = '2026.10.09.83';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11055,10 +11055,13 @@ function hqReadZip(bytes){
 function hqWriteZip(entries){
   var td = new TextEncoder();
   var entriesArr = Array.from(entries);
-  // First pass: build local headers and data
-  var localParts = [];
+  var n = entriesArr.length;
+  // First pass: build local headers and data, compute offsets
+  var locals = [];
+  var offset = 0;
+  var offsets = new Array(n);
   var i;
-  for (i = 0; i < entriesArr.length; i++) {
+  for (i = 0; i < n; i++) {
     var pair = entriesArr[i];
     var name = pair[0];
     var data = pair[1];
@@ -11076,24 +11079,15 @@ function hqWriteZip(entries){
     ldv.setUint16(26, nameBytes.length, true);
     ldv.setUint16(28, 0, true);
     local.set(nameBytes, 30);
-    localParts.push(local);
-    localParts.push(data);
+    offsets[i] = offset;
+    locals.push(local);
+    locals.push(data);
+    offset = offset + (30 + nameBytes.length) + data.length;
   }
-  // Compute offsets (second pass over localParts, two entries per file)
-  var offsets = [];
-  var off = 0;
-  var k;
-  for (k = 0; k < entriesArr.length; k++) {
-    offsets[k] = off;
-    var nameBytes2 = td.encode(entriesArr[k][0]);
-    var localLen = 30 + nameBytes2.length;
-    var dataLen = entriesArr[k][1].length;
-    off = off + localLen + dataLen;
-  }
-  // Build central directory
-  var cdParts = [];
+  // Second pass: build central directory
+  var cds = [];
   var cdSize = 0;
-  for (i = 0; i < entriesArr.length; i++) {
+  for (i = 0; i < n; i++) {
     var pair2 = entriesArr[i];
     var name2 = pair2[0];
     var data2 = pair2[1];
@@ -11115,20 +11109,20 @@ function hqWriteZip(entries){
     cdv.setUint16(32, 0, true);
     cdv.setUint16(34, 0, true);
     cdv.setUint32(36, 0, true);
-    cdv.setUint32(40, offsets[k] === undefined ? offsets[i] : offsets[i], true);
+    cdv.setUint32(40, offsets[i], true);
     cd.set(nameBytes2, 46);
-    cdParts.push(cd);
+    cds.push(cd);
     cdSize += cd.length;
   }
   // Assemble
-  var cdStart = off;
-  var allParts = localParts.slice();
-  for (i = 0; i < cdParts.length; i++) { allParts.push(cdParts[i]); }
+  var cdStart = offset;
+  var allParts = locals.slice();
+  for (i = 0; i < cds.length; i++) { allParts.push(cds[i]); }
   var eocd = new Uint8Array(22);
   var edv = new DataView(eocd.buffer);
   edv.setUint32(0, 0x06054b50, true);
-  edv.setUint16(8, cdParts.length, true);
-  edv.setUint16(10, cdParts.length, true);
+  edv.setUint16(8, cds.length, true);
+  edv.setUint16(10, cds.length, true);
   edv.setUint32(12, cdSize, true);
   edv.setUint32(16, cdStart, true);
   edv.setUint16(20, 0, true);
