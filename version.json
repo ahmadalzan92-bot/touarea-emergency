@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.85",
+  "version": "2026.10.09.86",
   "released": "2026-11-02",
-  "notes": "إصلاح writer ZIP: إعادة حساب offset محلي داخل CD loop (offsets[i] كانت تُقرأ 0). إصدار 2026.10.09.85."
+  "notes": "Debug version for zip offsets."
 }
