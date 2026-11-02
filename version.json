@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.80",
+  "version": "2026.10.09.81",
   "released": "2026-11-02",
-  "notes": "إعادة كتابة writer ZIP (two-pass offset tracking) لضمان فتح ملف Excel في Excel/openpyxl بدون BadZipFile."
+  "notes": "إعادة كتابة writer ZIP (for loop index-based) لضمان offsets صحيحة وفتح ملف Excel في Excel/openpyxl."
 }
