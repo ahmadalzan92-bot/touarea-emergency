@@ -1236,6 +1236,9 @@
     .dir-card-hq .dir-long{color:#e2e8f0!important}
     .dir-card-hq .dir-code{background:rgba(245,158,11,.22)!important;color:#ffd166!important;border:1px solid rgba(255,209,102,.45)!important}
     .dir-card-hq .dir-ico{background:rgba(255,209,102,.18)!important;color:#ffd166!important}
+    .dir-card.disabled{opacity:.35;pointer-events:none;filter:grayscale(1);cursor:not-allowed;position:relative}
+    .dir-card.disabled::after{content:"🔒";position:absolute;top:8px;left:8px;font-size:.8rem;opacity:.8}
+    .dir-card.disabled .dir-lock{display:block}
     .btn-xs{font-size:.72rem;line-height:1.35;padding:1px 6px;border-radius:5px}
 #hqScreen{position:fixed;inset:0;z-index:3200;display:none;flex-direction:column;background:#0b192c;color:#f8fafc;overflow:hidden;font-family:'Cairo','Segoe UI',Tahoma,sans-serif}
     .hq-topbar{background:linear-gradient(90deg,#081c33 0%,#0f2c52 50%,#143a69 100%);border-bottom:2px solid #f59e0b;display:flex;flex-direction:column;padding:6px 12px;gap:6px;z-index:40;box-shadow:0 4px 16px rgba(0,0,0,.35);overflow:hidden;flex-shrink:0}
@@ -3293,7 +3296,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.109';
+    const APP_VERSION = '2026.10.09.110';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3826,20 +3829,18 @@
     function buildHomeGrid(){
       const grid=document.getElementById('homeGrid'); if(!grid) return;
       if(typeof loadCustomDirectorates==='function') loadCustomDirectorates();
-      // Filter directorates by user's governorate (if set)
+      // Show all directorates; disable non-assigned for non-admin
       var userGov = govGetGovernorate();
-      var filteredDirs = DIRECTORATES;
-      if(userGov && userGov !== 'all' && govGetRole() !== 'admin'){
-        filteredDirs = DIRECTORATES.filter(function(d){ return d.key === userGov; });
-      }
-      grid.innerHTML='<button type="button" class="dir-card dir-card-hq" onclick="openHQPass()">'+
+      var isAdmin = (govGetRole() === 'admin');
+      var hqDisabled = (!isAdmin) ? ' disabled' : '';
+      grid.innerHTML='<button type="button" class="dir-card dir-card-hq'+hqDisabled+'" onclick="'+(isAdmin?'openHQPass()':'void(0)')+'">'+
           '<span class="dir-lock">'+((getPass('hq'))?'<i class="fas fa-lock"></i>':'<i class="fas fa-lock-open"></i>')+'</span>'+
           '<span class="dir-ico"><i class="fas fa-satellite-dish"></i></span>'+
           '<span class="dir-short">مديرية الطوارئ — الوزارة (المركز)</span>'+
           '<span class="dir-code">HQ</span>'+
           '<span class="dir-long">غرفة العمليات المركزية — شاشة خريطة كاملة لجميع المحافظات + إضافة وتحويل البلاغات لأي مديرية فرعية + إضافة صفحات فرعية + نظام تقارير شامل</span>'+
         '</button>'+DIRECTORATES.map(d=>
-        '<button type="button" class="dir-card'+(d.key===ACTIVE_DIR.key?' active':'')+'" onclick="enterDirectorate(\''+d.key+'\')">'+
+        '<button type="button" class="dir-card'+(d.key===ACTIVE_DIR.key?' active':'')+( (!isAdmin && userGov && userGov !== 'all' && d.key !== userGov) ? ' disabled' : '')+'" onclick="'+((!isAdmin && userGov && userGov !== 'all' && d.key !== userGov)?'void(0)':'enterDirectorate(\''+d.key+'\')')+'">'+
           '<span class="dir-lock">'+((getPass(d.key))?'<i class="fas fa-lock"></i>':'<i class="fas fa-lock-open"></i>')+'</span>'+
           '<span class="dir-ico"><i class="fas '+d.icon+'"></i></span>'+
           '<span class="dir-short">'+d.short+'</span>'+
@@ -10129,7 +10130,7 @@ function hqFilters(){
 function hqAllEntries(){
   loadCustomDirectorates();
   var out=[];
-  filteredDirs.forEach(function(d){
+  DIRECTORATES.forEach(function(d){
     var rs=getLSFor(d.key,LS_KEYS.reports,[])||[];
     (rs||[]).forEach(function(r){ out.push({d:d,r:r,key:d.key}); });
   });

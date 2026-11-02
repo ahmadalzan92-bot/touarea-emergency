@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.109",
+  "version": "2026.10.09.110",
   "released": "2026-11-02",
-  "notes": "Fix: expose govGetGovernorate and govApplyRBAC on window (were inside IIFE, not global). SSO now works correctly."
+  "notes": "Option A (SSO) complete: Government login bypasses directorate password. Non-assigned directorate cards are faded/disabled for non-admin users. RBAC enforcement (viewer=read-only, staff=read+write, admin=full). Auto-enter directorate for single-governorate users."
 }
