@@ -61,7 +61,7 @@ async function encryptData(plaintext) {
 }
 
 async function decryptData(ciphertext) {
-  if (!ciphertext || !ciphertext.startsWith('ENC:')) return ciphertext; // Not encrypted, return as-is
+  if (!ciphertext || !ciphertext.startsWith('ENC:')) return ciphertext;
   try {
     const enc = new TextEncoder();
     const combined = Uint8Array.from(atob(ciphertext.slice(4)), c => c.charCodeAt(0));
@@ -117,7 +117,7 @@ function checkRateLimit(ip) {
   return true;
 }
 
-// Input validation + XSS sanitization
+// Input validation
 function validateKey(key) {
   if (!key || typeof key !== 'string') return false;
   if (key.length > 256) return false;
@@ -155,20 +155,14 @@ async function auditLog(db, user, action, target, details, ip) {
   } catch (e) { console.error('Audit log error:', e.message); }
 }
 
-// Security monitoring - detect anomalies
+// Security monitoring
 async function securityMonitor(db, user, action, ip) {
   try {
-    // Check for brute force (5+ failed logins in 10 min)
-    const recentFails = await db.prepare(
-      'SELECT COUNT(*) as cnt FROM audit_log WHERE action = ? AND ip = ? AND ts > ?'
-    ).bind('LOGIN_FAILED', ip, Date.now() - 10 * 60 * 1000).first();
+    const recentFails = await db.prepare('SELECT COUNT(*) as cnt FROM audit_log WHERE action = ? AND ip = ? AND ts > ?').bind('LOGIN_FAILED', ip, Date.now() - 10 * 60 * 1000).first();
     if (recentFails && recentFails.cnt >= 5) {
       await auditLog(db, 'SYSTEM', 'SECURITY_ALERT', 'brute_force', `IP ${ip} has ${recentFails.cnt} failed logins in 10 min`, ip);
     }
-    // Check for unusual data access (100+ reads in 1 min)
-    const recentReads = await db.prepare(
-      'SELECT COUNT(*) as cnt FROM audit_log WHERE action = ? AND user = ? AND ts > ?'
-    ).bind('DATA_READ', user, Date.now() - 60 * 1000).first();
+    const recentReads = await db.prepare('SELECT COUNT(*) as cnt FROM audit_log WHERE action = ? AND user = ? AND ts > ?').bind('DATA_READ', user, Date.now() - 60 * 1000).first();
     if (recentReads && recentReads.cnt >= 100) {
       await auditLog(db, 'SYSTEM', 'SECURITY_ALERT', 'data_exfiltration', `User ${user} has ${recentReads.cnt} reads in 1 min`, ip);
     }
@@ -183,7 +177,6 @@ async function createBackup(db) {
     for (const r of rows.results) backup.data[r.key] = { value: r.value, ts: r.ts };
     const backupKey = 'backup_' + Date.now();
     await db.prepare('INSERT INTO backups (key, data, ts) VALUES (?, ?, ?)').bind(backupKey, JSON.stringify(backup), Date.now()).run();
-    // Keep only last 30 backups
     await db.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY ts DESC LIMIT 30)').run();
     return backupKey;
   } catch (e) {
@@ -194,14 +187,9 @@ async function createBackup(db) {
 
 // Session invalidation
 async function invalidateUserSessions(db, username) {
-  // In a full implementation, this would revoke JWT tokens
-  // For now, we update a "session_version" that the client checks
   try {
     await db.prepare('UPDATE users SET session_version = COALESCE(session_version, 0) + 1 WHERE username = ?').bind(username).run();
-  } catch (e) {
-    // Column might not exist yet
-    console.error('Session invalidation error:', e.message);
-  }
+  } catch (e) { console.error('Session invalidation error:', e.message); }
 }
 
 const securityHeaders = {
@@ -274,7 +262,7 @@ export default {
         await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = null, last_login = ? WHERE username = ?').bind(Date.now(), username).run();
         const jwt = createJWT({ username: row.username, role: row.role, sv: row.session_version || 0 });
         await auditLog(db, username, 'LOGIN_SUCCESS', 'auth', 'Login successful' + (row.totp_enabled ? ' (2FA)' : ''), clientIP);
-        return jsonResponse({ token: jwt, username: row.username, role: row.role, totpEnabled: !!row.totp_enabled }, securityHeaders);
+        return jsonResponse({ token: jwt, username: row.username, role: row.role, totpEnabled: !!row.totp_enabled, sessionVersion: row.session_version || 0 }, securityHeaders);
       }
 
       if (path === '/api/auth/register' && method === 'POST') {
@@ -381,7 +369,6 @@ export default {
         const backup = await db.prepare('SELECT data FROM backups WHERE key = ?').bind(backupKey).first();
         if (!backup) return jsonResponse({ error: 'Backup not found' }, securityHeaders, 404);
         const backupData = JSON.parse(backup.data);
-        // Restore all keys
         for (const [key, val] of Object.entries(backupData.data)) {
           await db.prepare('INSERT OR REPLACE INTO store (key, value, ts) VALUES (?, ?, ?)').bind(key, val.value, val.ts).run();
         }
@@ -389,11 +376,26 @@ export default {
         return jsonResponse({ ok: true, restored: Object.keys(backupData.data).length }, securityHeaders);
       }
 
+      // === SECURITY MONITORING ENDPOINT ===
+      if (path === '/api/security/alerts' && method === 'GET') {
+        if (!user || !hasPermission(user.role, 'view_audit')) return jsonResponse({ error: 'Admin access required' }, securityHeaders, 403);
+        const rows = await db.prepare('SELECT * FROM security_alerts ORDER BY ts DESC LIMIT 50').all();
+        return jsonResponse({ alerts: rows.results }, securityHeaders);
+      }
+
       // === DATA ENDPOINTS ===
       if (path === '/api/all' && method === 'GET') {
         const rows = await db.prepare('SELECT key, value, ts FROM store').all();
         const data = {};
-        for (const r of rows.results) data[r.key] = { value: r.value, ts: r.ts };
+        for (const r of rows.results) {
+          // Decrypt if encrypted
+          let value = r.value;
+          if (value && value.startsWith('ENC:')) {
+            const decrypted = await decryptData(value);
+            if (decrypted) value = decrypted;
+          }
+          data[r.key] = { value: value, ts: r.ts };
+        }
         return jsonResponse(data, securityHeaders);
       }
 
@@ -402,7 +404,13 @@ export default {
         const key = gm[1];
         if (!validateKey(key)) return jsonResponse({ error: 'Invalid key name' }, securityHeaders, 400);
         const row = await db.prepare('SELECT value, ts FROM store WHERE key = ?').bind(key).first();
-        return row ? jsonResponse({ value: row.value, ts: row.ts }, securityHeaders) : jsonResponse({ value: null, ts: 0 }, securityHeaders);
+        if (!row) return jsonResponse({ value: null, ts: 0 }, securityHeaders);
+        let value = row.value;
+        if (value && value.startsWith('ENC:')) {
+          const decrypted = await decryptData(value);
+          if (decrypted) value = decrypted;
+        }
+        return jsonResponse({ value: value, ts: row.ts }, securityHeaders);
       }
 
       if (gm && method === 'PUT') {
@@ -413,8 +421,11 @@ export default {
         const body = await request.json();
         const value = typeof body.value === 'string' ? body.value : JSON.stringify(body.value);
         if (!validateValue(value)) return jsonResponse({ error: 'Invalid value' }, securityHeaders, 400);
-        await db.prepare('INSERT OR REPLACE INTO store (key, value, ts) VALUES (?, ?, ?)').bind(key, value, Date.now()).run();
+        // Encrypt sensitive data before storing
+        const encryptedValue = await encryptData(value);
+        await db.prepare('INSERT OR REPLACE INTO store (key, value, ts) VALUES (?, ?, ?)').bind(key, encryptedValue, Date.now()).run();
         await auditLog(db, user.username, 'DATA_UPDATE', key, 'Updated ' + key, clientIP);
+        await securityMonitor(db, user.username, 'DATA_UPDATE', clientIP);
         return jsonResponse({ ok: true }, securityHeaders);
       }
 
@@ -440,6 +451,7 @@ export default {
       const backupKey = await createBackup(db);
       if (backupKey) {
         console.log('Scheduled backup created:', backupKey);
+        await auditLog(db, 'SYSTEM', 'BACKUP_CREATED', 'backup', 'Scheduled backup: ' + backupKey, 'system');
       }
     } catch (e) {
       console.error('Scheduled backup error:', e.message);

@@ -1316,6 +1316,7 @@
     <span id="govUserInfo"></span>
     <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="govLogout()" style="font-size:.75rem"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
     <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="govShowAuditLog()" id="govAuditBtn" style="font-size:.75rem;display:none"><i class="fas fa-clipboard-list"></i> سجل التدقيق</button>
+    <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="govShowSecurityAlerts()" id="govAlertsBtn" style="font-size:.75rem;display:none"><i class="fas fa-exclamation-triangle"></i> تنبيهات أمنية</button>
   </div>
     </div>
   </div>
@@ -11317,6 +11318,7 @@ function govLogin(){
       var ui=document.getElementById('govUserInfo'); if(ui) ui.innerHTML='<i class="fas fa-user-shield"></i> '+res.data.username+' ('+res.data.role+')';
       if(res.data.sessionVersion !== undefined) sessionStorage.setItem('gov_session_version', res.data.sessionVersion);
       var ab=document.getElementById('govAuditBtn'); if(ab && res.data.role==='admin') ab.style.display='';
+      var al=document.getElementById('govAlertsBtn'); if(al && res.data.role==='admin') al.style.display='';
       showAlert('مرحباً '+res.data.username+' — تم تسجيل الدخول بنجاح.','success');
       // Reload data
       if(typeof cloudPullAll==='function') cloudPullAll();
@@ -11325,6 +11327,37 @@ function govLogin(){
 }
 
 function govCloseAuditModal(){ var m=document.getElementById('govAuditModal'); if(m) m.style.display='none'; }
+
+function govShowSecurityAlerts(){
+  if(govGetRole()!=='admin'){ showAlert('صلاحيات المدير مطلوبة.','warning'); return; }
+  var modal = document.getElementById('govAlertsModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'govAlertsModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:95vw;max-width:900px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden"><div style="background:#b91c1c;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><b><i class="fas fa-exclamation-triangle"></i> تنبيهات أمنية (Security Alerts)</b><button class="btn btn-sm btn-light" onclick="govCloseAlertsModal()">إغلاق</button></div><div style="padding:12px;overflow:auto;flex:1"><div id="govAlertsContent">جارٍ التحميل...</div></div></div>';
+    modal.addEventListener('click', function(ev){ if(ev.target===modal) modal.style.display='none'; });
+    modal.setAttribute('data-alerts-modal','1');
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  var content = document.getElementById('govAlertsContent');
+  if(content) content.innerHTML = 'جارٍ التحميل...';
+  fetch(CLOUD_API_BASE+'/api/security/alerts',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.alerts || !d.alerts.length){ content.innerHTML = '<p class="text-muted text-center">لا توجد تنبيهات أمنية.</p>'; return; }
+      var html = '<table class="table table-sm table-bordered" style="font-size:.8rem"><thead class="table-light"><tr><th>النوع</th><th>المستخدم</th><th>IP</th><th>التفاصيل</th><th>الوقت</th></tr></thead><tbody>';
+      d.alerts.forEach(function(a){
+        html += '<tr><td><span class="badge bg-danger">'+esc(a.alert_type)+'</span></td><td>'+esc(a.user||'')+'</td><td class="small">'+esc(a.ip||'')+'</td><td class="small">'+esc(a.details||'')+'</td><td class="small">'+new Date(a.ts).toLocaleString('ar-JO')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      content.innerHTML = html;
+    })
+    .catch(function(e){ content.innerHTML = '<p class="text-danger">تعذّر تحميل التنبيهات: '+esc(e.message)+'</p>'; });
+}
+function govCloseAlertsModal(){ var m=document.getElementById('govAlertsModal'); if(m) m.style.display='none'; }
+
 function govShowAuditLog(){
   if(govGetRole()!=='admin'){ showAlert('صلاحيات المدير مطلوبة.','warning'); return; }
   var modal = document.getElementById('govAuditModal');
@@ -11449,6 +11482,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
     var ui=document.getElementById('govUserInfo'); var un=sessionStorage.getItem('gov_auth_user')||''; var rl=sessionStorage.getItem('gov_auth_role')||''; if(ui && un) ui.innerHTML='<i class="fas fa-user-shield"></i> '+un+' ('+rl+')';
     var ab=document.getElementById('govAuditBtn'); if(ab && rl==='admin') ab.style.display='';
+    var al=document.getElementById('govAlertsBtn'); if(al && rl==='admin') al.style.display='';
   }
 });
 // Enter key on password field
