@@ -3293,7 +3293,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.108';
+    const APP_VERSION = '2026.10.09.109';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3826,6 +3826,12 @@
     function buildHomeGrid(){
       const grid=document.getElementById('homeGrid'); if(!grid) return;
       if(typeof loadCustomDirectorates==='function') loadCustomDirectorates();
+      // Filter directorates by user's governorate (if set)
+      var userGov = govGetGovernorate();
+      var filteredDirs = DIRECTORATES;
+      if(userGov && userGov !== 'all' && govGetRole() !== 'admin'){
+        filteredDirs = DIRECTORATES.filter(function(d){ return d.key === userGov; });
+      }
       grid.innerHTML='<button type="button" class="dir-card dir-card-hq" onclick="openHQPass()">'+
           '<span class="dir-lock">'+((getPass('hq'))?'<i class="fas fa-lock"></i>':'<i class="fas fa-lock-open"></i>')+'</span>'+
           '<span class="dir-ico"><i class="fas fa-satellite-dish"></i></span>'+
@@ -4088,6 +4094,11 @@
       try{localStorage.setItem(DIR_STORAGE,key);}catch(e){}
       applyDirectorate();
       const doBoot=function(){ bootstrapDir(); };
+      // Auto-enter if user has a single governorate
+      if(govIsAuth() && govGetGovernorate() && govGetGovernorate()!=='all' && govGetRole()!=='admin'){
+        var gk = govGetGovernorate();
+        setTimeout(function(){ try{ enterDirectorate(gk); }catch(e){} }, 300);
+      }
       if(cloudAvailable()){
         cloudPullAll().then(doBoot).catch(doBoot);
       } else {
@@ -4128,6 +4139,7 @@
       var badge = document.getElementById('govRoleBadge');
       if (badge) badge.textContent = role === 'admin' ? 'مدير' : (role === 'staff' ? 'موظف' : 'مشاهد');
     }
+    window.govApplyRBAC = govApplyRBAC;
 
     document.addEventListener('keydown',function(ev){
       if(ev.key==='Enter'){
@@ -10117,7 +10129,7 @@ function hqFilters(){
 function hqAllEntries(){
   loadCustomDirectorates();
   var out=[];
-  DIRECTORATES.forEach(function(d){
+  filteredDirs.forEach(function(d){
     var rs=getLSFor(d.key,LS_KEYS.reports,[])||[];
     (rs||[]).forEach(function(r){ out.push({d:d,r:r,key:d.key}); });
   });
@@ -11360,6 +11372,7 @@ function govLogin(){
       sessionStorage.setItem('gov_auth_token', res.data.token);
       sessionStorage.setItem('gov_auth_user', res.data.username);
       sessionStorage.setItem('gov_auth_role', res.data.role);
+      sessionStorage.setItem('gov_auth_gov', res.data.governorate || '');
       var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
       var ui=document.getElementById('govUserInfo'); if(ui) ui.innerHTML='<i class="fas fa-user-shield"></i> '+res.data.username+' ('+res.data.role+')';
       if(res.data.sessionVersion !== undefined) sessionStorage.setItem('gov_session_version', res.data.sessionVersion);
@@ -11521,13 +11534,15 @@ function govIsAuth(){
 }
 function govGetUser(){ return sessionStorage.getItem('gov_auth_user')||''; }
 function govGetRole(){ return sessionStorage.getItem('gov_auth_role')||'viewer'; }
+function govGetGovernorate(){ return sessionStorage.getItem('gov_auth_gov')||''; }
+window.govGetGovernorate = govGetGovernorate;
 // Check auth on page load
 document.addEventListener('DOMContentLoaded', function(){
   if(!govIsAuth()){
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='flex';
   } else {
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
-    var ui=document.getElementById('govUserInfo'); var un=sessionStorage.getItem('gov_auth_user')||''; var rl=sessionStorage.getItem('gov_auth_role')||''; if(ui && un) ui.innerHTML='<i class="fas fa-user-shield"></i> '+un+' ('+rl+')';
+    var ui=document.getElementById('govUserInfo'); var un=sessionStorage.getItem('gov_auth_user')||''; var rl=sessionStorage.getItem('gov_auth_role')||''; var gv=sessionStorage.getItem('gov_auth_gov')||''; if(ui && un) ui.innerHTML='<i class="fas fa-user-shield"></i> '+un+' ('+rl+')'+(gv?' — '+gv:'');
     var ab=document.getElementById('govAuditBtn'); if(ab && rl==='admin') ab.style.display='';
     var al=document.getElementById('govAlertsBtn'); if(al && rl==='admin') al.style.display='';
   }
