@@ -3296,7 +3296,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.117';
+    const APP_VERSION = '2026.10.09.118';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11333,51 +11333,422 @@ function hqDownloadXlsxWithImages(baseBytes, filename){
 
 </script>
 
-<!-- ======================== Login Modal (Government Security) ======================== -->
-<div id="govLoginModal" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f2c52,#1a3a6b);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'Cairo',Tahoma,sans-serif">
-  <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:32px 28px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center">
-    <img src="logo-web.png" alt="شعار الوزارة" style="width:72px;height:72px;border-radius:50%;background:#f1f5f9;padding:4px;margin-bottom:12px">
-    <h2 style="font-size:1.15rem;font-weight:800;color:#0f2c52;margin-bottom:4px">المملكة الأردنية الهاشمية</h2>
-    <h3 style="font-size:1rem;font-weight:700;color:#1a3a6b;margin-bottom:2px">وزارة الأشغال العامة والإسكان</h3>
-    <p style="font-size:.85rem;color:#64748b;margin-bottom:20px">مديرية الطوارئ — نظام إدارة بلاغات الحوادث</p>
-    <div id="govLoginMsg" style="background:#fef2f2;color:#b91c1c;padding:8px 12px;border-radius:8px;font-size:.82rem;margin-bottom:14px;display:none"></div>
-    <div style="text-align:right;margin-bottom:12px">
-      <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">اسم المستخدم</label>
-      <input type="text" id="govLoginUser" class="form-control" placeholder="أدخل اسم المستخدم" style="border-radius:8px;padding:10px 12px" autocomplete="username">
+<!-- ======================== Login Modal (Government Security + DLS CAPTCHA) ======================== -->
+<style>
+  #govLoginCard {
+    position: relative;
+    background: linear-gradient(180deg, #fffffff7, #fafcfde8);
+    border: 1px solid rgba(255,255,255,.72);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 450px;
+    max-height: 96vh;
+    overflow-y: auto;
+    padding: 24px 24px 20px;
+    box-shadow: 0 24px 60px rgba(2,8,14,.45), 0 9px 19px rgba(2,8,14,.2);
+    text-align: center;
+  }
+  #govLoginCard::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(90deg, #ff7f27, #17a673 48%, #0f2c52);
+    pointer-events: none;
+  }
+  .dls-sec-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 800;
+    color: #0f6a45;
+    background: rgba(23,166,115,.12);
+    border: 1px solid rgba(23,166,115,.22);
+  }
+  .dls-sec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #17a673;
+    box-shadow: 0 0 0 3px rgba(23,166,115,.18);
+  }
+  .dls-captcha-box {
+    margin: 12px 0 12px;
+    text-align: right;
+  }
+  .dls-captcha-pattern {
+    position: relative;
+    min-height: 102px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(50,62,72,.07), rgba(255,127,39,.08)), linear-gradient(180deg, #fff, #f5f8fa);
+    border: 1px solid rgba(50,62,72,.14);
+    box-shadow: inset 0 1px rgba(255,255,255,.85), inset 0 -18px 36px rgba(50,62,72,.05);
+    margin-bottom: 10px;
+    padding: 10px 16px;
+  }
+  .dls-captcha-pattern::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .7;
+    background: repeating-linear-gradient(135deg, rgba(50,62,72,.045) 0 1px, transparent 1px 10px);
+  }
+  .dls-captcha-bg-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: rgba(50,62,72,.13);
+    opacity: .55;
+    pointer-events: none;
+  }
+  .dls-captcha-img-wrap {
+    position: relative;
+    z-index: 3;
+    width: min(275px, calc(100% - 34px));
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, #fffffffa, #f7fafcf5);
+    border: 1px solid rgba(50,62,72,.16);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(21,32,42,.14), inset 0 0 0 1px rgba(255,255,255,.75);
+  }
+  .dls-captcha-img-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    border-radius: 6px;
+    border: 1px dashed rgba(50,62,72,.2);
+    pointer-events: none;
+  }
+  #govCaptchaCanvas {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: 100%;
+    height: 56px;
+    border-radius: 6px;
+    user-select: none;
+    cursor: pointer;
+  }
+  .dls-captcha-refresh {
+    position: absolute;
+    z-index: 5;
+    top: 50%;
+    left: -15px;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: #fff;
+    background: #323e48;
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(21,32,42,.24);
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .dls-captcha-refresh:hover {
+    transform: translateY(-50%) scale(1.06);
+    background: #ff7f27;
+    box-shadow: 0 10px 18px rgba(255,127,39,.3);
+  }
+  .dls-captcha-refresh.spinning svg {
+    animation: dlsSpin .65s linear infinite;
+  }
+  @keyframes dlsSpin {
+    to { transform: rotate(360deg); }
+  }
+  .dls-captcha-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .dls-captcha-label {
+    font-size: .8rem;
+    font-weight: 800;
+    color: #26333d;
+  }
+  .dls-captcha-helper {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 800;
+    color: rgba(50,62,72,.68);
+    background: rgba(50,62,72,.08);
+  }
+  .dls-captcha-input-wrap {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid rgba(50,62,72,.2);
+    border-radius: 8px;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .dls-captcha-input-wrap:focus-within {
+    border-color: #ff7f27;
+    box-shadow: 0 0 0 3px rgba(255,127,39,.16);
+  }
+  .dls-captcha-input-wrap.is-error {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 3px rgba(220,53,69,.14) !important;
+  }
+  .dls-captcha-input-wrap.is-success {
+    border-color: #17a673 !important;
+    box-shadow: 0 0 0 3px rgba(23,166,115,.14) !important;
+  }
+  #govCaptchaInput {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px 0 48px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #202b34;
+    caret-color: #ff7f27;
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 900;
+    text-align: center;
+    letter-spacing: .22rem;
+    direction: ltr;
+  }
+  #govCaptchaInput::placeholder {
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: rgba(50,62,72,.42);
+  }
+  .dls-captcha-count {
+    position: absolute;
+    left: 8px;
+    min-width: 32px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 800;
+    direction: ltr;
+    text-align: center;
+    color: rgba(50,62,72,.6);
+    background: #f2f5f7;
+  }
+  .dls-captcha-hint {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    font-size: .68rem;
+    font-weight: 600;
+    color: rgba(50,62,72,.58);
+  }
+  .dls-captcha-hint-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #ff7f27;
+  }
+</style>
+<div id="govLoginModal" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f2c52,#1a3a6b);display:flex;align-items:center;justify-content:center;padding:14px;font-family:'Cairo',Tahoma,sans-serif">
+  <div id="govLoginCard">
+    <div class="dls-sec-badge"><span class="dls-sec-dot"></span>اتصال آمن</div>
+    <img src="logo-web.png" alt="شعار الوزارة" style="width:64px;height:64px;border-radius:50%;background:#f1f5f9;padding:4px;margin-bottom:8px">
+    <h2 style="font-size:1.1rem;font-weight:800;color:#0f2c52;margin-bottom:2px">المملكة الأردنية الهاشمية</h2>
+    <h3 style="font-size:.95rem;font-weight:700;color:#1a3a6b;margin-bottom:2px">وزارة الأشغال العامة والإسكان</h3>
+    <p style="font-size:.8rem;color:#64748b;margin-bottom:14px">مديرية الطوارئ — نظام إدارة بلاغات الحوادث</p>
+    <div id="govLoginMsg" style="background:#fef2f2;color:#b91c1c;padding:8px 12px;border-radius:8px;font-size:.8rem;font-weight:700;margin-bottom:12px;display:none"></div>
+    <div style="text-align:right;margin-bottom:10px">
+      <label style="font-size:.8rem;font-weight:700;color:#334155;display:block;margin-bottom:3px">اسم المستخدم</label>
+      <input type="text" id="govLoginUser" class="form-control" placeholder="أدخل اسم المستخدم" style="border-radius:8px;padding:8px 12px" autocomplete="username">
     </div>
-    <div style="text-align:right;margin-bottom:12px">
-      <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">كلمة المرور</label>
-      <input type="password" id="govLoginPass" class="form-control" placeholder="أدخل كلمة المرور" style="border-radius:8px;padding:10px 12px" autocomplete="current-password">
+    <div style="text-align:right;margin-bottom:10px">
+      <label style="font-size:.8rem;font-weight:700;color:#334155;display:block;margin-bottom:3px">كلمة المرور</label>
+      <input type="password" id="govLoginPass" class="form-control" placeholder="أدخل كلمة المرور" style="border-radius:8px;padding:8px 12px" autocomplete="current-password">
     </div>
-    <div id="govLogin2FA" style="text-align:right;margin-bottom:18px;display:none">
-      <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">رمز المصادقة (2FA)</label>
-      <input type="text" id="govLoginTOTP" class="form-control" placeholder="أدخل رمز 6 أرقام" style="border-radius:8px;padding:10px 12px;text-align:center;letter-spacing:8px;font-size:1.2rem" maxlength="6" autocomplete="one-time-code">
+    <div id="govLogin2FA" style="text-align:right;margin-bottom:12px;display:none">
+      <label style="font-size:.8rem;font-weight:700;color:#334155;display:block;margin-bottom:3px">رمز المصادقة (2FA)</label>
+      <input type="text" id="govLoginTOTP" class="form-control" placeholder="أدخل رمز 6 أرقام" style="border-radius:8px;padding:8px 12px;text-align:center;letter-spacing:8px;font-size:1.1rem" maxlength="6" autocomplete="one-time-code">
     </div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#475569;margin-bottom:14px;cursor:pointer">
+
+    <!-- DLS-Style CAPTCHA Verification Box -->
+    <div class="dls-captcha-box">
+      <div class="dls-captcha-pattern">
+        <svg class="dls-captcha-bg-svg" viewBox="0 0 600 180" preserveAspectRatio="none">
+          <defs>
+            <pattern id="dlsCaptchaGrid" width="34" height="34" patternUnits="userSpaceOnUse">
+              <path d="M0 17H34M17 0V34" stroke="currentColor" stroke-width="0.7"></path>
+              <circle cx="17" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="0.8"></circle>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dlsCaptchaGrid)"></rect>
+        </svg>
+        <div class="dls-captcha-img-wrap">
+          <canvas id="govCaptchaCanvas" width="240" height="60" onclick="govGenerateCaptcha(true)" title="اضغط لتحديث الرمز"></canvas>
+          <button type="button" id="govCaptchaRefreshBtn" class="dls-captcha-refresh" onclick="govGenerateCaptcha(true)" title="تحديث رمز التحقق" aria-label="تحديث رمز التحقق">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+              <path d="M16 16h5v5"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="dls-captcha-label-row">
+        <label class="dls-captcha-label" for="govCaptchaInput">رمز التحقق</label>
+        <span class="dls-captcha-helper">6 أحرف</span>
+      </div>
+      <div id="govCaptchaWrap" class="dls-captcha-input-wrap">
+        <input type="text" id="govCaptchaInput" placeholder="أدخل الرمز هنا" maxlength="6" autocomplete="off" spellcheck="false" oninput="govOnCaptchaInput(this.value)">
+        <span id="govCaptchaCount" class="dls-captcha-count">0/6</span>
+      </div>
+      <div class="dls-captcha-hint">
+        <span class="dls-captcha-hint-dot"></span>
+        <span>يمكنك تحديث الصورة للحصول على رمز جديد</span>
+      </div>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#475569;margin-bottom:12px;cursor:pointer">
       <input type="checkbox" id="govRememberMe" style="width:16px;height:16px;accent-color:#0f2c52">
       <span>تذكر معلومات الدخول</span>
     </label>
-    <button type="button" class="btn btn-primary w-100 fw-bold" style="border-radius:8px;padding:10px" onclick="govLogin()"><i class="fas fa-key"></i> دخول</button>
-    <p style="font-size:.72rem;color:#94a3b8;margin-top:16px;margin-bottom:0"><i class="fas fa-shield-halved"></i> نظام آمن — جميع العمليات مسجّلة (Audit Log)</p>
-    <p style="font-size:.75rem;color:#0f2c52;margin-top:10px;margin-bottom:0;font-weight:800;text-shadow:0 1px 2px rgba(255,255,255,.5)">إعداد وتصميم <b>م. أحمد الزن</b> — جميع الحقوق محفوظة © 2025-2026</p>
+    <button type="button" class="btn btn-primary w-100 fw-bold" style="border-radius:8px;padding:10px;background:linear-gradient(135deg,#0f2c52,#1a3a6b 62%,#ff7f27 160%);border:none;box-shadow:0 8px 18px rgba(15,44,82,.3)" onclick="govLogin()"><i class="fas fa-key"></i> تحقق ودخول</button>
+    <p style="font-size:.7rem;color:#94a3b8;margin-top:12px;margin-bottom:0"><i class="fas fa-shield-halved"></i> نظام آمن — جميع العمليات مسجّلة (Audit Log)</p>
+    <p style="font-size:.74rem;color:#0f2c52;margin-top:6px;margin-bottom:0;font-weight:800;text-shadow:0 1px 2px rgba(255,255,255,.5)">إعداد وتصميم <b>م. أحمد الزن</b> — جميع الحقوق محفوظة © 2025-2026</p>
   </div>
 </div>
 
 
 <script>
 // ======================== Government Authentication (Phase 1) ========================
+var _govCaptchaCode = '';
+function govGenerateCaptcha(animate){
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var code = '';
+  for(var i=0;i<6;i++) code += chars.charAt(Math.floor(Math.random()*chars.length));
+  _govCaptchaCode = code;
+  var inp = document.getElementById('govCaptchaInput');
+  if(inp) inp.value = '';
+  var cnt = document.getElementById('govCaptchaCount');
+  if(cnt) cnt.textContent = '0/6';
+  var wrap = document.getElementById('govCaptchaWrap');
+  if(wrap){ wrap.classList.remove('is-error','is-success'); }
+  if(animate){
+    var btn = document.getElementById('govCaptchaRefreshBtn');
+    if(btn){ btn.classList.add('spinning'); setTimeout(function(){ btn.classList.remove('spinning'); }, 650); }
+  }
+  var cvs = document.getElementById('govCaptchaCanvas');
+  if(!cvs || !cvs.getContext) return;
+  var ctx = cvs.getContext('2d');
+  var w = cvs.width, h = cvs.height;
+  ctx.clearRect(0,0,w,h);
+  // Subtle gradient background
+  var grad = ctx.createLinearGradient(0,0,w,h);
+  grad.addColorStop(0,'#f8fafc');
+  grad.addColorStop(0.5,'#f1f5f9');
+  grad.addColorStop(1,'#fff7ed');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,w,h);
+  // Interference curved lines
+  var lineColors = ['rgba(255,127,39,0.35)','rgba(15,44,82,0.28)','rgba(23,166,115,0.3)'];
+  for(var l=0;l<4;l++){
+    ctx.beginPath();
+    ctx.strokeStyle = lineColors[l % lineColors.length];
+    ctx.lineWidth = 1.4 + Math.random()*1.2;
+    ctx.moveTo(Math.random()*30, Math.random()*h);
+    ctx.bezierCurveTo(w*0.33, Math.random()*h, w*0.66, Math.random()*h, w - Math.random()*25, Math.random()*h);
+    ctx.stroke();
+  }
+  // Noise dots
+  for(var d=0;d<38;d++){
+    ctx.fillStyle = (d%2===0) ? 'rgba(50,62,72,0.22)' : 'rgba(255,127,39,0.28)';
+    ctx.beginPath();
+    ctx.arc(Math.random()*w, Math.random()*h, 1 + Math.random()*1.4, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // Draw the 6 characters with slight rotation & wave
+  var charColors = ['#202b34','#0f2c52','#c2590a','#0f6a45','#1e3a8a','#323e48'];
+  var startX = 24;
+  var stepX = (w - 44) / 6;
+  for(var c=0;c<6;c++){
+    ctx.save();
+    var cx = startX + c*stepX + (Math.random()*4 - 2);
+    var cy = h/2 + 8 + (Math.random()*8 - 4);
+    ctx.translate(cx, cy);
+    ctx.rotate((Math.random() - 0.5) * 0.38);
+    ctx.font = '900 ' + (25 + Math.floor(Math.random()*4)) + 'px monospace, Tahoma';
+    ctx.fillStyle = charColors[c % charColors.length];
+    ctx.shadowColor = 'rgba(0,0,0,0.12)';
+    ctx.shadowBlur = 2;
+    ctx.fillText(code.charAt(c), 0, 0);
+    ctx.restore();
+  }
+}
+function govOnCaptchaInput(val){
+  var clean = (val||'').replace(/\s+/g,'').slice(0,6).toUpperCase();
+  var inp = document.getElementById('govCaptchaInput');
+  if(inp && inp.value !== clean) inp.value = clean;
+  var cnt = document.getElementById('govCaptchaCount');
+  if(cnt) cnt.textContent = clean.length + '/6';
+  var wrap = document.getElementById('govCaptchaWrap');
+  if(wrap){
+    wrap.classList.remove('is-error');
+    if(clean.length === 6 && _govCaptchaCode && clean === _govCaptchaCode.toUpperCase()){
+      wrap.classList.add('is-success');
+    } else {
+      wrap.classList.remove('is-success');
+    }
+  }
+}
 function govLogin(){
   var u=(document.getElementById('govLoginUser')||{}).value||'';
   var p=(document.getElementById('govLoginPass')||{}).value||'';
+  var cap=((document.getElementById('govCaptchaInput')||{}).value||'').trim().toUpperCase();
+  var wrap=document.getElementById('govCaptchaWrap');
   var msg=document.getElementById('govLoginMsg');
   if(!u||!p){ if(msg){msg.textContent='أدخل اسم المستخدم وكلمة المرور.';msg.style.display='block';} return; }
+  if(!_govCaptchaCode) govGenerateCaptcha(false);
+  if(!cap){
+    if(wrap) wrap.classList.add('is-error');
+    if(msg){msg.textContent='يرجى كتابة رمز التحقق الظاهر في الصورة أولاً.';msg.style.display='block';}
+    var ci=document.getElementById('govCaptchaInput'); if(ci) ci.focus();
+    return;
+  }
+  if(cap !== _govCaptchaCode.toUpperCase()){
+    govGenerateCaptcha(true);
+    if(wrap) wrap.classList.add('is-error');
+    if(msg){msg.textContent='رمز التحقق غير صحيح، تم إنشاء رمز جديد.';msg.style.display='block';}
+    var ci2=document.getElementById('govCaptchaInput'); if(ci2) ci2.focus();
+    return;
+  }
   var totp = (document.getElementById('govLoginTOTP')||{}).value||'';
   var remember = (document.getElementById('govRememberMe')||{}).checked || false;
   fetch(CLOUD_API_BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p,totpCode:totp})})
     .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
     .then(function(res){
       if(!res.ok && res.data && res.data.requires2FA){ var f2=document.getElementById('govLogin2FA'); if(f2) f2.style.display='block'; var inp=document.getElementById('govLoginTOTP'); if(inp) inp.focus(); if(msg){msg.textContent='أدخل رمز المصادقة (2FA).';msg.style.display='block';} return; }
-      if(!res.ok){ if(msg){msg.textContent=res.data.error||'بيانات الدخول غير صحيحة.';msg.style.display='block';} return; }
+      if(!res.ok){ govGenerateCaptcha(true); if(msg){msg.textContent=res.data.error||'بيانات الدخول غير صحيحة.';msg.style.display='block';} return; }
       sessionStorage.setItem('gov_auth_token', res.data.token);
       sessionStorage.setItem('gov_auth_user', res.data.username);
       sessionStorage.setItem('gov_auth_role', res.data.role);
@@ -11584,6 +11955,7 @@ function govGetGovernorate(){ return sessionStorage.getItem('gov_auth_gov') || l
 window.govGetGovernorate = govGetGovernorate;
 // Check auth on page load
 document.addEventListener('DOMContentLoaded', function(){
+  govGenerateCaptcha(false);
   var remUser = localStorage.getItem('gov_remember_user') || '';
   var remChk = localStorage.getItem('gov_remember_checked') === '1';
   if(remUser){ var uInp=document.getElementById('govLoginUser'); if(uInp) uInp.value=remUser; }
@@ -11603,8 +11975,8 @@ document.addEventListener('DOMContentLoaded', function(){
 document.addEventListener('keydown', function(e){
   var m=document.getElementById('govLoginModal');
   if(m && m.style.display!=='none' && e.key==='Enter'){
-    var u=document.getElementById('govLoginUser'), p=document.getElementById('govLoginPass');
-    if(document.activeElement===p || document.activeElement===u) govLogin();
+    var u=document.getElementById('govLoginUser'), p=document.getElementById('govLoginPass'), c=document.getElementById('govCaptchaInput');
+    if(document.activeElement===p || document.activeElement===u || document.activeElement===c) govLogin();
   }
 });
 </script>
