@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.81';
+    const APP_VERSION = '2026.10.09.82';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11055,9 +11055,7 @@ function hqReadZip(bytes){
 function hqWriteZip(entries){
   var td = new TextEncoder();
   var entriesArr = Array.from(entries);
-  // First pass
-  var offsets = [];
-  var off = 0;
+  // First pass: build local headers and data
   var localParts = [];
   var i;
   for (i = 0; i < entriesArr.length; i++) {
@@ -11078,12 +11076,21 @@ function hqWriteZip(entries){
     ldv.setUint16(26, nameBytes.length, true);
     ldv.setUint16(28, 0, true);
     local.set(nameBytes, 30);
-    offsets[i] = off;
     localParts.push(local);
     localParts.push(data);
-    off = off + local.length + data.length;
   }
-  // Second pass: central directory
+  // Compute offsets (second pass over localParts, two entries per file)
+  var offsets = [];
+  var off = 0;
+  var k;
+  for (k = 0; k < entriesArr.length; k++) {
+    offsets[k] = off;
+    var nameBytes2 = td.encode(entriesArr[k][0]);
+    var localLen = 30 + nameBytes2.length;
+    var dataLen = entriesArr[k][1].length;
+    off = off + localLen + dataLen;
+  }
+  // Build central directory
   var cdParts = [];
   var cdSize = 0;
   for (i = 0; i < entriesArr.length; i++) {
@@ -11108,7 +11115,7 @@ function hqWriteZip(entries){
     cdv.setUint16(32, 0, true);
     cdv.setUint16(34, 0, true);
     cdv.setUint32(36, 0, true);
-    cdv.setUint32(40, offsets[i], true);
+    cdv.setUint32(40, offsets[k] === undefined ? offsets[i] : offsets[i], true);
     cd.set(nameBytes2, 46);
     cdParts.push(cd);
     cdSize += cd.length;
@@ -11116,8 +11123,7 @@ function hqWriteZip(entries){
   // Assemble
   var cdStart = off;
   var allParts = localParts.slice();
-  var ci;
-  for (ci = 0; ci < cdParts.length; ci++) { allParts.push(cdParts[ci]); }
+  for (i = 0; i < cdParts.length; i++) { allParts.push(cdParts[i]); }
   var eocd = new Uint8Array(22);
   var edv = new DataView(eocd.buffer);
   edv.setUint32(0, 0x06054b50, true);
@@ -11128,10 +11134,10 @@ function hqWriteZip(entries){
   edv.setUint16(20, 0, true);
   allParts.push(eocd);
   var total = 0;
-  for (ci = 0; ci < allParts.length; ci++) total += allParts[ci].length;
+  for (i = 0; i < allParts.length; i++) total += allParts[i].length;
   var out = new Uint8Array(total);
   var o = 0;
-  for (ci = 0; ci < allParts.length; ci++) { out.set(allParts[ci], o); o += allParts[ci].length; }
+  for (i = 0; i < allParts.length; i++) { out.set(allParts[i], o); o += allParts[i].length; }
   return out;
 }
 
