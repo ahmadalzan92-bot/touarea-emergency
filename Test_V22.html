@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.92';
+    const APP_VERSION = '2026.10.09.93';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9417,7 +9417,7 @@ function nrpTableHTML(rs){
       var k = C.number ? ('N:'+C.number) : ('M:'+normalizeArabic(C.name||''));
       if(seen[k]) return; seen[k]=1; uniq.push({s:s,C:C});
     });
-    if(!uniq.length) uniq = [{s:null,C:{name:'',number:'',title:''}}];
+    if(!uniq.length) uniq = [{s:null,C:{name:'',number:'',title:'',vehicleType:'',vehicleNumber:'',ownership:''}}];
     var n = uniq.length;
     var merged = function(content, cls){
       return '<td'+(cls?' class="'+cls+'"':'')+' rowspan="'+n+'" style="vertical-align:middle">'+content+'</td>';
@@ -9436,12 +9436,16 @@ function nrpTableHTML(rs){
       }
       var nameTxt = u.s ? (esc(staffCanonical(u.s).name||'')+(staffCanonical(u.s).title?(' / '+esc(staffCanonical(u.s).title)):'')) : '';
       var numTxt = u.s ? esc(staffCanonical(u.s).number||'') : '';
+      var vehType = u.s ? esc(u.s.vehicleType||'') : '';
+      var vehNum = u.s ? esc(u.s.vehicleNumber||'') : '';
+      var vehOwn = u.s ? esc(u.s.ownership||'') : '';
       rowsHtml += '<td class="nrp-l">'+nameTxt+'</td>';
       rowsHtml += '<td class="nrp-l">'+numTxt+'</td>';
+      // vehicle columns per staff (not merged)
+      rowsHtml += '<td class="nrp-l">'+vehType+'</td>';
+      rowsHtml += '<td>'+vehOwn+'</td>';
+      rowsHtml += '<td>'+vehNum+'</td>';
       if(ui===0){
-        rowsHtml += merged(escBr(v[10]),'nrp-l');
-        rowsHtml += merged(escBr(v[11]));
-        rowsHtml += merged(escBr(v[12]));
         rowsHtml += merged(escBr(v[13]));
         rowsHtml += merged(escBr(v[14]));
         rowsHtml += merged(esc(v[15]));
@@ -9663,12 +9667,14 @@ function nrpBuildWS(rs){
 }
 function nrpExportExcel(){
   var rs=nrpReports(); if(!rs.length) return showAlert('لا توجد بلاغات ضمن النطاق المحدد.','warning');
-  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">'
+  var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:v="urn:schemas-microsoft-com:vml" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">'
     +'<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
     +'<style>table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:9pt;direction:rtl}'
     +'td,th{border:1px solid #7c8db5;padding:3px;vertical-align:top;text-align:right;white-space:pre-wrap}'
     +'th{background:#D9E1F2;color:#1a3a6b;font-weight:bold;text-align:center;vertical-align:middle}'
-    +'img{width:64px;height:48px;object-fit:contain}</style></head><body><table dir="rtl">';
+    +'img{width:64px;height:48px;object-fit:contain}</style></head><body>'
+      +'<v:shapetype id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f"><v:stroke joinstyle="miter"/><v:formulas><v:f eqn="if lineDrawn pixelLineWidth 0"/><v:f eqn="sum @0 1 0"/><v:f eqn="sum 0 0 @1"/><v:f eqn="prod @2 1 2"/><v:f eqn="prod @3 21600 pixelWidth"/><v:f eqn="prod @3 21600 pixelHeight"/><v:f eqn="sum @0 0 1"/><v:f eqn="prod @6 1 2"/><v:f eqn="prod @7 21600 pixelWidth"/><v:f eqn="sum @8 21600 0"/><v:f eqn="prod @7 21600 pixelHeight"/><v:f eqn="sum @10 21600 0"/></v:formulas><v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/><o:lock v:ext="edit" aspectratio="t"/></v:shapetype>'
+      +'<table dir="rtl">';
   html += '<tr>'
     +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
     +'<th rowspan="2">رقم البلاغ</th><th rowspan="2">نوع البلاغ</th><th rowspan="2">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
@@ -9683,7 +9689,7 @@ function nrpExportExcel(){
   (rs||[]).forEach(function(r){
     var v = nrpRow(r, idx);
     var ph = nrpPhotos(r);
-    var photoCell = ph.length&&(ph[0]&&ph[0].data)?('<img src="'+nrpThumb(ph[0].data)+'" width="64" height="48" alt="صورة">') : (ph.length?(ph.length+' صورة'):'');
+    var photoCell = ph.length&&(ph[0]&&ph[0].data)?('<v:shape type="#_x0000_t75" style="width:48pt;height:36pt"><v:imagedata src="'+nrpThumb(ph[0].data)+'" o:title="صورة"/></v:shape><img src="'+nrpThumb(ph[0].data)+'" width="64" height="48" alt="صورة" style="display:none">') : (ph.length?(ph.length+' صورة'):'');
     var staff = (r.staff||[]);
     var seen = {}, uniq = [];
     staff.forEach(function(s){
@@ -10954,12 +10960,14 @@ function hqReportExcel(){
     var aoa=HQ_LAST_REPORT.aoa;
     var isOfficial=(HQ_LAST_REPORT.kind==='official22');
     // بناء جدول HTML (Excel يفتحه ويعرض الصور داخل الخلايا)
-    var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">'
+    var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:v="urn:schemas-microsoft-com:vml" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl">'
       +'<head><meta charset="utf-8"><meta http-equiv="Content-Type" content="text/html; charset=utf-8">'
       +'<style>table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:10pt;direction:rtl}'
       +'td,th{border:1px solid #999;padding:4px;vertical-align:top;text-align:right;white-space:pre-wrap}'
       +'th{background:#D9E1F2;color:#1a3a6b;font-weight:bold;text-align:center}'
-      +'img{width:64px;height:48px;object-fit:contain}</style></head><body><table dir="rtl">';
+      +'img{width:64px;height:48px;object-fit:contain}</style></head><body>'
+      +'<v:shapetype id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f"><v:stroke joinstyle="miter"/><v:formulas><v:f eqn="if lineDrawn pixelLineWidth 0"/><v:f eqn="sum @0 1 0"/><v:f eqn="sum 0 0 @1"/><v:f eqn="prod @2 1 2"/><v:f eqn="prod @3 21600 pixelWidth"/><v:f eqn="prod @3 21600 pixelHeight"/><v:f eqn="sum @0 0 1"/><v:f eqn="prod @6 1 2"/><v:f eqn="prod @7 21600 pixelWidth"/><v:f eqn="sum @8 21600 0"/><v:f eqn="prod @7 21600 pixelHeight"/><v:f eqn="sum @10 21600 0"/></v:formulas><v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/><o:lock v:ext="edit" aspectratio="t"/></v:shapetype>'
+      +'<table dir="rtl">';
     // header
     html+='<tr>'+aoa[0].map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr>';
     // data rows
@@ -10972,7 +10980,7 @@ function hqReportExcel(){
         if(isPhoto){
           var e=entries[ri];
           var ph=e?nrpPhotos(e.r):[];
-          if(ph.length && ph[0] && ph[0].data){ val='<img src="'+nrpThumb(ph[0].data)+'" width="64" height="48" alt="صورة">'; }
+          if(ph.length && ph[0] && ph[0].data){ val='<v:shape type="#_x0000_t75" style="width:48pt;height:36pt"><v:imagedata src="'+nrpThumb(ph[0].data)+'" o:title="صورة"/></v:shape><img src="'+nrpThumb(ph[0].data)+'" width="64" height="48" alt="صورة" style="display:none">'; }
         } else {
           val=escBr(c);
         }

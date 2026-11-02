@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.92",
+  "version": "2026.10.09.93",
   "released": "2026-11-02",
-  "notes": "إصلاح RTL (dir=rtl) لتصدير Excel (HQ و NRP)، واستخدام صور مصغّرة (nrpThumb 128×96) في Excel لتجنب red X."
+  "notes": "استخدام VML (v:shape + v:imagedata) لعرض الصور في Excel HTML (أفضل دعم من data URI) + dir=rtl. إصدار 2026.10.09.93."
 }
