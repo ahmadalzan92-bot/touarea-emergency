@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.76",
+  "version": "2026.10.09.77",
   "released": "2026-11-02",
-  "notes": "إصلاح كتابة ZIP (offset حقل اسم الملف في central directory) لضمان فتح ملف Excel في Excel/LibreOffice/openpyxl بدون خطأ BadZipFile."
+  "notes": "إصلاح offset محلي (local header offset) في writer ZIP لضمان فتح ملف Excel في Excel/openpyxl بدون BadZipFile."
 }
