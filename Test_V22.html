@@ -1650,6 +1650,7 @@
             <option value="date">تاريخ البلاغ</option>
           </select>
           <input type="search" id="hqFilterSearch" class="form-control" style="max-width:210px" oninput="hqOnSearchText(this.value,true)" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ...">
+          <select id="hqFilterSearchStatus" class="form-select" style="max-width:150px;display:none" onchange="hqOnSearchText(this.value,true)"><option value="">كل الحالات</option><option value="جديد">جديد</option><option value="قيد التنفيذ">قيد التنفيذ</option><option value="منجز">منجز</option><option value="مؤجل">مؤجل</option></select>
           <button type="button" class="btn btn-xs btn-warning fw-bold py-1 px-2" onclick="hqSearchPickFirst()" title="تحديد البلاغ على الخريطة"><i class="fas fa-location-crosshairs"></i> تحديد</button>
           <button type="button" class="btn btn-xs btn-outline-light py-1 px-2" onclick="hqClearAllFilters()" title="إعادة ضبط الفلاتر والبحث"><i class="fas fa-rotate-left"></i> كل البلاغات</button>
         </div>
@@ -1809,6 +1810,7 @@
                 <option value="date">التاريخ</option>
               </select>
               <input type="search" id="hqSideSearchInput" class="form-control form-control-sm" oninput="hqOnSearchText(this.value,false)" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="اكتب رقم بلاغ، موقع، اسم، آلية...">
+              <select id="hqSideSearchStatus" class="form-select form-select-sm" style="display:none" onchange="hqOnSearchText(this.value,false)"><option value="">كل الحالات</option><option value="جديد">جديد</option><option value="قيد التنفيذ">قيد التنفيذ</option><option value="منجز">منجز</option><option value="مؤجل">مؤجل</option></select>
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <span class="small text-muted">النتائج المطابقة: <b id="hqSideListCount">0</b> بلاغ</span>
@@ -1909,6 +1911,7 @@
               <option value="date">تاريخ البلاغ</option>
             </select>
             <input type="search" id="hqMapSearchInput" class="form-control form-control-sm" style="font-size:.78rem" oninput="hqOnSearchText(this.value,true)" onfocus="hqRenderSearchDropdown()" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ: رقم، موقع، نوع، موظف، آلية...">
+            <select id="hqMapSearchStatus" class="form-select form-select-sm" style="font-size:.78rem;display:none" onchange="hqOnSearchText(this.value,true)"><option value="">كل الحالات</option><option value="جديد">جديد</option><option value="قيد التنفيذ">قيد التنفيذ</option><option value="منجز">منجز</option><option value="مؤجل">مؤجل</option></select>
             <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-2" onclick="hqSearchPickFirst()" title="انتقال إلى البلاغ على الخريطة"><i class="fas fa-location-crosshairs"></i></button>
             <button type="button" class="btn btn-sm btn-outline-secondary text-light py-1 px-2" onclick="hqClearSearch()" title="مسح نص البحث"><i class="fas fa-eraser"></i></button>
             <button type="button" class="btn btn-sm btn-danger py-1 px-2" onclick="hqToggleSearchBar(false)" title="إغلاق شريط البحث"><i class="fas fa-xmark"></i></button>
@@ -10090,11 +10093,23 @@ function hqSyncSearchField(val){
   ['hqFilterField','hqMapSearchField','hqSideSearchField'].forEach(function(id){
     var el=hqEl(id); if(el && el.value!==val) el.value=val;
   });
+  var isStatus = (val==='status');
+  var pairs = [
+    {text:'hqFilterSearch', sel:'hqFilterSearchStatus'},
+    {text:'hqMapSearchInput', sel:'hqMapSearchStatus'},
+    {text:'hqSideSearchInput', sel:'hqSideSearchStatus'}
+  ];
+  pairs.forEach(function(p){
+    var t=hqEl(p.text), sel=hqEl(p.sel);
+    if(t) t.style.display = isStatus ? 'none' : '';
+    if(sel) sel.style.display = isStatus ? '' : 'none';
+  });
   hqRenderAll(false);
   hqRenderSearchDropdown();
 }
 function hqOnSearchText(val,showDrop){
-  ['hqFilterSearch','hqMapSearchInput','hqSideSearchInput'].forEach(function(id){
+  var ids = ['hqFilterSearch','hqMapSearchInput','hqSideSearchInput','hqFilterSearchStatus','hqMapSearchStatus','hqSideSearchStatus'];
+  ids.forEach(function(id){
     var el=hqEl(id); if(el && el.value!==val) el.value=val;
   });
   hqRenderAll(false);
@@ -10102,7 +10117,7 @@ function hqOnSearchText(val,showDrop){
   else hqHideSearchDropdown();
 }
 function hqClearSearch(){
-  ['hqFilterSearch','hqMapSearchInput','hqSideSearchInput'].forEach(function(id){
+  ['hqFilterSearch','hqMapSearchInput','hqSideSearchInput','hqFilterSearchStatus','hqMapSearchStatus','hqSideSearchStatus'].forEach(function(id){
     var el=hqEl(id); if(el) el.value='';
   });
   hqHideSearchDropdown();
