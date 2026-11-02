@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.74';
+    const APP_VERSION = '2026.10.09.75';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9398,7 +9398,7 @@ function nrpRow(r,i){
     outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
     nrpStatus(r), r.responseSpeed||'',
     [r.longitude,r.latitude].filter(Boolean).join('\n'),
-    ph.length?(ph.length+' صورة'):''
+    ''
   ];
 }
 function nrpDutyInfo(rs){ var inH=0,outH=0; rs.forEach(function(r){var d=nrpDuty(r);inH+=d.inH||0;outH+=d.outH||0;}); return {inH:roundH(inH),outH:roundH(outH)}; }
@@ -9430,7 +9430,6 @@ function nrpTableHTML(rs){
       +'<td>'+esc(v[19])+'</td>'
       +'<td>'+esc(v[20])+'</td>'
       +'<td>'+esc(v[21])+'</td>'
-      +'<td>'+escBr(v[22])+'</td>'
       +'<td>'+photoCell+'</td>'
       +'</tr>';
   }).join('')||'<tr><td colspan="23" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
