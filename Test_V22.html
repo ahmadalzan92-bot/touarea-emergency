@@ -1228,6 +1228,55 @@
     #appUpdateBanner .aub-now:hover{background:#218838}
     #appUpdateBanner .aub-later{background:rgba(255,255,255,.15);color:#fff;font-size:1.2rem;line-height:1;padding:6px 12px}
     @media(max-width:576px){#appUpdateBanner .aub-text{font-size:.9rem}#appUpdateBanner .aub-actions{width:100%;justify-content:flex-end}}
+  
+    /* ======================== صفحة مديرية الطوارئ - الوزارة (المركز) ======================== */
+    .dir-card-hq{background:linear-gradient(135deg,#0a2540 0%,#144272 55%,#1e6091 100%)!important;color:#fff!important;border:2px solid #f59e0b!important;grid-column:1 / -1;box-shadow:0 14px 30px -12px rgba(10,37,64,.55)!important}
+    .dir-card-hq .dir-short{color:#ffd166!important;font-size:1.22rem!important}
+    .dir-card-hq .dir-long{color:#e2e8f0!important}
+    .dir-card-hq .dir-code{background:rgba(245,158,11,.22)!important;color:#ffd166!important;border:1px solid rgba(255,209,102,.45)!important}
+    .dir-card-hq .dir-ico{background:rgba(255,209,102,.18)!important;color:#ffd166!important}
+    .btn-xs{font-size:.72rem;line-height:1.35;padding:1px 6px;border-radius:5px}
+#hqScreen{position:fixed;inset:0;z-index:3200;display:none;flex-direction:column;background:#0b192c;color:#f8fafc;overflow:hidden;font-family:'Cairo','Segoe UI',Tahoma,sans-serif}
+    .hq-topbar{height:60px;min-height:60px;background:linear-gradient(90deg,#081c33 0%,#0f2c52 50%,#143a69 100%);border-bottom:2px solid #f59e0b;display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:8px;z-index:40;box-shadow:0 4px 16px rgba(0,0,0,.35);flex-wrap:nowrap;overflow-x:auto}
+    .hq-brand{display:flex;align-items:center;gap:9px;flex-shrink:0}
+    .hq-brand img{width:40px;height:40px;border-radius:50%;background:#fff;padding:2px;border:1.5px solid #ffd166}
+    .hq-brand-title{font-weight:800;font-size:.96rem;color:#ffd166;line-height:1.15;white-space:nowrap}
+    .hq-brand-sub{font-size:.72rem;color:#cbd5e1;white-space:nowrap}
+    .hq-kpis{display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .hq-kpi-pill{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:3px 9px;display:flex;align-items:center;gap:5px;font-size:.76rem;white-space:nowrap}
+    .hq-kpi-pill b{font-size:.9rem;color:#ffd166}
+    .hq-filters{display:flex;align-items:center;gap:5px;flex:1;justify-content:center;min-width:260px}
+    .hq-filters .form-select,.hq-filters .form-control{background:rgba(15,23,42,.82);color:#fff;border:1px solid rgba(255,255,255,.25);font-size:.78rem;padding:3px 8px;height:31px;border-radius:6px}
+    .hq-filters .form-control::placeholder{color:#94a3b8}
+    .hq-actions{display:flex;align-items:center;gap:5px;flex-shrink:0}
+    .hq-actions .btn{font-size:.78rem;padding:4px 9px;font-weight:700;white-space:nowrap;border-radius:7px}
+    .hq-body{flex:1;display:flex;position:relative;overflow:hidden;width:100%;height:calc(100vh - 60px)}
+    .hq-sidebar{width:415px;max-width:92vw;height:100%;background:#ffffff;color:#1e293b;border-left:2px solid #cbd5e1;display:flex;flex-direction:column;z-index:30;box-shadow:-6px 0 24px rgba(0,0,0,.28);transition:margin-right .25s ease}
+    .hq-sidebar.collapsed{margin-right:-415px}
+    .hq-side-toggle{position:absolute;top:14px;right:415px;z-index:35;background:#0f2c52;color:#ffd166;border:2px solid #f59e0b;border-right:none;border-radius:8px 0 0 8px;padding:8px 10px;cursor:pointer;font-weight:700;font-size:.8rem;box-shadow:-4px 4px 12px rgba(0,0,0,.3);transition:right .25s ease}
+    .hq-sidebar.collapsed + .hq-side-toggle{right:0}
+    .hq-side-tabs{display:flex;background:#f1f5f9;border-bottom:1px solid #cbd5e1;padding:5px 6px 0;gap:4px}
+    .hq-side-tab{flex:1;border:none;background:transparent;color:#475569;font-weight:700;font-size:.8rem;padding:8px 4px;border-bottom:3px solid transparent;cursor:pointer;border-radius:6px 6px 0 0;transition:all .15s}
+    .hq-side-tab.active{background:#fff;color:#0f2c52;border-bottom-color:#f59e0b}
+    .hq-side-pane{display:none;flex:1;overflow-y:auto;padding:12px}
+    .hq-side-pane.active{display:block}
+    .hq-map-wrap{flex:1;height:100%;position:relative;background:#0f172a}
+    #hqMapBox{width:100%;height:100%}
+    .hq-map-legend{position:absolute;bottom:14px;left:14px;z-index:1000;background:rgba(15,23,42,.9);color:#fff;padding:7px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.22);font-size:.76rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+    .hq-pick-banner{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:1000;background:#f59e0b;color:#0f172a;font-weight:800;padding:7px 18px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.4);display:none;align-items:center;gap:8px;font-size:.85rem}
+    .hq-inc-card{border:1px solid #cbd5e1;border-right:4px solid #1f6fb2;border-radius:8px;padding:9px 10px;margin-bottom:8px;background:#f8fafc;transition:box-shadow .15s}
+    .hq-inc-card:hover{box-shadow:0 4px 12px rgba(15,44,82,.12);background:#fff}
+    .hq-transfer-box{background:#eff6ff;border:1px dashed #3b82f6;border-radius:7px;padding:8px;margin-top:7px;display:none}
+    .hq-pin-wrap{display:flex;flex-direction:column;align-items:center;transform:translateY(-6px)}
+    .hq-pin-tag{background:#0f172a;color:#ffd166;font-size:9px;font-weight:700;padding:0 4px;border-radius:4px;white-space:nowrap;border:1px solid rgba(255,255,255,.35);margin-bottom:1px;line-height:1.3}
+    .hq-pin-dot{width:26px;height:26px;border-radius:50%;color:#fff;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.45)}
+    #hqReportsModal{position:fixed;inset:0;z-index:3400;background:rgba(15,23,42,.78);display:none;align-items:center;justify-content:center;padding:14px}
+    .hq-rep-dialog{background:#fff;color:#1e293b;width:96vw;max-width:1380px;height:92vh;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+    .hq-rep-head{background:linear-gradient(90deg,#081c33,#143a69);color:#fff;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #f59e0b}
+    .hq-rep-bar{background:#f1f5f9;padding:10px 14px;border-bottom:1px solid #cbd5e1;display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+    .hq-rep-body{flex:1;overflow:auto;padding:14px;background:#e2e8f0}
+    .hq-rep-paper{background:#fff;padding:14px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-height:100%}
+
   </style>
 </head>
 <body>
@@ -1530,6 +1579,332 @@
     <footer class="text-center py-3 mt-5">
       <p><span>العرض المركزي لجميع بلاغات المحافظات © 2025-2026 — إعداد وتصميم م. أحمد الزن</span></p>
     </footer>
+  </div>
+
+  <!-- ======================== صفحة مديرية الطوارئ - الوزارة (المركز) ======================== -->
+  <div id="hqScreen">
+    <div class="hq-topbar">
+      <div class="hq-brand">
+        <img src="logo-web.png" alt="شعار الوزارة">
+        <div>
+          <div class="hq-brand-title"><i class="fas fa-satellite-dish"></i> مديرية الطوارئ — الوزارة (المركز)</div>
+          <div class="hq-brand-sub">غرفة العمليات المركزية — الخريطة الشاملة وتوجيه البلاغات</div>
+        </div>
+      </div>
+      <div class="hq-kpis">
+        <div class="hq-kpi-pill" title="إجمالي البلاغات في جميع المحافظات"><i class="fas fa-bolt text-warning"></i><span>الإجمالي</span><b id="hqKpiTotal">0</b></div>
+        <div class="hq-kpi-pill" title="بلاغات جديدة أو قيد التنفيذ"><i class="fas fa-spinner text-info"></i><span>جديد/قيد</span><b id="hqKpiActive">0</b></div>
+        <div class="hq-kpi-pill" title="بلاغات منجزة"><i class="fas fa-circle-check text-success"></i><span>منجز</span><b id="hqKpiDone">0</b></div>
+        <div class="hq-kpi-pill" title="بلاغات موجهة أو محولة من المركز"><i class="fas fa-share-nodes text-warning"></i><span>محوّل</span><b id="hqKpiTransferred">0</b></div>
+        <div class="hq-kpi-pill" title="عدد المديريات الفرعية الفعالة"><i class="fas fa-sitemap text-light"></i><span>المديريات</span><b id="hqKpiDirs">14</b></div>
+      </div>
+      <div class="hq-filters">
+        <select id="hqFilterDir" class="form-select" style="max-width:155px" onchange="hqRenderAll(true)" title="فلترة حسب المديرية / المحافظة">
+          <option value="">كل المحافظات والمديريات</option>
+        </select>
+        <select id="hqFilterStatus" class="form-select" style="max-width:120px" onchange="hqRenderAll(false)" title="فلترة حسب الحالة">
+          <option value="">كل الحالات</option>
+          <option value="جديد">جديد</option>
+          <option value="قيد التنفيذ">قيد التنفيذ</option>
+          <option value="منجز">منجز</option>
+          <option value="مؤجل">مؤجل</option>
+        </select>
+        <input type="date" id="hqFilterFrom" class="form-control" style="max-width:128px" onchange="hqRenderAll(false)" title="من تاريخ">
+        <input type="date" id="hqFilterTo" class="form-control" style="max-width:128px" onchange="hqRenderAll(false)" title="إلى تاريخ">
+        <input type="search" id="hqFilterSearch" class="form-control" style="max-width:165px" oninput="hqRenderAll(false)" placeholder="بحث: رقم، موقع، وصف...">
+      </div>
+      <div class="hq-actions">
+        <button type="button" class="btn btn-warning text-dark" onclick="hqOpenSideTab('add')"><i class="fas fa-plus-circle"></i> إضافة/توجيه بلاغ</button>
+        <button type="button" class="btn btn-info text-white" onclick="hqOpenSideTab('list')"><i class="fas fa-right-left"></i> التحويل والسجل</button>
+        <button type="button" class="btn btn-outline-light" onclick="hqOpenSideTab('dirs')"><i class="fas fa-sitemap"></i> + صفحة فرعية</button>
+        <button type="button" class="btn btn-success" onclick="hqOpenReportsModal()"><i class="fas fa-file-signature"></i> نظام التقارير الشامل</button>
+        <button type="button" class="btn btn-outline-warning" onclick="hqMapFit()" title="ملاءمة الخريطة لجميع البلاغات"><i class="fas fa-expand"></i></button>
+        <button type="button" class="btn btn-light" onclick="hqRefreshCloud()" title="تحديث فوري من السحابة"><i class="fas fa-rotate"></i></button>
+        <button type="button" class="btn btn-danger" onclick="closeHQ()"><i class="fas fa-house"></i> الرئيسية</button>
+      </div>
+    </div>
+
+    <div class="hq-body">
+      <!-- الشريط الجانبي للعمليات -->
+      <aside class="hq-sidebar" id="hqSidebar">
+        <div class="hq-side-tabs">
+          <button type="button" class="hq-side-tab active" id="hqTabBtn_add" onclick="hqSwitchSideTab('add')"><i class="fas fa-plus-circle"></i> إضافة وتوجيه بلاغ</button>
+          <button type="button" class="hq-side-tab" id="hqTabBtn_list" onclick="hqSwitchSideTab('list')"><i class="fas fa-share-nodes"></i> البلاغات والتحويل</button>
+          <button type="button" class="hq-side-tab" id="hqTabBtn_dirs" onclick="hqSwitchSideTab('dirs')"><i class="fas fa-sitemap"></i> المديريات الفرعية</button>
+        </div>
+
+        <!-- تبويب 1: إضافة بلاغ من المركز وتحويله لأي مديرية فرعية -->
+        <div class="hq-side-pane active" id="hqSidePane_add">
+          <div class="alert alert-primary py-2 px-2 small mb-2">
+            <i class="fas fa-satellite-dish"></i> <b>تسجيل وتوجيه بلاغ مركزي:</b> أدخل بيانات البلاغ واختر المديرية الفرعية ليُحوَّل إليها فوراً ويظهر على خريطتها وسجلها وتقاريرها.
+          </div>
+          <form id="hqAddForm" onsubmit="hqSubmitIncident(event)">
+            <div class="mb-2">
+              <label class="form-label small fw-bold mb-1 text-primary"><i class="fas fa-building-flag"></i> تحويل / توجيه البلاغ إلى مديرية طوارئ فرعية *</label>
+              <select id="hqFormDir" class="form-select form-select-sm fw-bold border-primary" required onchange="hqOnFormDirChange()"></select>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small fw-bold mb-1">رقم البلاغ *</label>
+                <input type="text" id="hqFormNo" class="form-control form-control-sm" required placeholder="رقم البلاغ">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold mb-1">التاريخ *</label>
+                <input type="date" id="hqFormDate" class="form-control form-control-sm" required>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-4">
+                <label class="form-label small fw-bold mb-1">وقت البدء *</label>
+                <input type="time" id="hqFormStart" class="form-control form-control-sm" required onchange="hqCalcFormDur()">
+              </div>
+              <div class="col-4">
+                <label class="form-label small fw-bold mb-1">وقت الانتهاء *</label>
+                <input type="time" id="hqFormEnd" class="form-control form-control-sm" required onchange="hqCalcFormDur()">
+              </div>
+              <div class="col-4">
+                <label class="form-label small fw-bold mb-1">المدة</label>
+                <input type="text" id="hqFormDur" class="form-control form-control-sm bg-light" readonly value="01:00 ساعة">
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-7">
+                <label class="form-label small fw-bold mb-1">طبيعة المهمة *</label>
+                <select id="hqFormType" class="form-select form-select-sm" required>
+                  <option value="جولة تفقدية">جولة تفقدية</option>
+                  <option value="انهيارات جبلية على الطريق">انهيارات جبلية على الطريق</option>
+                  <option value="انهيار صخري / ترابي">انهيار صخري / ترابي</option>
+                  <option value="تجمع مياه أمطار">تجمع مياه أمطار</option>
+                  <option value="انسداد عبارة / منهل">انسداد عبارة / منهل</option>
+                  <option value="سقوط شجرة / عائق على الطريق">سقوط شجرة / عائق على الطريق</option>
+                  <option value="انجراف على الطريق">انجراف على الطريق</option>
+                  <option value="تراكم ثلوج / انجماد">تراكم ثلوج / انجماد</option>
+                  <option value="حادث سير / أضرار طريق">حادث سير / أضرار طريق</option>
+                  <option value="صيانة إنارة / إشارات">صيانة إنارة / إشارات</option>
+                  <option value="طوارئ عامة">طوارئ عامة</option>
+                </select>
+              </div>
+              <div class="col-5">
+                <label class="form-label small fw-bold mb-1">حالة البلاغ *</label>
+                <select id="hqFormStatus" class="form-select form-select-sm" required>
+                  <option value="جديد">جديد</option>
+                  <option value="قيد التنفيذ" selected>قيد التنفيذ</option>
+                  <option value="منجز">منجز</option>
+                  <option value="مؤجل">مؤجل</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold mb-1">وصف البلاغ التفصيلي *</label>
+              <textarea id="hqFormDesc" class="form-control form-control-sm" rows="2" required placeholder="وصف الحالة الواردة للغرفة المركزية..."></textarea>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold mb-1">موقع البلاغ (الطريق / المنطقة) *</label>
+              <input type="text" id="hqFormLoc" class="form-control form-control-sm" required placeholder="مثال: طريق مادبا - البحر الميت">
+            </div>
+            <div class="mb-2 p-2 rounded border bg-light">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-bold mb-0"><i class="fas fa-location-dot text-danger"></i> الإحداثيات على الخريطة *</label>
+                <div class="d-flex gap-1">
+                  <button type="button" class="btn btn-xs btn-warning py-0 px-2 fw-bold" id="hqPickCoordBtn" onclick="hqTogglePickCoord()"><i class="fas fa-crosshairs"></i> التقاط من الخريطة</button>
+                  <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="hqFillDirCenter()"><i class="fas fa-compass"></i> مركز المحافظة</button>
+                </div>
+              </div>
+              <div class="row g-2">
+                <div class="col-6">
+                  <input type="text" id="hqFormLon" class="form-control form-control-sm" required placeholder="خط الطول 35.xxxx">
+                </div>
+                <div class="col-6">
+                  <input type="text" id="hqFormLat" class="form-control form-control-sm" required placeholder="خط العرض 31.xxxx">
+                </div>
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-5">
+                <label class="form-label small fw-bold mb-1">مقدم البلاغ *</label>
+                <input type="text" id="hqFormReporter" class="form-control form-control-sm" required value="غرفة العمليات المركزية - الوزارة">
+              </div>
+              <div class="col-4">
+                <label class="form-label small fw-bold mb-1">وسيلة التبليغ</label>
+                <select id="hqFormMethod" class="form-select form-select-sm">
+                  <option value="غرفة العمليات المركزية">غرفة العمليات المركزية</option>
+                  <option value="اتصال هاتفي">اتصال هاتفي</option>
+                  <option value="الدفاع المدني / 911">الدفاع المدني / 911</option>
+                  <option value="الأمن العام">الأمن العام</option>
+                  <option value="واتساب / شكوى">واتساب / شكوى</option>
+                </select>
+              </div>
+              <div class="col-3">
+                <label class="form-label small fw-bold mb-1">الهاتف</label>
+                <input type="text" id="hqFormPhone" class="form-control form-control-sm" value="07X-XXXXXXX">
+              </div>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold mb-1">توجيهات المركز / الإجراءات المتخذة *</label>
+              <textarea id="hqFormActions" class="form-control form-control-sm" rows="2" required placeholder="1- تم استلام البلاغ في غرفة عمليات الوزارة وتوجيه المديرية المعنية..."></textarea>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-6">
+                <label class="form-label small fw-bold mb-1">رقم الفرقة / الكادر المناوب</label>
+                <input type="text" id="hqFormTeam" class="form-control form-control-sm" placeholder="مثال: فرقة 1 / مناوب المركز">
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold mb-1">صور البلاغ (اختياري)</label>
+                <input type="file" id="hqFormFiles" class="form-control form-control-sm" accept="image/*" multiple>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold mt-1"><i class="fas fa-paper-plane"></i> حفظ البلاغ وتحويله للمديرية المختارة فوراً</button>
+          </form>
+        </div>
+
+        <!-- تبويب 2: سجل البلاغات والتحويل لأي مديرية فرعية -->
+        <div class="hq-side-pane" id="hqSidePane_list">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="fw-bold small text-primary"><i class="fas fa-list-check"></i> البلاغات المطابقة للفلتر (<span id="hqSideListCount">0</span>)</span>
+            <button type="button" class="btn btn-xs btn-outline-success py-0 px-2" onclick="hqOpenReportsModal()"><i class="fas fa-file-export"></i> إصدار تقرير</button>
+          </div>
+          <div id="hqSideIncidentsList"></div>
+        </div>
+
+        <!-- تبويب 3: إدارة المديريات الفرعية وإضافة صفحات جديدة -->
+        <div class="hq-side-pane" id="hqSidePane_dirs">
+          <div class="card border-primary mb-3">
+            <div class="card-header bg-primary text-white py-2 px-3 small fw-bold">
+              <i class="fas fa-plus-circle"></i> إضافة صفحة مديرية / غرفة طوارئ فرعية جديدة
+            </div>
+            <div class="card-body p-2">
+              <form id="hqNewDirForm" onsubmit="hqCreateSubDir(event)">
+                <div class="row g-2 mb-2">
+                  <div class="col-7">
+                    <label class="form-label small fw-bold mb-1">الاسم المختصر *</label>
+                    <input type="text" id="hqNewDirShort" class="form-control form-control-sm" required placeholder="مثال: لواء ذيبان">
+                  </div>
+                  <div class="col-5">
+                    <label class="form-label small fw-bold mb-1">الرمز (Code) *</label>
+                    <input type="text" id="hqNewDirCode" class="form-control form-control-sm text-uppercase" required placeholder="مثال: DHI" maxlength="6">
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small fw-bold mb-1">الاسم الرسمي الكامل للصفحة *</label>
+                  <input type="text" id="hqNewDirLong" class="form-control form-control-sm" required placeholder="مثال: غرفة عمليات مديرية أشغال لواء ذيبان">
+                </div>
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small fw-bold mb-1">خط الطول للمركز</label>
+                    <input type="text" id="hqNewDirLon" class="form-control form-control-sm" placeholder="35.7500" value="35.7932">
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small fw-bold mb-1">خط العرض للمركز</label>
+                    <input type="text" id="hqNewDirLat" class="form-control form-control-sm" placeholder="31.5500" value="31.7165">
+                  </div>
+                </div>
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small fw-bold mb-1">الأيقونة</label>
+                    <select id="hqNewDirIcon" class="form-select form-select-sm">
+                      <option value="fa-building-shield">مبنى طوارئ</option>
+                      <option value="fa-road">طرق وجسور</option>
+                      <option value="fa-mountain-city">محافظة / لواء</option>
+                      <option value="fa-truck-monster">آليات ثقيلة</option>
+                      <option value="fa-map-location-dot">خريطة موقع</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small fw-bold mb-1">كلمة المرور (اختياري)</label>
+                    <input type="text" id="hqNewDirPass" class="form-control form-control-sm" placeholder="تلقائي: CODE@123456789">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold"><i class="fas fa-plus"></i> إنشاء صفحة المديرية الفرعية وإضافتها للنظام</button>
+              </form>
+            </div>
+          </div>
+          <div class="fw-bold small mb-2 text-secondary"><i class="fas fa-sitemap"></i> جميع صفحات المديريات الفرعية المتاحة (<span id="hqDirsListCount">0</span>):</div>
+          <div id="hqSubDirsList"></div>
+        </div>
+      </aside>
+
+      <button type="button" class="hq-side-toggle" id="hqSideToggleBtn" onclick="hqToggleSidebar()" title="طيّ / إظهار الشريط الجانبي">
+        <i class="fas fa-chevron-right" id="hqSideToggleIcon"></i>
+      </button>
+
+      <!-- الخريطة التفاعلية بكامل الشاشة -->
+      <div class="hq-map-wrap">
+        <div class="hq-pick-banner" id="hqPickBanner">
+          <i class="fas fa-crosshairs fa-spin"></i> اضغط على أي موقع في الخريطة لالتقاط إحداثيات البلاغ...
+          <button type="button" class="btn btn-xs btn-dark py-0 px-2" onclick="hqTogglePickCoord(false)">إلغاء</button>
+        </div>
+        <div id="hqMapBox"></div>
+        <div class="hq-map-legend" id="hqMapLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== نافذة نظام إصدار التقارير الشامل (المركز) ======================== -->
+  <div id="hqReportsModal" onclick="if(event.target===this)hqCloseReportsModal()">
+    <div class="hq-rep-dialog">
+      <div class="hq-rep-head">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-file-signature fa-lg text-warning"></i>
+          <div>
+            <div class="fw-bold">نظام إصدار التقارير الشامل — مديرية الطوارئ - الوزارة (المركز)</div>
+            <div class="small text-light opacity-75">إصدار التقارير الرسمية (22 عموداً) والتقارير الإحصائية وكشوف المكافآت وسجل التحويلات لأي محافظة أو لجميع المحافظات</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-light fw-bold" onclick="hqCloseReportsModal()"><i class="fas fa-xmark"></i> إغلاق</button>
+      </div>
+      <div class="hq-rep-bar">
+        <div>
+          <label class="form-label small fw-bold mb-1">نوع التقرير</label>
+          <select id="hqRepKind" class="form-select form-select-sm fw-bold" onchange="hqRenderReportPreview()">
+            <option value="official22">1) التقرير الرسمي المعتمد (22 عموداً — شامل الوصف والصور)</option>
+            <option value="summary">2) التقرير الإحصائي الشامل لجميع المحافظات والمديريات الفرعية</option>
+            <option value="bonus">3) كشف ساعات العمل ومكافآت الطوارئ (مرتب أبجدياً)</option>
+            <option value="transfers">4) سجل البلاغات الموجهة والمحولة من المركز</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label small fw-bold mb-1">المديرية / المحافظة</label>
+          <select id="hqRepDir" class="form-select form-select-sm" onchange="hqRenderReportPreview()">
+            <option value="">جميع المحافظات والمديريات الفرعية</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label small fw-bold mb-1">الحالة</label>
+          <select id="hqRepStatus" class="form-select form-select-sm" onchange="hqRenderReportPreview()">
+            <option value="">جميع الحالات</option>
+            <option value="جديد">جديد</option>
+            <option value="قيد التنفيذ">قيد التنفيذ</option>
+            <option value="منجز">منجز</option>
+            <option value="مؤجل">مؤجل</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label small fw-bold mb-1">من تاريخ</label>
+          <input type="date" id="hqRepFrom" class="form-control form-control-sm" onchange="hqRenderReportPreview()">
+        </div>
+        <div>
+          <label class="form-label small fw-bold mb-1">إلى تاريخ</label>
+          <input type="date" id="hqRepTo" class="form-control form-control-sm" onchange="hqRenderReportPreview()">
+        </div>
+        <div>
+          <label class="form-label small fw-bold mb-1">مدير الأشغال / المعني</label>
+          <input type="text" id="hqRepMgr1" class="form-control form-control-sm" value="م. أحمد عطاالله الكساسبة" oninput="hqRenderReportPreview()">
+        </div>
+        <div>
+          <label class="form-label small fw-bold mb-1">مدير مديرية الطوارئ</label>
+          <input type="text" id="hqRepMgr2" class="form-control form-control-sm" value="م. خالد إبراهيم الجزازي" oninput="hqRenderReportPreview()">
+        </div>
+        <div class="d-flex gap-1 ms-auto">
+          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold" onclick="hqRepClearDates()"><i class="fas fa-calendar"></i> كل الفترات</button>
+          <button type="button" class="btn btn-sm btn-info text-white fw-bold" onclick="hqReportPrint()"><i class="fas fa-print"></i> طباعة / PDF</button>
+          <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="hqReportWord()"><i class="fas fa-file-word"></i> تنزيل Word</button>
+          <button type="button" class="btn btn-sm btn-success fw-bold" onclick="hqReportExcel()"><i class="fas fa-file-excel"></i> تصدير Excel</button>
+        </div>
+      </div>
+      <div class="hq-rep-body">
+        <div class="hq-rep-paper nrp" id="hqReportPreviewBox"></div>
+      </div>
+    </div>
   </div>
   <div id="attachOverlay" class="attach-overlay" style="display:none" onclick="if(event.target===this)closeAttachViewer()">
     <div class="attach-viewer">
@@ -2814,7 +3189,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.66';
+    const APP_VERSION = '2026.10.09.67';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3017,7 +3392,7 @@
       return fullKey.slice(i+2);
     }
     function cloudSyncableKey(fullKey){
-      if(fullKey==='opendirPasswordsV2'||fullKey==='opendirAdminPw') return true;
+      if(fullKey==='opendirPasswordsV2'||fullKey==='opendirAdminPw'||fullKey==='customDirectoratesV1'||fullKey==='hqTransfersV1') return true;
       const raw = cloudRawKeyOf(fullKey);
       if(!raw) return false;
       return Object.values(LS_KEYS).indexOf(raw) > -1 || fullKey === 'opendirKey';
@@ -3185,7 +3560,7 @@
             await cloudPushNow(fullKey, localRaw);
           }
         }
-        [ADMIN_PW_KEY, 'opendirPasswordsV2'].forEach(fullKey=>{
+        [ADMIN_PW_KEY, 'opendirPasswordsV2', 'customDirectoratesV1', 'hqTransfersV1'].forEach(fullKey=>{
           if(existing[fullKey]) return;
           const localRaw = localStorage.getItem(fullKey);
           if(localRaw === null || localRaw === '') return;
@@ -3334,7 +3709,14 @@
     }
     function buildHomeGrid(){
       const grid=document.getElementById('homeGrid'); if(!grid) return;
-      grid.innerHTML=DIRECTORATES.map(d=>
+      if(typeof loadCustomDirectorates==='function') loadCustomDirectorates();
+      grid.innerHTML='<button type="button" class="dir-card dir-card-hq" onclick="openHQPass()">'+
+          '<span class="dir-lock">'+((getPass('hq'))?'<i class="fas fa-lock"></i>':'<i class="fas fa-lock-open"></i>')+'</span>'+
+          '<span class="dir-ico"><i class="fas fa-satellite-dish"></i></span>'+
+          '<span class="dir-short">مديرية الطوارئ — الوزارة (المركز)</span>'+
+          '<span class="dir-code">HQ</span>'+
+          '<span class="dir-long">غرفة العمليات المركزية — شاشة خريطة كاملة لجميع المحافظات + إضافة وتحويل البلاغات لأي مديرية فرعية + إضافة صفحات فرعية + نظام تقارير شامل</span>'+
+        '</button>'+DIRECTORATES.map(d=>
         '<button type="button" class="dir-card'+(d.key===ACTIVE_DIR.key?' active':'')+'" onclick="enterDirectorate(\''+d.key+'\')">'+
           '<span class="dir-lock">'+((getPass(d.key))?'<i class="fas fa-lock"></i>':'<i class="fas fa-lock-open"></i>')+'</span>'+
           '<span class="dir-ico"><i class="fas '+d.icon+'"></i></span>'+
@@ -3369,7 +3751,7 @@
     const DEFAULT_PW_SUFFIX='@123456789';
     function defaultDirPass(d){ return ((d&&d.code)||'').toUpperCase() + DEFAULT_PW_SUFFIX; }
     function getCustomPass(key){ try{ return ((JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}'))[key]||''); }catch(e){ return ''; } }
-    function getPass(key){ const c=getCustomPass(key); if(c) return c; if(key==='central') return 'CEN'+DEFAULT_PW_SUFFIX; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
+    function getPass(key){ const c=getCustomPass(key); if(c) return c; if(key==='hq') return 'HQ'+DEFAULT_PW_SUFFIX; if(key==='central') return 'CEN'+DEFAULT_PW_SUFFIX; const d=DIRECTORATES.find(x=>x.key===key); return defaultDirPass(d); }
     function savePass(key,p){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} o[key]=p; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
     function delPass(key){ const o={}; try{ Object.assign(o,JSON.parse(localStorage.getItem('opendirPasswordsV2')||'{}')); }catch(e){} delete o[key]; localStorage.setItem('opendirPasswordsV2',JSON.stringify(o)); cloudPush('opendirPasswordsV2', o); }
     const SAVED_LOGIN_KEY='opendirSavedLoginV1';
@@ -3381,12 +3763,12 @@
       PASS_MODE=mode; PASS_DIR=key;
       const box=document.getElementById('passModal'),title=document.getElementById('passTitle'),msg=document.getElementById('passMsg'),inp=document.getElementById('passInput'),label=document.getElementById('passOkLabel'),rem=document.getElementById('passRemember');
       if(!box) return;
-      const isCentral=(key==='central');
-      const d=isCentral?{long:'العرض المركزي لجميع بلاغات المحافظات'}:DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
+      const isCentral=(key==='central'||key==='hq');
+      const d=(key==='hq')?{long:'مديرية الطوارئ — الوزارة (المركز الرئيسي)'}:isCentral?{long:'العرض المركزي لجميع بلاغات المحافظات'}:DIRECTORATES.find(x=>x.key===key)||DIRECTORATES[2];
       title.textContent=d.long;
       inp.type='password'; const eye=box.querySelector('.pw-toggle i'); if(eye) eye.className='fas fa-eye';
       if(mode==='enter'){
-        msg.textContent=isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة مرور العرض المركزي للوصول إليها.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة مرور المديرية للوصول إليها.';
+        msg.textContent=(key==='hq')?'هذه صفحة مديرية الطوارئ — الوزارة (المركز)، محمية بكلمة مرور مستقلة. أدخل كلمة مرور المركز للوصول إلى الخريطة الشاملة وتوجيه البلاغات.':isCentral?'هذه الصفحة المركزية محمية بكلمة مرور مستقلة. أدخل كلمة مرور العرض المركزي للوصول إليها.':'هذه المديرية محمية بكلمة مرور مستقلة. أدخل كلمة مرور المديرية للوصول إليها.';
         label.innerHTML='<i class="fas fa-key"></i> دخول';
         const saved=getSavedLogins()[key]||''; inp.value=saved; if(rem) rem.checked=!!saved;
       }
@@ -3399,8 +3781,8 @@
     function passOk(){
       const inp=document.getElementById('passInput'),val=(inp?inp.value.trim():'');
       const rem=document.getElementById('passRemember');
-      const isCentral=(PASS_DIR==='central');
-      const d=isCentral?{short:'العرض المركزي',key:'central'}:DIRECTORATES.find(x=>x.key===PASS_DIR)||DIRECTORATES[2];
+      const isCentral=(PASS_DIR==='central'||PASS_DIR==='hq');
+      const d=(PASS_DIR==='hq')?{short:'مديرية الطوارئ - الوزارة (المركز)',key:'hq'}:isCentral?{short:'العرض المركزي',key:'central'}:DIRECTORATES.find(x=>x.key===PASS_DIR)||DIRECTORATES[2];
       if(PASS_MODE==='manage'){
         if(!val){ showAlert('أدخل كلمة مرور جديدة لاستبدال الحالية.','warning'); return; }
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
@@ -3411,12 +3793,15 @@
         if(val.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
         savePass(PASS_DIR,val); showAlert('تم إنشاء كلمة مرور، وتم الدخول إليها.','success'); closePass();
         setSavedLogin(PASS_DIR,(rem&&rem.checked)?val:'');
+        if(PASS_DIR==='hq'){ HQ_UNLOCKED=true; showHQ(); return; }
         if(isCentral){ CENTRAL_UNLOCKED=true; showCentral(); return; }
         selectDirectorate(PASS_DIR);
       }else{
-        if(getPass(PASS_DIR)&&val!==getPass(PASS_DIR)){ showAlert('كلمة المرور غير صحيحة، حاول مجدداً.','danger'); if(inp){inp.value='';inp.focus();} return; }
+        const validHQ=(PASS_DIR==='hq' && !getCustomPass('hq') && (val==='HQ@123456789'||val==='MIN@123456789'||val==='CEN@123456789'));
+        if(!validHQ && getPass(PASS_DIR)&&val!==getPass(PASS_DIR)){ showAlert('كلمة المرور غير صحيحة، حاول مجدداً.','danger'); if(inp){inp.value='';inp.focus();} return; }
         closePass();
         setSavedLogin(PASS_DIR,(rem&&rem.checked)?val:'');
+        if(PASS_DIR==='hq'){ HQ_UNLOCKED=true; showHQ(); return; }
         if(isCentral){ CENTRAL_UNLOCKED=true; showCentral(); return; }
         selectDirectorate(PASS_DIR);
       }
@@ -5111,6 +5496,7 @@ function compressImageFile(file){
       try{ if(typeof grpRender==='function' && document.getElementById('grpList')) grpRender(); }catch(e){}
       try{ if(typeof grpRepRender==='function' && document.getElementById('grpRepList')) grpRepRender(); }catch(e){}
       try{ if(typeof renderMap==='function' && typeof MAP!=='undefined' && MAP) renderMap(true); }catch(e){}
+      try{ if(typeof hqRenderAll==='function' && document.getElementById('hqScreen') && document.getElementById('hqScreen').style.display!=='none') hqRenderAll(false); }catch(e){}
     }
 
     let currentPreviewId = null;
@@ -8689,7 +9075,7 @@ else document.addEventListener('DOMContentLoaded', function(){ try{ grpRender();
   };
   window.tabGuideClose=function(){ window.tabGuideToggle(false); };
   function sync(){
-    const homeVisible=vis(document.getElementById('homeScreen'));
+    const homeVisible=vis(document.getElementById('homeScreen'))||vis(document.getElementById('hqScreen'));
     document.body.classList.toggle('tg-show',!homeVisible);
     if(!homeVisible) setGuide(activePaneId());
   }
@@ -9387,6 +9773,879 @@ function nrpOfficialExcel(){
   var btn=document.getElementById('newreport-tab');
   if(btn) btn.addEventListener('shown.bs.tab',function(){ nrpLoad(); nrpRender(); });
 })();
+</script>
+
+<script>
+/* =====================================================================
+   مديرية الطوارئ — الوزارة (المركز)
+   شاشة خريطة شاملة لكل المحافظات + إضافة وتوجيه البلاغات + مديريات فرعية + تقارير
+   ===================================================================== */
+var HQ_UNLOCKED = false;
+var HQMAP = null, HQ_LAYER = null, HQMARKS = {}, HQ_PICKING = false;
+var HQ_LAST_REPORT = null;
+var HQ_DIRS_KEY = 'customDirectoratesV1';
+var HQ_TRANSFERS_KEY = 'hqTransfersV1';
+var HQ_DIR_CENTERS = {
+  amman:[31.9539,35.9106], balqa:[32.0392,35.7272], madaba:[31.7165,35.7932],
+  zarqa:[32.0728,36.0880], irbid:[32.5556,35.8500], ramtha:[32.5590,36.0069],
+  mafraq:[32.3400,36.2080], jerash:[32.2808,35.8993], ajloun:[32.3325,35.7517],
+  karak:[31.1853,35.7048], tafila:[30.8375,35.6041], aqaba:[29.5321,35.0063],
+  maan:[30.1962,35.7341], petra:[30.3216,35.4813]
+};
+var HQ_PALETTE = ['#dc3545','#0d6efd','#198754','#fd7e14','#6f42c1','#0dcaf0','#d63384','#20c997','#ffc107','#6610f2','#e83e8c','#0b7285','#5f3dc4','#c92a2a'];
+
+function hqEl(id){ return document.getElementById(id); }
+function hqVal(id){ var e=hqEl(id); return e?String(e.value||'').trim():''; }
+function hqStoreGet(key,def){ try{ var v=JSON.parse(localStorage.getItem(key)); return (v===null||v===undefined)?def:v; }catch(e){ return def; } }
+function hqStoreSet(key,val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ try{ showAlert('تعذّر الحفظ المحلي — مساحة التخزين ممتلئة.','danger'); }catch(_){} }
+  try{ if(typeof cloudPush==='function') cloudPush(key,val); }catch(e){}
+}
+
+/* ---------------------------- المديريات الفرعية ---------------------------- */
+function hqCustomDirs(){ var a=hqStoreGet(HQ_DIRS_KEY,[]); return Array.isArray(a)?a:[]; }
+function loadCustomDirectorates(){
+  var arr=hqCustomDirs();
+  arr.forEach(function(c){
+    if(!c||!c.key) return;
+    if(DIRECTORATES.some(function(d){ return d.key===c.key; })) return;
+    DIRECTORATES.push({
+      key:c.key,
+      short:c.short||c.key,
+      code:String(c.code||c.key).toUpperCase(),
+      long:c.long||('غرفة عمليات '+c.short),
+      icon:c.icon||'fa-building-shield',
+      custom:true,
+      lon:c.lon||'',
+      lat:c.lat||''
+    });
+  });
+  return DIRECTORATES;
+}
+function hqDirByKey(key){ return DIRECTORATES.find(function(d){ return d.key===key; })||null; }
+function hqDirName(key){ var d=hqDirByKey(key); return d?d.short:key; }
+function hqDirColor(key){ var i=DIRECTORATES.findIndex(function(d){ return d.key===key; }); return HQ_PALETTE[(i<0?0:i)%HQ_PALETTE.length]; }
+function hqFmtDT(iso){ try{ return new Date(iso).toLocaleString('ar-JO'); }catch(e){ return iso||''; } }
+
+/* ---------------------------- الدخول والعرض ---------------------------- */
+function openHQPass(){ if(HQ_UNLOCKED){ showHQ(); return; } openPass('enter','hq'); }
+function showHQ(){
+  if(!HQ_UNLOCKED){ openHQPass(); return; }
+  var p=hqEl('hqScreen'); if(!p) return;
+  ['homeScreen','centralScreen'].forEach(function(id){ var e=hqEl(id); if(e) e.style.display='none'; });
+  p.style.display='flex';
+  loadCustomDirectorates();
+  hqFillDirSelectors();
+  hqRenderAll(true);
+  hqRenderDirsList();
+  setTimeout(function(){
+    hqInitMap();
+    if(HQMAP){ try{ HQMAP.invalidateSize(); }catch(e){} hqRenderMap(hqFiltered(),true); }
+  },160);
+  try{ window.scrollTo(0,0); }catch(e){}
+}
+function closeHQ(){
+  var p=hqEl('hqScreen'); if(!p) return;
+  p.style.display='none';
+  try{ if(typeof openHome==='function') openHome(); }catch(e){}
+  setTimeout(function(){ try{ var t=document.getElementById('cov-tab'); if(t) t.click(); }catch(e){} },10);
+}
+function hqEnterDir(key){
+  if(!key) return;
+  closeHQ();
+  setTimeout(function(){ try{ enterDirectorate(key); }catch(e){} },170);
+}
+function hqToggleSidebar(force){
+  var sb=hqEl('hqSidebar'); if(!sb) return;
+  var collapse=(force===undefined)?!sb.classList.contains('collapsed'):!!force;
+  sb.classList.toggle('collapsed',collapse);
+  var ic=hqEl('hqSideToggleIcon');
+  if(ic) ic.className=collapse?'fas fa-chevron-left':'fas fa-chevron-right';
+  try{ if(HQMAP) setTimeout(function(){ HQMAP.invalidateSize(); },320); }catch(e){}
+}
+function hqSwitchSideTab(id){
+  ['add','list','dirs'].forEach(function(k){
+    var b=hqEl('hqTabBtn_'+k); if(b) b.classList.toggle('active',k===id);
+    var pa=hqEl('hqSidePane_'+k); if(pa) pa.classList.toggle('active',k===id);
+  });
+  hqToggleSidebar(false);
+}
+function hqOpenSideTab(id){ hqSwitchSideTab(id); }
+
+/* ---------------------------- الخريطة ---------------------------- */
+function hqInitMap(){
+  if(HQMAP) return;
+  if(typeof L==='undefined') return;
+  var box=hqEl('hqMapBox'); if(!box) return;
+  var street=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
+  var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
+  HQMAP=L.map('hqMapBox',{layers:[street],zoomControl:true}).setView([31.55,36.05],8);
+  L.control.layers({'خريطة':street,'أقمار صناعية':sat},{position:'topright'}).addTo(HQMAP);
+  HQ_LAYER=L.layerGroup().addTo(HQMAP);
+  HQMAP.on('click',function(ev){
+    if(!HQ_PICKING) return;
+    var lat=Math.round(ev.latlng.lat*1e7)/1e7, lon=Math.round(ev.latlng.lng*1e7)/1e7;
+    var lo=hqEl('hqFormLon'), la=hqEl('hqFormLat');
+    if(lo) lo.value=String(lon);
+    if(la) la.value=String(lat);
+    hqTogglePickCoord(false);
+    try{ showAlert('تم التقاط إحداثيات الموقع: '+lon+' / '+lat,'success'); }catch(e){}
+  });
+}
+function hqTogglePickCoord(force){
+  HQ_PICKING=(force===undefined)?!HQ_PICKING:!!force;
+  var b=hqEl('hqPickBanner'); if(b) b.style.display=HQ_PICKING?'flex':'none';
+  var btn=hqEl('hqPickCoordBtn');
+  if(btn){ btn.classList.toggle('btn-danger',HQ_PICKING); btn.classList.toggle('btn-warning',!HQ_PICKING); }
+}
+function hqFillDirCenter(){
+  var key=hqVal('hqFormDir'), d=hqDirByKey(key), c=null;
+  if(d && d.lon && d.lat) c=[parseFloat(d.lat),parseFloat(d.lon)];
+  else if(HQ_DIR_CENTERS[key]) c=HQ_DIR_CENTERS[key];
+  if(!c && HQMAP){ var cc=HQMAP.getCenter(); c=[cc.lat,cc.lng]; }
+  if(!c) c=[31.7165,35.7932];
+  var lo=hqEl('hqFormLon'), la=hqEl('hqFormLat');
+  if(lo) lo.value=String(c[1]);
+  if(la) la.value=String(c[0]);
+}
+function hqOnFormDirChange(){ if(!hqVal('hqFormLon')||!hqVal('hqFormLat')) hqFillDirCenter(); }
+function hqCalcFormDur(){
+  var e=hqEl('hqFormDur'); if(e) e.value=hqDurText(hqVal('hqFormStart'),hqVal('hqFormEnd'));
+}
+function hqDurText(s,e){
+  var a=timeToMin(s), b=timeToMin(e);
+  if(a==null||b==null) return '00:00 ساعة';
+  if(b<=a) b+=1440;
+  var m=b-a, hh=Math.floor(m/60), mm=m%60;
+  return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm+' ساعة';
+}
+
+/* ---------------------------- الفلترة والقراءة ---------------------------- */
+function hqFilters(){
+  return { dir:hqVal('hqFilterDir'), status:hqVal('hqFilterStatus'), from:hqVal('hqFilterFrom'), to:hqVal('hqFilterTo'), q:hqVal('hqFilterSearch') };
+}
+function hqAllEntries(){
+  loadCustomDirectorates();
+  var out=[];
+  DIRECTORATES.forEach(function(d){
+    var rs=getLSFor(d.key,LS_KEYS.reports,[])||[];
+    (rs||[]).forEach(function(r){ out.push({d:d,r:r,key:d.key}); });
+  });
+  return out;
+}
+function hqMatch(e,f){
+  var r=e.r;
+  if(f.dir && e.key!==f.dir) return false;
+  if(f.status && String(r.status||r.reportStatus||'')!==f.status) return false;
+  if(f.from && String(r.reportDate||'')<f.from) return false;
+  if(f.to && String(r.reportDate||'')>f.to) return false;
+  if(f.q){
+    var nq=normalizeArabic(f.q);
+    var hay=normalizeArabic([
+      r.reportNumber,r.location,r.missionType,r.reportDescription,r.actionsTaken,r.reporter,r.teamNo,
+      (r.staff||[]).map(function(s){ return (s.name||'')+' '+(s.number||''); }).join(' ')
+    ].join(' '));
+    if(hay.indexOf(nq)<0) return false;
+  }
+  return true;
+}
+function hqFiltered(){ var f=hqFilters(); return hqAllEntries().filter(function(e){ return hqMatch(e,f); }); }
+
+function hqFillDirSelectors(){
+  loadCustomDirectorates();
+  var list=DIRECTORATES.map(function(d){ return {key:d.key,short:d.short,code:d.code}; });
+  function fill(id,allLabel,defVal){
+    var sel=hqEl(id); if(!sel) return;
+    var cur=sel.value;
+    sel.innerHTML=(allLabel?'<option value="">'+allLabel+'</option>':'')+list.map(function(d){
+      return '<option value="'+d.key+'">'+esc(d.short)+' ('+esc(d.code)+')</option>';
+    }).join('');
+    if(cur && list.some(function(d){ return d.key===cur; })) sel.value=cur;
+    else if(defVal && list.some(function(d){ return d.key===defVal; })) sel.value=defVal;
+  }
+  fill('hqFilterDir','كل المحافظات والمديريات','');
+  fill('hqRepDir','جميع المحافظات والمديريات الفرعية','');
+  fill('hqFormDir','',(ACTIVE_DIR&&ACTIVE_DIR.key)||'madaba');
+}
+
+/* ---------------------------- الرسم العام ---------------------------- */
+function hqRenderAll(fit){
+  loadCustomDirectorates();
+  hqFillDirSelectors();
+  var all=hqAllEntries(), f=hqFilters();
+  var list=all.filter(function(e){ return hqMatch(e,f); });
+  var active=0, done=0, transferred=0;
+  all.forEach(function(e){
+    var s=String(e.r.status||e.r.reportStatus||'منجز');
+    if(/منجز|منتهي|مكتمل/.test(s)) done++; else active++;
+    if(e.r.transferInfo) transferred++;
+  });
+  var set=function(id,v){ var el=hqEl(id); if(el) el.textContent=String(v); };
+  set('hqKpiTotal',all.length);
+  set('hqKpiActive',active);
+  set('hqKpiDone',done);
+  set('hqKpiTransferred',transferred);
+  set('hqKpiDirs',DIRECTORATES.length);
+  hqRenderMap(list,fit);
+  hqRenderSideList(list);
+}
+function hqRenderMap(list,fit){
+  hqInitMap();
+  if(!HQMAP||!HQ_LAYER) return;
+  list=list||hqFiltered();
+  HQ_LAYER.clearLayers(); HQMARKS={};
+  var pts=[], counts={}, shown=0, valid=0;
+  list.forEach(function(e,idx){
+    var r=e.r;
+    if(!coordOk(r.longitude,r.latitude)) return;
+    valid++;
+    var ll=[parseFloat(r.latitude),parseFloat(r.longitude)];
+    var color=hqDirColor(e.key);
+    counts[e.key]=(counts[e.key]||0)+1;
+    pts.push(ll); shown++;
+    var icon=L.divIcon({
+      className:'',
+      html:'<div class="hq-pin-wrap"><div class="hq-pin-tag">'+esc(e.d.short)+'</div><div class="hq-pin-dot" style="background:'+color+'">'+(idx+1)+'</div></div>',
+      iconSize:[30,44], iconAnchor:[15,40], popupAnchor:[0,-38]
+    });
+    var m=L.marker(ll,{icon:icon,title:e.d.short+' — '+(r.missionType||'')}).addTo(HQ_LAYER);
+    HQMARKS[e.key+'|'+r.id]=m;
+    m.bindPopup(function(){ return hqPopupHTML(e); },{minWidth:280,maxWidth:380});
+  });
+  var legend=hqEl('hqMapLegend');
+  if(legend){
+    var parts=DIRECTORATES.filter(function(d){ return counts[d.key]; }).map(function(d){
+      return '<span><i class="fas fa-circle" style="color:'+hqDirColor(d.key)+'"></i> '+esc(d.short)+' ('+counts[d.key]+')</span>';
+    }).join('');
+    legend.innerHTML='<span class="fw-bold"><i class="fas fa-map-location-dot"></i> بلاغات على الخريطة: '+shown+'</span>'+(parts||'<span>لا توجد بلاغات بإحداثيات صحيحة</span>');
+  }
+  var note='';
+  if(list.length && !valid) note='لا توجد بلاغات ذات إحداثيات صحيحة ضمن الفلتر الحالي.';
+  if(note) showAlert(note,'info');
+  if(fit && pts.length){ try{ HQMAP.fitBounds(pts,{padding:[40,40],maxZoom:12}); }catch(e){} }
+}
+function hqPopupHTML(e){
+  var r=e.r, color=hqDirColor(e.key);
+  var st=String(r.status||r.reportStatus||'منجز');
+  var staff=(r.staff||[]).length?r.staff.map(function(s){ return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):''); }).join('<br>'):'لا يوجد';
+  var veh=(typeof reportVehicles==='function'?reportVehicles(r):[]);
+  var vehTxt=veh.length?veh.map(function(v){ return esc(v.type||'')+(v.number?' — '+esc(String(v.number)):''); }).join('<br>'):'لا يوجد';
+  var tr=r.transferInfo?('<div class="small mb-1 text-success"><i class="fas fa-share-nodes"></i> محوّل من: '+esc(r.transferInfo.fromName||'')+' — '+esc(hqFmtDT(r.transferInfo.at))+'</div>'):'';
+  var opts=DIRECTORATES.filter(function(d){ return d.key!==e.key; }).map(function(d){ return '<option value="'+d.key+'">'+esc(d.short)+'</option>'; }).join('');
+  return '<div dir="rtl" style="min-width:270px">'
+    +'<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(e.d.short)+'</span> بلاغ '+esc(String(r.reportNumber||'—'))+'</div>'
+    +'<div class="small text-muted mb-1">'+esc(r.reportDate||'')+' · '+esc(dayName(r.reportDate)||'')+'</div>'
+    +'<div class="mb-1"><i class="fas fa-bullhorn"></i> '+esc(r.missionType||'')+'</div>'
+    +(r.reportDescription?'<div class="small mb-1 text-secondary">'+escBr(r.reportDescription)+'</div>':'')
+    +'<div class="small mb-1"><i class="fas fa-location-dot"></i> '+esc(r.location||'')+'</div>'
+    +'<div class="small mb-1"><i class="fas fa-clock"></i> '+esc(r.startTime||'')+' — '+esc(r.endTime||'')+' <b>('+esc(r.duration||'')+')</b></div>'
+    +'<div class="small mb-1"><i class="fas fa-circle-info"></i> '+esc(st)+'</div>'
+    +tr
+    +'<div class="small mb-1"><i class="fas fa-id-card"></i> '+staff+'</div>'
+    +'<div class="small mb-2"><i class="fas fa-truck"></i> '+vehTxt+'</div>'
+    +'<div class="border rounded p-1 bg-light">'
+      +'<label class="small fw-bold mb-1"><i class="fas fa-share-nodes"></i> تحويل إلى مديرية فرعية</label>'
+      +'<div class="d-flex gap-1">'
+        +'<select class="form-select form-select-sm" id="hqMapTarget_'+e.key+'_'+r.id+'">'+opts+'</select>'
+        +'<button type="button" class="btn btn-sm btn-warning fw-bold" onclick="hqTransferFromMap(\''+e.key+'\',\''+String(r.id)+'\')">تحويل</button>'
+      +'</div>'
+    +'</div>'
+    +'<a class="small d-inline-block mt-2" href="#" onclick="hqShowReportDetails(\''+e.key+'\',\''+String(r.id)+'\');return false"><i class="fas fa-file-lines"></i> عرض تفاصيل البلاغ كاملة</a>'
+  +'</div>';
+}
+function hqFocusReport(dirKey,id){
+  hqInitMap();
+  var m=HQMARKS[dirKey+'|'+id];
+  if(!m){ showAlert('لا توجد إحداثيات صحيحة لهذا البلاغ على الخريطة.','warning'); return; }
+  try{ HQMAP.setView(m.getLatLng(),14,{animate:true}); m.openPopup(); }catch(e){}
+  hqToggleSidebar(true);
+}
+function hqMapFit(){ hqRenderMap(hqFiltered(),true); }
+
+function hqRenderSideList(list){
+  var box=hqEl('hqSideIncidentsList'); if(!box) return;
+  list=list||hqFiltered();
+  var cnt=hqEl('hqSideListCount'); if(cnt) cnt.textContent=list.length;
+  var show=list.slice().sort(function(a,b){
+    return String(b.r.reportDate||'').localeCompare(String(a.r.reportDate||'')) || (Number(b.r.id)||0)-(Number(a.r.id)||0);
+  }).slice(0,300);
+  if(!show.length){
+    box.innerHTML='<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>لا توجد بلاغات مطابقة للفلتر الحالي.</div>';
+    return;
+  }
+  box.innerHTML=show.map(function(e){
+    var r=e.r, color=hqDirColor(e.key), st=String(r.status||r.reportStatus||'منجز');
+    var opts=DIRECTORATES.filter(function(d){ return d.key!==e.key; }).map(function(d){ return '<option value="'+d.key+'">'+esc(d.short)+'</option>'; }).join('');
+    var tr=r.transferInfo?('<div class="small text-success mt-1"><i class="fas fa-share-nodes"></i> محوّل من '+esc(r.transferInfo.fromName||'')+'</div>'):'';
+    return '<div class="hq-inc-card" style="border-right-color:'+color+'">'
+      +'<div class="d-flex justify-content-between align-items-start gap-2">'
+        +'<div class="fw-bold small"><span class="badge" style="background:'+color+'">'+esc(e.d.short)+'</span> '+esc(String(r.reportNumber||'—'))+'</div>'
+        +'<span class="badge bg-secondary">'+esc(st)+'</span>'
+      +'</div>'
+      +'<div class="small text-muted mt-1">'+esc(r.reportDate||'')+' · '+esc(r.startTime||'')+' — '+esc(r.endTime||'')+'</div>'
+      +'<div class="small mt-1"><b>'+esc(r.missionType||'')+'</b></div>'
+      +'<div class="small text-secondary" style="max-height:2.6em;overflow:hidden">'+esc(r.location||'')+'</div>'
+      +tr
+      +'<div class="d-flex gap-1 mt-2">'
+        +'<button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="hqFocusReport(\''+e.key+'\',\''+String(r.id)+'\')"><i class="fas fa-location-crosshairs"></i> الخريطة</button>'
+        +'<button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" onclick="hqToggleTransfer(this)"><i class="fas fa-share-nodes"></i> تحويل</button>'
+        +'<button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="hqShowReportDetails(\''+e.key+'\',\''+String(r.id)+'\')"><i class="fas fa-file-lines"></i> تفاصيل</button>'
+      +'</div>'
+      +'<div class="hq-transfer-box">'
+        +'<label class="small fw-bold mb-1">تحويل البلاغ إلى مديرية:</label>'
+        +'<div class="d-flex gap-1">'
+          +'<select class="form-select form-select-sm">'+opts+'</select>'
+          +'<button type="button" class="btn btn-sm btn-warning fw-bold" onclick="hqTransferFromCard(this,\''+e.key+'\',\''+String(r.id)+'\')">تحويل</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+function hqToggleTransfer(btn){
+  var card=btn.closest('.hq-inc-card'); if(!card) return;
+  var box=card.querySelector('.hq-transfer-box'); if(!box) return;
+  box.style.display=(box.style.display==='block')?'none':'block';
+}
+function hqTransferFromCard(btn,srcKey,id){
+  var box=btn.closest('.hq-transfer-box');
+  var sel=box?box.querySelector('select'):null;
+  if(!sel) return;
+  hqTransferReport(srcKey,id,sel.value);
+}
+function hqTransferFromMap(srcKey,id){
+  var sel=hqEl('hqMapTarget_'+srcKey+'_'+id);
+  if(!sel) return showAlert('اختر المديرية المستهدفة أولاً.','warning');
+  hqTransferReport(srcKey,id,sel.value);
+}
+
+/* ---------------------------- التحويل بين المديريات ---------------------------- */
+function hqTransferReport(srcKey,id,targetKey){
+  if(!targetKey) return showAlert('اختر المديرية المستهدفة.','warning');
+  if(targetKey===srcKey) return showAlert('المديرية المصدر والمستهدفة متطابقتان.','warning');
+  var src=getLSFor(srcKey,LS_KEYS.reports,[])||[];
+  var i=src.findIndex(function(r){ return String(r&&r.id)===String(id); });
+  if(i<0) return showAlert('البلاغ غير موجود في المديرية المصدر.','danger');
+  var rep=JSON.parse(JSON.stringify(src[i]));
+  var oldId=rep.id;
+  var dst=getLSFor(targetKey,LS_KEYS.reports,[])||[];
+  rep.id=nextId(dst);
+  rep.transferInfo={
+    from:srcKey, fromName:hqDirName(srcKey), to:targetKey, toName:hqDirName(targetKey),
+    at:new Date().toISOString(), by:'مديرية الطوارئ — الوزارة (المركز)'
+  };
+  dst.push(rep);
+  setLSFor(targetKey,LS_KEYS.reports,dst);
+  src.splice(i,1);
+  setLSFor(srcKey,LS_KEYS.reports,src);
+  try{ reportTombAdd([oldId],srcKey); }catch(e){}
+  hqLogTransfer(rep.transferInfo,rep);
+  hqRenderAll(false);
+  try{ if(ACTIVE_DIR&&(ACTIVE_DIR.key===srcKey||ACTIVE_DIR.key===targetKey)) refreshAllReportsUI(); }catch(e){}
+  closeHQMapPopup();
+  showAlert('تم تحويل البلاغ '+String(rep.reportNumber||'')+' من «'+hqDirName(srcKey)+'» إلى «'+hqDirName(targetKey)+'».','success');
+}
+function closeHQMapPopup(){ try{ if(HQMAP) HQMAP.closePopup(); }catch(e){} }
+function hqLogTransfer(info,rep){
+  var log=hqStoreGet(HQ_TRANSFERS_KEY,[]); if(!Array.isArray(log)) log=[];
+  log.unshift({
+    at:info.at, reportNumber:rep.reportNumber||'', reportDate:rep.reportDate||'',
+    missionType:rep.missionType||'', location:rep.location||'',
+    from:info.from, fromName:info.fromName, to:info.to, toName:info.toName,
+    by:info.by, note:'تحويل من غرفة العمليات المركزية'
+  });
+  if(log.length>2000) log=log.slice(0,2000);
+  hqStoreSet(HQ_TRANSFERS_KEY,log);
+}
+
+/* ---------------------------- إضافة بلاغ من المركز ---------------------------- */
+function hqCollectHqAttachments(files){
+  var out=[];
+  if(!files||!files.length) return Promise.resolve(out);
+  return (async function(){
+    for(var i=0;i<files.length;i++){
+      var file=files[i];
+      try{
+        if(file.size>ATTACH_MAX_BYTES){ showAlert('الملف «'+file.name+'» أكبر من 3MB — تم تجاهله.','warning'); continue; }
+        var rec={name:file.name,type:file.type||'',data:'',size:file.size};
+        if(attachmentKind(rec)==='image'){
+          var comp=await compressImageFile(file);
+          if(comp&&comp.data) rec=comp; else rec.data=await readFileAsDataURL(file);
+        }else{
+          rec.data=await readFileAsDataURL(file);
+        }
+        out.push(rec);
+      }catch(e){}
+    }
+    return out;
+  })();
+}
+function hqSubmitIncident(e){
+  if(e&&e.preventDefault) e.preventDefault();
+  var dirKey=hqVal('hqFormDir');
+  var no=hqVal('hqFormNo'), date=hqVal('hqFormDate'), start=hqVal('hqFormStart'), end=hqVal('hqFormEnd');
+  var type=hqVal('hqFormType'), status=hqVal('hqFormStatus'), desc=hqVal('hqFormDesc'), loc=hqVal('hqFormLoc');
+  var lon=hqVal('hqFormLon'), lat=hqVal('hqFormLat'), reporter=hqVal('hqFormReporter'), actions=hqVal('hqFormActions');
+  if(!dirKey) return showAlert('اختر المديرية الفرعية المستهدفة.','warning');
+  if(!no||!date||!start||!end||!type||!desc||!loc||!lon||!lat||!reporter||!actions) return showAlert('يرجى تعبئة جميع الحقول المطلوبة (*).','warning');
+  if(!coordOk(lon,lat)) return showAlert('الإحداثيات غير صحيحة أو خارج نطاق الأردن.','warning');
+  var dst=getLSFor(dirKey,LS_KEYS.reports,[])||[];
+  if(dst.some(function(r){ return String(r.reportNumber||'')===String(no) && String(r.reportDate||'')===String(date); })){
+    if(!confirm('يوجد بلاغ بنفس الرقم والتاريخ في «'+hqDirName(dirKey)+'». المتابعة على أي حال؟')) return;
+  }
+  var form=hqEl('hqAddForm');
+  var btn=form?form.querySelector('button[type="submit"]'):null;
+  if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> جارٍ حفظ البلاغ...'; }
+  var files=hqEl('hqFormFiles');
+  hqCollectHqAttachments(files&&files.files).then(function(atts){
+    var rec={
+      id:nextId(dst),
+      reportNumber:no,
+      reportDate:date,
+      startTime:start,
+      endTime:end,
+      duration:hqDurText(start,end),
+      weather:'صحو',
+      missionType:type,
+      reportDescription:desc,
+      reporter:reporter,
+      reportMethod:hqVal('hqFormMethod')||'غرفة العمليات المركزية',
+      reporterPhone:hqVal('hqFormPhone')||'',
+      location:loc,
+      longitude:String(Math.round(parseFloat(lon)*1e7)/1e7),
+      latitude:String(Math.round(parseFloat(lat)*1e7)/1e7),
+      actionsTaken:actions,
+      reportStatus:status,
+      status:status,
+      teamNo:hqVal('hqFormTeam')||'',
+      workMode:'ميداني',
+      responseSpeed:'',
+      dayKind:'',
+      staff:[],
+      vehicles:[],
+      attachments:atts,
+      createdAt:new Date().toISOString(),
+      transferInfo:{ from:'hq', fromName:'مديرية الطوارئ — الوزارة (المركز)', to:dirKey, toName:hqDirName(dirKey), at:new Date().toISOString(), by:'غرفة العمليات المركزية' }
+    };
+    dst.push(rec);
+    setLSFor(dirKey,LS_KEYS.reports,dst);
+    hqLogTransfer(rec.transferInfo,rec);
+    if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> حفظ البلاغ وتحويله للمديرية المختارة فوراً'; }
+    ['hqFormNo','hqFormDesc','hqFormLoc','hqFormActions','hqFormTeam'].forEach(function(id){ var el=hqEl(id); if(el) el.value=''; });
+    var f=hqEl('hqFormFiles'); if(f) f.value='';
+    hqCalcFormDur();
+    hqRenderAll(true);
+    hqSwitchSideTab('list');
+    try{ if(ACTIVE_DIR&&ACTIVE_DIR.key===dirKey) refreshAllReportsUI(); }catch(e){}
+    showAlert('تم تسجيل البلاغ وتحويله إلى «'+hqDirName(dirKey)+'» بنجاح.','success');
+  }).catch(function(){
+    if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> حفظ البلاغ وتحويله للمديرية المختارة فوراً'; }
+    showAlert('تعذّر حفظ البلاغ — تحقق من المرفقات وحاول مجدداً.','danger');
+  });
+}
+
+/* ---------------------------- إدارة المديريات الفرعية ---------------------------- */
+function hqCreateSubDir(e){
+  if(e&&e.preventDefault) e.preventDefault();
+  var short=hqVal('hqNewDirShort'), code=hqVal('hqNewDirCode').toUpperCase(), long=hqVal('hqNewDirLong');
+  var lon=hqVal('hqNewDirLon'), lat=hqVal('hqNewDirLat'), icon=hqVal('hqNewDirIcon'), pass=hqVal('hqNewDirPass');
+  if(!short||!code||!long) return showAlert('يرجى تعبئة الاسم المختصر والرمز والاسم الرسمي.','warning');
+  if(!/^[A-Z0-9]{2,6}$/.test(code)) return showAlert('الرمز يجب أن يكون من 2 إلى 6 أحرف إنجليزية أو أرقام.','warning');
+  if(DIRECTORATES.some(function(d){ return String(d.code||'').toUpperCase()===code; })) return showAlert('الرمز مستخدم لمديرية أخرى — اختر رمزاً مختلفاً.','warning');
+  if(lon||lat){ if(!coordOk(lon,lat)) return showAlert('إحداثيات مركز المديرية غير صحيحة.','warning'); }
+  if(pass && pass.length<3) return showAlert('كلمة المرور قصيرة (3 أحرف فأكثر).','warning');
+  var key='sub_'+code.toLowerCase();
+  var arr=hqCustomDirs();
+  if(arr.some(function(c){ return c.key===key; })) return showAlert('توجد صفحة فرعية بهذا الرمز بالفعل.','warning');
+  arr.push({key:key,short:short,code:code,long:long,icon:icon||'fa-building-shield',lon:lon||'',lat:lat||'',createdAt:new Date().toISOString()});
+  hqStoreSet(HQ_DIRS_KEY,arr);
+  loadCustomDirectorates();
+  try{ savePass(key,pass||(code+DEFAULT_PW_SUFFIX)); }catch(e){}
+  try{ buildHomeGrid(); }catch(e){}
+  var form=hqEl('hqNewDirForm'); if(form) form.reset();
+  var ic=hqEl('hqNewDirIcon'); if(ic) ic.value='fa-building-shield';
+  var lo=hqEl('hqNewDirLon'); if(lo) lo.value='35.7932';
+  var la=hqEl('hqNewDirLat'); if(la) la.value='31.7165';
+  hqFillDirSelectors();
+  hqRenderDirsList();
+  hqRenderAll(false);
+  showAlert('تم إنشاء صفحة «'+short+'» وإضافتها إلى النظام'+(pass?' بكلمة المرور المحددة.':(' — كلمة المرور الافتراضية: '+code+DEFAULT_PW_SUFFIX)),'success');
+}
+function hqDeleteSubDir(key){
+  var d=hqDirByKey(key);
+  if(!d||!d.custom) return showAlert('لا يمكن حذف مديرية أساسية.','warning');
+  var rs=getLSFor(key,LS_KEYS.reports,[])||[];
+  if(rs.length) return showAlert('لا يمكن حذف صفحة تحتوي على بلاغات ('+rs.length+' بلاغ).','warning');
+  if(!confirm('حذف صفحة «'+d.short+'» نهائياً من النظام؟')) return;
+  var arr=hqCustomDirs().filter(function(c){ return c.key!==key; });
+  hqStoreSet(HQ_DIRS_KEY,arr);
+  var idx=DIRECTORATES.findIndex(function(x){ return x.key===key; });
+  if(idx>=0) DIRECTORATES.splice(idx,1);
+  try{ savePass(key,''); }catch(e){}
+  try{ buildHomeGrid(); }catch(e){}
+  hqFillDirSelectors();
+  hqRenderDirsList();
+  hqRenderAll(false);
+  showAlert('تم حذف الصفحة الفرعية.','success');
+}
+function hqRenderDirsList(){
+  var box=hqEl('hqSubDirsList'); if(!box) return;
+  loadCustomDirectorates();
+  var cnt=hqEl('hqDirsListCount'); if(cnt) cnt.textContent=DIRECTORATES.length;
+  box.innerHTML=DIRECTORATES.map(function(d){
+    var rs=getLSFor(d.key,LS_KEYS.reports,[])||[];
+    var hasPass=!!getCustomPass(d.key);
+    return '<div class="d-flex align-items-center justify-content-between gap-2 border rounded p-2 mb-2 bg-white">'
+      +'<div style="min-width:0">'
+        +'<div class="fw-bold small"><i class="fas '+(d.icon||'fa-building')+' text-primary"></i> '+esc(d.short)
+          +' <span class="badge bg-light text-dark border">'+esc(d.code)+'</span>'
+          +(d.custom?' <span class="badge bg-warning text-dark">صفحة فرعية</span>':'')
+        +'</div>'
+        +'<div class="text-muted" style="font-size:.72rem">'+esc(d.long)+'</div>'
+        +'<div class="text-secondary" style="font-size:.72rem"><i class="fas fa-file-lines"></i> '+rs.length+' بلاغ · كلمة المرور: '
+          +(hasPass?'<span class="text-success">مخصّصة</span>':'<code>'+esc(codeOfDir(d))+'</code>')
+        +'</div>'
+      +'</div>'
+      +'<div class="d-flex flex-column gap-1 flex-shrink-0">'
+        +'<button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" onclick="hqEnterDir(\''+d.key+'\')"><i class="fas fa-arrow-left"></i> دخول</button>'
+        +(d.custom?'<button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" onclick="hqDeleteSubDir(\''+d.key+'\')"><i class="fas fa-trash"></i></button>':'')
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+function codeOfDir(d){ return String((d&&d.code)||'').toUpperCase()+DEFAULT_PW_SUFFIX; }
+function hqRefreshCloud(){
+  if(typeof cloudPullAll!=='function'){ showAlert('المزامنة السحابية غير متاحة.','warning'); return; }
+  showAlert('جارٍ التحديث من السحابة...','info');
+  cloudPullAll().then(function(){ hqRenderAll(true); showAlert('تم تحديث بيانات المركز من السحابة.','success'); })
+    .catch(function(){ showAlert('تعذّر التحديث من السحابة — تحقق من الاتصال.','danger'); });
+}
+
+/* ---------------------------- تفاصيل بلاغ ---------------------------- */
+function hqShowReportDetails(dirKey,id){
+  var rs=getLSFor(dirKey,LS_KEYS.reports,[])||[];
+  var r=rs.find(function(x){ return String(x&&x.id)===String(id); });
+  if(!r) return showAlert('البلاغ غير موجود.','warning');
+  var d=hqDirByKey(dirKey)||{short:dirKey,long:dirKey};
+  var staff=(r.staff||[]).length?r.staff.map(function(s){ return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):'')+' ('+esc(staffModeOf(s,r))+')'; }).join('<br>'):'لا يوجد';
+  var veh=(typeof reportVehicles==='function'?reportVehicles(r):[]);
+  var vehTxt=veh.length?veh.map(function(v){ return esc(v.type||'')+(v.number?' — '+esc(String(v.number)):'')+(v.ownership?' ('+esc(v.ownership)+')':''); }).join('<br>'):'لا يوجد';
+  var html='<div dir="rtl" style="font-family:Cairo,Tahoma,sans-serif">'
+    +'<div class="d-flex justify-content-between align-items-center mb-2"><span class="badge" style="background:'+hqDirColor(dirKey)+'">'+esc(d.short)+'</span><b>بلاغ '+esc(String(r.reportNumber||'—'))+'</b></div>'
+    +'<table class="table table-sm table-bordered mb-2" style="font-size:.82rem">'
+      +'<tr><th style="width:26%">التاريخ</th><td>'+esc(dayName(r.reportDate)||'')+' — '+esc(r.reportDate?fmtDMY(r.reportDate):'')+'</td></tr>'
+      +'<tr><th>الوقت والمدة</th><td>'+esc(r.startTime||'')+' — '+esc(r.endTime||'')+' ('+esc(r.duration||'')+')</td></tr>'
+      +'<tr><th>نوع البلاغ</th><td>'+escBr(nrpTypeText(r))+'</td></tr>'
+      +'<tr><th>الموقع</th><td>'+esc(r.location||'')+'</td></tr>'
+      +'<tr><th>الإحداثيات</th><td>'+esc([r.longitude,r.latitude].filter(Boolean).join(' / '))+'</td></tr>'
+      +'<tr><th>مقدم البلاغ</th><td>'+esc(r.reporter||'')+' — '+esc(r.reportMethod||'')+' — '+esc(r.reporterPhone||'')+'</td></tr>'
+      +'<tr><th>الإجراء المتخذ</th><td>'+escBr(r.actionsTaken||'')+'</td></tr>'
+      +'<tr><th>الحالة</th><td>'+esc(String(r.status||r.reportStatus||'منجز'))+'</td></tr>'
+      +'<tr><th>رقم الفرقة</th><td>'+esc(r.teamNo||'')+'</td></tr>'
+      +'<tr><th>الكادر</th><td>'+staff+'</td></tr>'
+      +'<tr><th>الآليات</th><td>'+vehTxt+'</td></tr>'
+      +(r.transferInfo?('<tr><th>التحويل</th><td>من '+esc(r.transferInfo.fromName||'')+' إلى '+esc(r.transferInfo.toName||'')+' — '+esc(hqFmtDT(r.transferInfo.at))+'</td></tr>'):'')
+      +(r.attachments&&r.attachments.length?('<tr><th>المرفقات</th><td>'+r.attachments.length+' مرفق</td></tr>'):'')
+    +'</table></div>';
+  var old=hqEl('hqDetailsModal');
+  if(old) old.remove();
+  var box=document.createElement('div');
+  box.id='hqDetailsModal';
+  box.style.cssText='position:fixed;inset:0;z-index:3500;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:16px';
+  box.innerHTML='<div style="background:#fff;color:#1e293b;border-radius:12px;max-width:720px;width:96vw;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45)">'
+    +'<div style="background:linear-gradient(90deg,#081c33,#143a69);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #f59e0b">'
+      +'<b><i class="fas fa-file-lines"></i> تفاصيل البلاغ</b>'
+      +'<button type="button" class="btn btn-sm btn-light" onclick="document.getElementById(\'hqDetailsModal\').remove()"><i class="fas fa-xmark"></i> إغلاق</button>'
+    +'</div>'
+    +'<div style="padding:14px;overflow:auto">'+html+'</div>'
+  +'</div>';
+  box.addEventListener('click',function(ev){ if(ev.target===box) box.remove(); });
+  document.body.appendChild(box);
+}
+
+/* ---------------------------- نظام التقارير الشامل ---------------------------- */
+function hqOpenReportsModal(){
+  loadCustomDirectorates();
+  hqFillDirSelectors();
+  var m=hqEl('hqReportsModal'); if(m) m.style.display='flex';
+  hqRenderReportPreview();
+}
+function hqCloseReportsModal(){ var m=hqEl('hqReportsModal'); if(m) m.style.display='none'; }
+function hqRepClearDates(){ ['hqRepFrom','hqRepTo'].forEach(function(id){ var e=hqEl(id); if(e) e.value=''; }); hqRenderReportPreview(); }
+function hqRepFiltered(){
+  var dir=hqVal('hqRepDir'), st=hqVal('hqRepStatus'), from=hqVal('hqRepFrom'), to=hqVal('hqRepTo');
+  loadCustomDirectorates();
+  var out=[];
+  DIRECTORATES.forEach(function(d){
+    if(dir && d.key!==dir) return;
+    (getLSFor(d.key,LS_KEYS.reports,[])||[]).forEach(function(r){
+      var s=String(r.status||r.reportStatus||'منجز');
+      if(st && s!==st) return;
+      if(from && String(r.reportDate||'')<from) return;
+      if(to && String(r.reportDate||'')>to) return;
+      out.push({d:d,r:r,key:d.key});
+    });
+  });
+  out.sort(function(a,b){
+    return String(a.r.reportDate||'').localeCompare(String(b.r.reportDate||''))
+      || String(a.d.short).localeCompare(String(b.d.short),'ar')
+      || (Number(a.r.id)||0)-(Number(b.r.id)||0);
+  });
+  return out;
+}
+function hqPeriodText(){
+  var f=hqVal('hqRepFrom'), t=hqVal('hqRepTo');
+  if(f&&t) return 'الفترة من '+fmtDMY(f)+' إلى '+fmtDMY(t);
+  if(f) return 'من '+fmtDMY(f)+' حتى تاريخ إصدار التقرير';
+  if(t) return 'حتى '+fmtDMY(t);
+  return 'جميع الفترات المسجلة';
+}
+function hqReportHeaderHTML(entries,title){
+  var totalH=0,inH=0,outH=0;
+  entries.forEach(function(e){
+    var d=nrpDuty(e.r);
+    inH+=d.inH||0; outH+=d.outH||0; totalH+=hoursOf(e.r);
+  });
+  return '<div style="text-align:center;margin-bottom:10px;font-family:Cairo,Tahoma,sans-serif">'
+    +'<div style="font-size:16px;font-weight:800;color:#0f2c52">المملكة الأردنية الهاشمية — وزارة الأشغال العامة والإسكان</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#0f2c52;margin-top:2px">مديرية الطوارئ — الوزارة (المركز)</div>'
+    +'<div style="font-size:13px;font-weight:700;color:#1a3a6b;margin-top:5px;border:1px solid #1a3a6b;border-radius:6px;display:inline-block;padding:2px 16px">'+esc(title)+'</div>'
+    +'<div style="font-size:11px;margin-top:6px;color:#334155">'+esc(hqPeriodText())
+      +' · عدد البلاغات: <b>'+entries.length+'</b>'
+      +' · إجمالي ساعات العمل: <b>'+fmtH(roundH(totalH))+'</b>'
+      +' · خلال الدوام: <b>'+fmtH(roundH(inH))+'</b>'
+      +' · خارج الدوام: <b>'+fmtH(roundH(outH))+'</b></div>'
+  +'</div>';
+}
+function hqSignHTML(){
+  var m1=hqVal('hqRepMgr1')||'م. أحمد عطاالله الكساسبة';
+  var m2=hqVal('hqRepMgr2')||'م. خالد إبراهيم الجزازي';
+  return '<table class="nrp-sign" style="width:100%;border-collapse:collapse;margin-top:26px;table-layout:fixed"><tr>'
+    +'<td style="width:50%;text-align:center;font-weight:700;padding:6px 10px"><div style="font-weight:700">مدير مديرية الأشغال</div><div style="border-bottom:1px solid #999;margin:30px 24px 6px"></div><div>'+esc(m1)+'</div></td>'
+    +'<td style="width:50%;text-align:center;font-weight:700;padding:6px 10px"><div style="font-weight:700">مدير مديرية الطوارئ</div><div style="border-bottom:1px solid #999;margin:30px 24px 6px"></div><div>'+esc(m2)+'</div></td>'
+  +'</tr></table>';
+}
+function hqSimpleTable(headers,rows,leftCols,foot){
+  var head='<thead><tr>'+headers.map(function(h){ return '<th>'+esc(h)+'</th>'; }).join('')+'</tr></thead>';
+  var body=rows.map(function(r){
+    return '<tr>'+r.map(function(c,j){
+      return '<td'+(leftCols&&leftCols.indexOf(j)>=0?' class="nrp-l"':'')+'>'+escBr(c)+'</td>';
+    }).join('')+'</tr>';
+  }).join('')||('<tr><td colspan="'+headers.length+'" style="color:#888">لا توجد بيانات ضمن الفترة المحددة</td></tr>');
+  var tfoot=foot?('<tfoot><tr>'+foot.map(function(c){ return '<td style="background:#eef3fb;font-weight:800">'+escBr(c)+'</td>'; }).join('')+'</tr></tfoot>'):'';
+  return '<table class="nrp-main">'+head+'<tbody>'+body+'</tbody>'+tfoot+'</table>';
+}
+function hqOfficialRowArrays(entries){
+  return entries.map(function(e,i){
+    var r=e.r, d=nrpDuty(r), v=nrpVehCols(r), ph=nrpPhotos(r);
+    var inT=nrpSegTxt(d.inSegs), outT=nrpSegTxt(d.outSegs);
+    return [
+      i+1, dayName(r.reportDate)||'', r.reportDate?fmtDMY(r.reportDate):'', e.d.short||'', numOrStr(r.reportNumber)||'',
+      nrpTypeText(r), r.actionsTaken||'', r.teamNo||'', nrpStaffText(r),
+      v.types, v.owns, v.numbers,
+      inT.start, inT.end, d.inH?numOrStr(fmtH(d.inH)):'',
+      outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
+      nrpStatus(r), r.responseSpeed||'', [r.longitude,r.latitude].filter(Boolean).join('\n'),
+      ph.length?(ph.length+' صورة'):''
+    ];
+  });
+}
+var HQ_OFFICIAL_HEADERS=['الرقم','اليوم','التاريخ','المحافظة','رقم البلاغ','نوع البلاغ','الإجراء المتخذ','رقم الفرقة',
+  'أسماء العاملين في الفرقة مع بيان الوظيفة','نوع الآلية','(حكومي / مستأجر)','رقم الآلية',
+  'وقت البدء (خلال الدوام)','وقت الانتهاء (خلال الدوام)','مدة العمل الكلي (خلال الدوام)',
+  'وقت البدء (خارج الدوام)','وقت الانتهاء (خارج الدوام)','مدة العمل الكلي (خارج الدوام)',
+  'حالة البلاغ','سرعة الاستجابة','إحداثيات الموقع','صور للبلاغ'];
+function hqOfficialTable(entries){
+  var arrs=hqOfficialRowArrays(entries);
+  var left={5:1,6:1,8:1,9:1,10:1,11:1,12:1,13:1,15:1,16:1,20:1};
+  var head='<thead><tr>'
+    +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
+    +'<th rowspan="2">رقم البلاغ</th><th rowspan="2" style="width:8%">نوع البلاغ</th><th rowspan="2" style="width:13%">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
+    +'<th rowspan="2" style="width:16%">أسماء العاملين في الفرقة مع بيان الوظيفة<br><small>(مهندس/ مراقب/ سائق/ سائق آلية...الخ)</small></th>'
+    +'<th colspan="3">الآليات المستخدمة</th>'
+    +'<th colspan="3">خلال أوقات العمل</th>'
+    +'<th colspan="3">خارج أوقات العمل</th>'
+    +'<th rowspan="2">حالة البلاغ<br><small>(منتهي/ قيد الإجراء)</small></th>'
+    +'<th rowspan="2">سرعة الاستجابة<br><small>(خاص بمديرية الطوارئ)</small></th>'
+    +'<th rowspan="2">إحداثيات الموقع</th><th rowspan="2">صور للبلاغ</th>'
+    +'</tr><tr><th>نوع الآلية</th><th>(حكومي / مستأجر)</th><th>رقم الآلية</th><th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th><th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th></tr></thead>';
+  var rows=arrs.map(function(a,i){
+    var e=entries[i], ph=nrpPhotos(e.r);
+    return '<tr>'+a.map(function(c,j){
+      if(j===21){
+        return '<td>'+(ph.length?(esc(ph.length+' صورة')+(ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')):'')+'</td>';
+      }
+      return '<td'+(left[j]?' class="nrp-l"':'')+'>'+escBr(c)+'</td>';
+    }).join('')+'</tr>';
+  }).join('')||'<tr><td colspan="22" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
+  return '<table class="nrp-main">'+head+'<tbody>'+rows+'</tbody></table>';
+}
+function hqSummaryData(entries){
+  var per={};
+  entries.forEach(function(e){
+    var k=e.d.key;
+    var o=per[k]||(per[k]={d:e.d,count:0,field:0,office:0,active:0,done:0,total:0,inH:0,outH:0,staff:{},veh:{}});
+    o.count++;
+    var h=hoursOf(e.r), du=nrpDuty(e.r);
+    if(reportWorkMode(e.r)==='مكتبي') o.office+=h; else o.field+=h;
+    o.total+=h; o.inH+=du.inH||0; o.outH+=du.outH||0;
+    var s=String(e.r.status||e.r.reportStatus||'منجز');
+    if(/منجز|منتهي|مكتمل/.test(s)) o.done++; else o.active++;
+    (e.r.staff||[]).forEach(function(st){ var C=staffCanonical(st); o.staff[C.number||normalizeArabic(C.name||'')]=1; });
+    (typeof reportVehicles==='function'?reportVehicles(e.r):[]).forEach(function(v){ if(v.number) o.veh[String(v.number)]=1; });
+  });
+  var keys=Object.keys(per).sort(function(a,b){
+    return String(per[a].d.short).localeCompare(String(per[b].d.short),'ar');
+  });
+  var T={count:0,field:0,office:0,active:0,done:0,total:0,inH:0,outH:0,staff:0,veh:0};
+  var rows=keys.map(function(k,i){
+    var o=per[k];
+    var staffN=Object.keys(o.staff).length, vehN=Object.keys(o.veh).length;
+    T.count+=o.count; T.field+=o.field; T.office+=o.office; T.active+=o.active; T.done+=o.done;
+    T.total+=o.total; T.inH+=o.inH; T.outH+=o.outH; T.staff+=staffN; T.veh+=vehN;
+    return [i+1, o.d.short, o.d.code, o.count, fmtH(roundH(o.field)), fmtH(roundH(o.office)), o.active, o.done,
+      fmtH(roundH(o.total)), fmtH(roundH(o.inH)), fmtH(roundH(o.outH)), staffN, vehN];
+  });
+  var foot=['','الإجمالي','',T.count,fmtH(roundH(T.field)),fmtH(roundH(T.office)),T.active,T.done,fmtH(roundH(T.total)),fmtH(roundH(T.inH)),fmtH(roundH(T.outH)),T.staff,T.veh];
+  return {
+    headers:['الرقم','المديرية / المحافظة','الرمز','عدد البلاغات','ميداني (ساعة)','مكتبي (ساعة)','جديد/قيد','منجز','إجمالي الساعات','خلال الدوام','خارج الدوام','عدد الكادر','عدد الآليات'],
+    rows:rows, foot:foot
+  };
+}
+function hqBonusData(entries){
+  var rs=entries.map(function(e){ return e.r; });
+  var rows=(staffHoursData({reports:rs,from:'',to:''}).rows||[]).filter(function(r){ return (Number(r.total)||0)>0; });
+  rows.sort(function(a,b){ return normalizeArabic(a.name).localeCompare(normalizeArabic(b.name),'ar')||cmpNum(a.number,b.number); });
+  var T={count:0,field:0,office:0,total:0,inH:0,outH:0,fri:0,sat:0,off:0};
+  var data=rows.map(function(r,i){
+    T.count+=(Number(r.count)||0); T.field+=Number(r.field)||0; T.office+=Number(r.office)||0;
+    T.total+=Number(r.total)||0; T.inH+=Number(r.inH)||0; T.outH+=Number(r.outH)||0;
+    T.fri+=Number(r.friH)||0; T.sat+=Number(r.satH)||0; T.off+=Number(r.offH)||0;
+    return [i+1, r.name, r.number||'', r.role||'', r.count||0, fmtH(roundH(r.field||0)), fmtH(roundH(r.office||0)),
+      fmtH(roundH(r.total||0)), fmtH(roundH(r.inH||0)), fmtH(roundH(r.outH||0)),
+      fmtH(roundH(r.friH||0)), fmtH(roundH(r.satH||0)), fmtH(roundH(r.offH||0)), r.duty||''];
+  });
+  var foot=['','الإجمالي','','',T.count,fmtH(roundH(T.field)),fmtH(roundH(T.office)),fmtH(roundH(T.total)),fmtH(roundH(T.inH)),fmtH(roundH(T.outH)),fmtH(roundH(T.fri)),fmtH(roundH(T.sat)),fmtH(roundH(T.off)),''];
+  return {
+    headers:['الرقم','اسم الموظف','الرقم الوظيفي','الوظيفة','عدد البلاغات','ميداني','مكتبي','إجمالي الساعات','خلال الدوام','خارج الدوام','الجمعة','السبت','العطل الرسمية','التقييم'],
+    rows:data, foot:foot, count:rows.length
+  };
+}
+function hqTransfersData(){
+  var log=hqStoreGet(HQ_TRANSFERS_KEY,[]);
+  if(!Array.isArray(log)) log=[];
+  log=log.slice().sort(function(a,b){ return String(b.at||'').localeCompare(String(a.at||'')); });
+  var rows=log.map(function(x,i){
+    return [i+1, hqFmtDT(x.at), x.reportNumber||'', x.reportDate||'', x.missionType||'', x.fromName||hqDirName(x.from), x.toName||hqDirName(x.to), x.by||'', x.note||''];
+  });
+  return {
+    headers:['الرقم','تاريخ ووقت التحويل','رقم البلاغ','تاريخ البلاغ','نوع البلاغ','من مديرية','إلى مديرية','بواسطة','ملاحظات'],
+    rows:rows, count:rows.length
+  };
+}
+function hqRenderReportPreview(){
+  var box=hqEl('hqReportPreviewBox'); if(!box) return;
+  try{ if(typeof nrpEnsureCSS==='function') nrpEnsureCSS(); }catch(e){}
+  var kind=hqVal('hqRepKind')||'official22';
+  var entries=hqRepFiltered();
+  var title='', body='', aoa=null, sheet='', left=null, foot=null;
+  if(kind==='summary'){
+    title='التقرير الإحصائي الشامل — جميع المحافظات والمديريات الفرعية';
+    var S=hqSummaryData(entries);
+    left=[1,2]; foot=S.foot;
+    body=hqSimpleTable(S.headers,S.rows,left,S.foot);
+    aoa=[S.headers].concat(S.rows);
+    sheet='ملخص المديريات';
+  }else if(kind==='bonus'){
+    title='كشف ساعات العمل ومكافآت الطوارئ — جميع المحافظات (مرتب أبجدياً)';
+    var B=hqBonusData(entries);
+    left=[1,2,3]; foot=B.foot;
+    body=hqSimpleTable(B.headers,B.rows,left,B.foot);
+    aoa=[B.headers].concat(B.rows);
+    sheet='احتساب المكافآت';
+  }else if(kind==='transfers'){
+    title='سجل البلاغات الموجهة والمحوّلة من غرفة العمليات المركزية';
+    var X=hqTransfersData();
+    left=[1,2,4,5,7,8];
+    body=hqSimpleTable(X.headers,X.rows,left,null);
+    aoa=[X.headers].concat(X.rows);
+    sheet='سجل التحويلات';
+  }else{
+    title='التقرير الرسمي المعتمد — التقرير المجمّع لبلاغات المحافظات والمديريات الفرعية';
+    var arrs=hqOfficialRowArrays(entries);
+    body=hqOfficialTable(entries);
+    aoa=[HQ_OFFICIAL_HEADERS].concat(arrs);
+    sheet='التقرير الرسمي 22 عموداً';
+  }
+  var html=hqReportHeaderHTML(entries,title)
+    +'<div class="nrp">'+body
+    +(kind==='official22'?hqSignHTML():'')
+    +'<div class="nrp-credit">تقرير صادر عن غرفة العمليات المركزية — مديرية الطوارئ / الوزارة — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ 2025-2026</div>'
+    +'</div>';
+  box.innerHTML=html;
+  HQ_LAST_REPORT={ kind:kind, title:title, html:html, count:entries.length, aoa:aoa, sheet:sheet };
+}
+function hqReportDocument(bodyHtml,title){
+  var css=typeof NRP_CSS==='string'?NRP_CSS:'';
+  return '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>'+esc(title||'تقرير المركز')+'</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">'
+    +'<style>@page{size:A4 landscape;margin:8mm}body{font-family:"Cairo",Tahoma,sans-serif;direction:rtl;margin:0;padding:6px;background:#fff}'
+    +'.nrp-photo{width:64px;height:48px;object-fit:contain}'
+    +css
+    +'</style></head><body>'+bodyHtml+'</body></html>';
+}
+function hqReportPrint(){
+  hqRenderReportPreview();
+  if(!HQ_LAST_REPORT) return;
+  var w=window.open('','_blank');
+  if(!w){ showAlert('يرجى السماح بالنوافذ المنبثقة لإتمام الطباعة.','warning'); return; }
+  try{
+    w.document.open();
+    w.document.write(hqReportDocument(HQ_LAST_REPORT.html,HQ_LAST_REPORT.title));
+    w.document.close();
+  }catch(e){ showAlert('تعذّرت الطباعة.','danger'); return; }
+  setTimeout(function(){ try{ w.focus(); w.print(); }catch(e){} },800);
+}
+function hqReportWord(){
+  hqRenderReportPreview();
+  if(!HQ_LAST_REPORT) return;
+  var doc='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" dir="rtl"><head><meta charset="utf-8"><title>'+esc(HQ_LAST_REPORT.title)+'</title>'
+    +'<style>@page{size:29.7cm 21cm;mso-page-orientation:landscape;margin:1cm}body{font-family:"Cairo",Tahoma,sans-serif;direction:rtl;font-size:10pt}'
+    +'table{border-collapse:collapse;width:100%}td,th{border:1px solid #555;padding:2px 3px;vertical-align:top;text-align:center}'
+    +'th{background:#dbe4f3;color:#1a3a6b}.nrp-l{text-align:right}.nrp-photo{width:128px;height:96px;object-fit:contain}'
+    +'</style></head><body>'+HQ_LAST_REPORT.html+'</body></html>';
+  var blob=new Blob(['\ufeff'+doc],{type:'application/msword'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='تقرير_المركز_'+new Date().toISOString().slice(0,10)+'.doc';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },5000);
+  showAlert('تم تنزيل التقرير بصيغة Word.','success');
+}
+function hqReportExcel(){
+  hqRenderReportPreview();
+  if(!HQ_LAST_REPORT||!HQ_LAST_REPORT.aoa) return;
+  try{
+    var wb=XLSX.utils.book_new();
+    wb.Workbook={Views:[{RTL:true}]};
+    var ws=XLSX.utils.aoa_to_sheet(HQ_LAST_REPORT.aoa);
+    ws['!cols']=HQ_LAST_REPORT.aoa[0].map(function(){ return {wch:16}; });
+    XLSX.utils.book_append_sheet(wb,ws,HQ_LAST_REPORT.sheet||'تقرير');
+    if(HQ_LAST_REPORT.kind==='official22'){
+      var S=hqSummaryData(hqRepFiltered());
+      var ws2=XLSX.utils.aoa_to_sheet([S.headers].concat(S.rows,[S.foot]));
+      XLSX.utils.book_append_sheet(wb,ws2,'ملخص المديريات');
+    }
+    XLSX.writeFile(wb,'تقرير_المركز_'+new Date().toISOString().slice(0,10)+'.xlsx');
+    showAlert('تم تصدير التقرير بصيغة Excel.','success');
+  }catch(e){ showAlert('تعذّر تصدير Excel: '+e.message,'danger'); }
+}
+
+/* ---------------------------- تهيئة ---------------------------- */
+try{ loadCustomDirectorates(); }catch(e){}
+try{
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){ try{ loadCustomDirectorates(); }catch(e){} });
+}catch(e){}
+
 </script>
 </body>
 </html>
