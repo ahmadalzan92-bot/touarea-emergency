@@ -1646,6 +1646,7 @@
             <option value="staff">اسم / رقم الموظف</option>
             <option value="veh">رقم / نوع الآلية</option>
             <option value="team">رقم الفرقة</option>
+            <option value="status">حالة البلاغ</option>
             <option value="date">تاريخ البلاغ</option>
           </select>
           <input type="search" id="hqFilterSearch" class="form-control" style="max-width:210px" oninput="hqOnSearchText(this.value,true)" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ...">
@@ -1804,6 +1805,7 @@
                 <option value="staff">الموظف / الرقم</option>
                 <option value="veh">الآلية</option>
                 <option value="team">رقم الفرقة</option>
+                <option value="status">حالة البلاغ</option>
                 <option value="date">التاريخ</option>
               </select>
               <input type="search" id="hqSideSearchInput" class="form-control form-control-sm" oninput="hqOnSearchText(this.value,false)" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="اكتب رقم بلاغ، موقع، اسم، آلية...">
@@ -1903,6 +1905,7 @@
               <option value="staff">اسم / رقم الموظف</option>
               <option value="veh">رقم / نوع الآلية</option>
               <option value="team">رقم الفرقة</option>
+              <option value="status">حالة البلاغ</option>
               <option value="date">تاريخ البلاغ</option>
             </select>
             <input type="search" id="hqMapSearchInput" class="form-control form-control-sm" style="font-size:.78rem" oninput="hqOnSearchText(this.value,true)" onfocus="hqRenderSearchDropdown()" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ: رقم، موقع، نوع، موظف، آلية...">
@@ -2676,7 +2679,7 @@
         <div class="card mt-4">
           <div class="card-header"><span>خريطة البلاغات التفاعلية</span>
             <div class="d-flex gap-2 flex-wrap align-items-center">
-              <select id="mapField" class="form-select form-select-sm w-auto" onchange="mapSetField()"><option value="all">البحث في الكل</option><option value="no">رقم البلاغ</option><option value="type">طبيعة المهمة (نوع البلاغ)</option><option value="date">تاريخ البلاغ</option><option value="day">اليوم</option><option value="act">الإجراء المتخذ</option><option value="loc">موقع البلاغ</option><option value="staff">اسم العامل / الوظيفة</option><option value="team">رقم الفرقة</option><option value="veh">رقم / نوع الآلية</option><option value="status">حالة البلاغ</option></select>
+              <select id="mapField" class="form-select form-select-sm w-auto" onchange="mapSetField()"><option value="all">البحث في الكل</option><option value="no">رقم البلاغ</option><option value="type">طبيعة المهمة (نوع البلاغ)</option><option value="date">تاريخ البلاغ</option><option value="day">اليوم</option><option value="act">الإجراء المتخذ</option><option value="loc">موقع البلاغ</option><option value="staff">اسم العامل / الوظيفة</option><option value="team">رقم الفرقة</option><option value="status">حالة البلاغ</option><option value="veh">رقم / نوع الآلية</option><option value="status">حالة البلاغ</option></select>
               <input type="search" id="mapSearch" class="form-control form-control-sm w-auto" placeholder="ابحث عن بلاغ: رقم، نوع، موقع، اسم..." oninput="mapSearch()" onkeydown="if(event.key==='Enter'){mapSearch(true)}"><select id="mapStatus" class="form-select form-select-sm w-auto" onchange="renderMap(true)"><option value="">كل الحالات</option><option>جديد</option><option>قيد التنفيذ</option><option>منجز</option><option>مؤجل</option></select>
               <button type="button" class="btn btn-sm btn-light" onclick="renderMap(true)"><i class="fas fa-expand"></i> عرض الكل</button>
             </div></div>
@@ -10063,6 +10066,7 @@ function hqFieldText(e,field){
     staff: staffTxt,
     veh: vehTxt,
     team: r.teamNo,
+    status: (r.status||r.reportStatus||''),
     date: (r.reportDate||'')+' '+(r.reportDate?fmtDMY(r.reportDate):'')+' '+(dayName(r.reportDate)||'')
   };
   if(field && field!=='all') return String(map[field]==null?'':map[field]);
