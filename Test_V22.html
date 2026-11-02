@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.75';
+    const APP_VERSION = '2026.10.09.76';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11079,9 +11079,9 @@ function hqWriteZip(entries){
     cdv.setUint32(14,hqCrc32(data),true);
     cdv.setUint32(18,data.length,true);
     cdv.setUint32(22,data.length,true);
-    cdv.setUint16(26,nameBytes.length,true);
-    cdv.setUint16(28,0,true);
+    cdv.setUint16(28,nameBytes.length,true);
     cdv.setUint16(30,0,true);
+    cdv.setUint16(32,0,true);
     cdv.setUint16(32,0,true);
     cdv.setUint16(34,0,true);
     cdv.setUint32(36,0,true);
