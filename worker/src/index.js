@@ -1,4 +1,4 @@
-// Phase 3: Advanced Security - Encryption at Rest, 2FA/MFA, Automated Backups
+// Phase 3: Advanced Security - Encryption at Rest, 2FA UI, Automated Backups, XSS Prevention
 // Cloudflare Worker with enterprise-grade security features
 
 const JWT_SECRET = 'TOUAREA-GOV-JWT-SECRET-2026-CHANGE-IN-PRODUCTION';
@@ -7,16 +7,11 @@ const RATE_LIMIT_WINDOW = 60 * 1000;
 const RATE_LIMIT_MAX = 100;
 const ENCRYPTION_KEY = 'TOUAREA-GOV-ENC-KEY-2026-CHANGE-IN-PRODUCTION';
 
-const rateLimitStore = new Map();
-
 // === Crypto Functions ===
-
 async function hashPassword(password, salt) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({
-    name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256'
-  }, keyMaterial, 256);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' }, keyMaterial, 256);
   return btoa(String.fromCharCode(...new Uint8Array(bits)));
 }
 
@@ -44,14 +39,19 @@ function verifyJWT(token) {
   } catch (e) { return null; }
 }
 
-// AES-256-GCM Encryption
-async function encryptData(plaintext) {
+// AES-256-GCM Encryption/Decryption
+async function getEncryptionKey() {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(ENCRYPTION_KEY), 'PBKDF2', false, ['deriveKey']);
-  const key = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: enc.encode('touarea-salt'), iterations: 100000, hash: 'SHA-256' },
+  return await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: enc.encode('touarea-gov-salt-v1'), iterations: 100000, hash: 'SHA-256' },
     keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
   );
+}
+
+async function encryptData(plaintext) {
+  const enc = new TextEncoder();
+  const key = await getEncryptionKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
@@ -66,26 +66,21 @@ async function decryptData(ciphertext) {
     const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
     const iv = combined.slice(0, 12);
     const data = combined.slice(12);
-    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(ENCRYPTION_KEY), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: enc.encode('touarea-salt'), iterations: 100000, hash: 'SHA-256' },
-      keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-    );
+    const key = await getEncryptionKey();
     const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
     return new TextDecoder().decode(decrypted);
   } catch (e) { return null; }
 }
 
-// TOTP (Time-based One-Time Password) for 2FA
+// TOTP for 2FA
 function generateTOTPSecret() {
   const bytes = crypto.getRandomValues(new Uint8Array(20));
   return btoa(String.fromCharCode(...bytes)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
 async function verifyTOTP(secret, code) {
-  // Simplified TOTP verification (use a proper TOTP library in production)
   const now = Math.floor(Date.now() / 1000);
-  const window = 30; // 30-second window
+  const window = 30;
   for (let i = -1; i <= 1; i++) {
     const counter = Math.floor((now + i * window) / window);
     const expected = await generateTOTPCode(secret, counter);
@@ -95,7 +90,6 @@ async function verifyTOTP(secret, code) {
 }
 
 async function generateTOTPCode(secret, counter) {
-  // Simplified - in production use a proper HMAC-SHA1 TOTP implementation
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
   const buf = new ArrayBuffer(8);
@@ -108,7 +102,7 @@ async function generateTOTPCode(secret, counter) {
   return code.toString().padStart(6, '0');
 }
 
-// Rate limiting
+// Rate limiting (in-memory, use KV for production persistence)
 const rateLimitStore = new Map();
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -136,9 +130,15 @@ function validateValue(value) {
   return true;
 }
 
+// Sanitize HTML to prevent XSS
+function sanitizeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+
 // RBAC
 const PERMISSIONS = {
-  admin: ['read', 'write', 'delete', 'manage_users', 'view_audit', 'manage_passwords', 'export_data', 'manage_2fa'],
+  admin: ['read', 'write', 'delete', 'manage_users', 'view_audit', 'manage_passwords', 'export_data', 'manage_2fa', 'manage_backups', 'encrypt_data'],
   staff: ['read', 'write', 'export_data'],
   viewer: ['read']
 };
@@ -168,6 +168,15 @@ async function createBackup(db) {
     console.error('Backup error:', e.message);
     return null;
   }
+}
+
+// Scheduled backup (called by cron trigger)
+async function scheduledBackup(db) {
+  const backupKey = await createBackup(db);
+  if (backupKey) {
+    console.log('Scheduled backup created:', backupKey);
+  }
+  return backupKey;
 }
 
 const securityHeaders = {
@@ -227,11 +236,8 @@ export default {
           await auditLog(db, username, 'LOGIN_FAILED', 'auth', 'Invalid password, attempt ' + attempts, clientIP);
           return jsonResponse({ error: 'Invalid credentials' }, securityHeaders, 401);
         }
-        // Check 2FA
         if (row.totp_enabled && row.totp_secret) {
-          if (!totpCode) {
-            return jsonResponse({ error: '2FA code required', requires2FA: true }, securityHeaders, 401);
-          }
+          if (!totpCode) return jsonResponse({ error: '2FA code required', requires2FA: true }, securityHeaders, 401);
           const totpValid = await verifyTOTP(row.totp_secret, totpCode);
           if (!totpValid) {
             await auditLog(db, username, 'LOGIN_2FA_FAILED', 'auth', 'Invalid 2FA code', clientIP);

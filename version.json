@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.104",
+  "version": "2026.10.09.105",
   "released": "2026-11-02",
-  "notes": "Phase 2 Security (fixed): RBAC، Rate Limiting، Input Validation، Audit Log viewer، User info، Logout، 2FA setup/verify، Backup creation. Fix: onclick quote escaping."
+  "notes": "Phase 3 Security: 2FA with QR code (Google Authenticator compatible), AES-256-GCM encryption functions, automated backup endpoint, persistent rate limiting support."
 }

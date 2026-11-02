@@ -11368,6 +11368,7 @@ function govSetup2FA(){
       modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:95vw;max-width:480px;padding:24px;text-align:center">'
         +'<h3 style="font-size:1.1rem;font-weight:800;color:#0f2c52;margin-bottom:12px"><i class="fas fa-shield-alt"></i> إعداد المصادقة (2FA)</h3>'
         +'<p style="font-size:.82rem;color:#64748b;margin-bottom:12px">امسح رمز QR في تطبيق المصادقة (Google Authenticator, Authy, etc.)</p>'
+        +'<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='+encodeURIComponent(qrUri)+'" alt="QR Code" style="width:200px;height:200px;margin:0 auto 12px;display:block;border:1px solid #e2e8f0;border-radius:8px;padding:4px">'
         +'<div style="background:#f1f5f9;padding:12px;border-radius:8px;margin-bottom:12px;font-family:monospace;font-size:.9rem;word-break:break-all">'+secret+'</div>'
         +'<p style="font-size:.75rem;color:#94748b;margin-bottom:12px">أو أدخل المفتاح يدوياً في تطبيق المصادقة</p>'
         +'<div style="text-align:right;margin-bottom:12px"><label style="font-size:.82rem;font-weight:700">أدخل رمز 6 أرقام للتأكيد</label><input type="text" id="gov2FAVerifyCode" class="form-control" maxlength="6" style="text-align:center;letter-spacing:8px;font-size:1.2rem" placeholder="000000"></div>'
