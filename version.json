@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.114",
+  "version": "2026.10.09.115",
   "released": "2026-11-02",
-  "notes": "Fix: \"change directorate\" returns to card screen (removed repeating auto-enter timer). Auto-enter now fires once on login (800ms). Timer cleared on enterDirectorate and openHome."
+  "notes": "إضافة \"إعداد وتصميم م. أحمد الزن — جميع الحقوق محفوظة\" في صفحة تسجيل الدخول."
 }
