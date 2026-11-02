@@ -1276,6 +1276,13 @@
     .hq-rep-bar{background:#f1f5f9;padding:10px 14px;border-bottom:1px solid #cbd5e1;display:flex;flex-wrap:wrap;gap:8px;align-items:end}
     .hq-rep-body{flex:1;overflow:auto;padding:14px;background:#e2e8f0}
     .hq-rep-paper{background:#fff;padding:14px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-height:100%}
+    .hq-search-wrap{position:absolute;top:12px;right:14px;z-index:1005;width:450px;max-width:calc(100% - 70px);background:rgba(15,23,42,.93);border:1.5px solid #f59e0b;border-radius:10px;padding:7px 9px;box-shadow:0 8px 24px rgba(0,0,0,.42);color:#fff}
+    .hq-search-drop{max-height:280px;overflow-y:auto;margin-top:6px;background:#fff;color:#1e293b;border-radius:8px;border:1px solid #cbd5e1;display:none;box-shadow:0 10px 24px rgba(0,0,0,.32)}
+    .hq-search-item{padding:7px 10px;border:none;border-bottom:1px solid #e2e8f0;cursor:pointer;font-size:.78rem;text-align:right;width:100%;background:#fff;display:block;transition:background .12s}
+    .hq-search-item:hover{background:#eff6ff}
+    .hq-selected-card{position:absolute;top:12px;left:58px;z-index:1010;width:360px;max-width:calc(100% - 75px);max-height:calc(100% - 75px);overflow-y:auto;background:#ffffff;color:#1e293b;border-radius:11px;border:2px solid #0f2c52;box-shadow:0 14px 36px rgba(0,0,0,.48);display:none;padding:11px 13px}
+    .hq-inc-card.active-card{border:2px solid #f59e0b;border-right:5px solid #f59e0b;background:#fffbeb;box-shadow:0 4px 14px rgba(245,158,11,.22)}
+    #hqMapBox .leaflet-popup-content{margin:10px 12px;max-height:310px;overflow-y:auto}
 
   </style>
 </head>
@@ -1599,19 +1606,32 @@
         <div class="hq-kpi-pill" title="عدد المديريات الفرعية الفعالة"><i class="fas fa-sitemap text-light"></i><span>المديريات</span><b id="hqKpiDirs">14</b></div>
       </div>
       <div class="hq-filters">
-        <select id="hqFilterDir" class="form-select" style="max-width:155px" onchange="hqRenderAll(true)" title="فلترة حسب المديرية / المحافظة">
+        <select id="hqFilterDir" class="form-select" style="max-width:145px" onchange="hqRenderAll(true)" title="فلترة حسب المديرية / المحافظة">
           <option value="">كل المحافظات والمديريات</option>
         </select>
-        <select id="hqFilterStatus" class="form-select" style="max-width:120px" onchange="hqRenderAll(false)" title="فلترة حسب الحالة">
+        <select id="hqFilterStatus" class="form-select" style="max-width:110px" onchange="hqRenderAll(false)" title="فلترة حسب الحالة">
           <option value="">كل الحالات</option>
           <option value="جديد">جديد</option>
           <option value="قيد التنفيذ">قيد التنفيذ</option>
           <option value="منجز">منجز</option>
           <option value="مؤجل">مؤجل</option>
         </select>
-        <input type="date" id="hqFilterFrom" class="form-control" style="max-width:128px" onchange="hqRenderAll(false)" title="من تاريخ">
-        <input type="date" id="hqFilterTo" class="form-control" style="max-width:128px" onchange="hqRenderAll(false)" title="إلى تاريخ">
-        <input type="search" id="hqFilterSearch" class="form-control" style="max-width:165px" oninput="hqRenderAll(false)" placeholder="بحث: رقم، موقع، وصف...">
+        <input type="date" id="hqFilterFrom" class="form-control" style="max-width:124px" onchange="hqRenderAll(false)" title="من تاريخ">
+        <input type="date" id="hqFilterTo" class="form-control" style="max-width:124px" onchange="hqRenderAll(false)" title="إلى تاريخ">
+        <select id="hqFilterField" class="form-select" style="max-width:125px" onchange="hqSyncSearchField(this.value)" title="حقل البحث عن بلاغ">
+          <option value="all">البحث في الكل</option>
+          <option value="no">رقم البلاغ</option>
+          <option value="dir">المحافظة</option>
+          <option value="type">نوع البلاغ</option>
+          <option value="desc">وصف البلاغ</option>
+          <option value="loc">موقع البلاغ</option>
+          <option value="act">الإجراء المتخذ</option>
+          <option value="staff">اسم / رقم الموظف</option>
+          <option value="veh">رقم / نوع الآلية</option>
+          <option value="team">رقم الفرقة</option>
+          <option value="date">تاريخ البلاغ</option>
+        </select>
+        <input type="search" id="hqFilterSearch" class="form-control" style="max-width:170px" oninput="hqOnSearchText(this.value,true)" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ...">
       </div>
       <div class="hq-actions">
         <button type="button" class="btn btn-warning text-dark" onclick="hqOpenSideTab('add')"><i class="fas fa-plus-circle"></i> إضافة/توجيه بلاغ</button>
@@ -1759,9 +1779,32 @@
 
         <!-- تبويب 2: سجل البلاغات والتحويل لأي مديرية فرعية -->
         <div class="hq-side-pane" id="hqSidePane_list">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="fw-bold small text-primary"><i class="fas fa-list-check"></i> البلاغات المطابقة للفلتر (<span id="hqSideListCount">0</span>)</span>
-            <button type="button" class="btn btn-xs btn-outline-success py-0 px-2" onclick="hqOpenReportsModal()"><i class="fas fa-file-export"></i> إصدار تقرير</button>
+          <div class="p-2 mb-2 rounded border bg-light">
+            <label class="form-label small fw-bold mb-1 text-primary"><i class="fas fa-magnifying-glass"></i> بحث سريع عن بلاغ</label>
+            <div class="d-flex gap-1 mb-1">
+              <select id="hqSideSearchField" class="form-select form-select-sm" style="max-width:130px" onchange="hqSyncSearchField(this.value)">
+                <option value="all">في الكل</option>
+                <option value="no">رقم البلاغ</option>
+                <option value="dir">المحافظة</option>
+                <option value="type">نوع البلاغ</option>
+                <option value="desc">وصف البلاغ</option>
+                <option value="loc">الموقع</option>
+                <option value="act">الإجراء المتخذ</option>
+                <option value="staff">الموظف / الرقم</option>
+                <option value="veh">الآلية</option>
+                <option value="team">رقم الفرقة</option>
+                <option value="date">التاريخ</option>
+              </select>
+              <input type="search" id="hqSideSearchInput" class="form-control form-control-sm" oninput="hqOnSearchText(this.value,false)" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="اكتب رقم بلاغ، موقع، اسم، آلية...">
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="small text-muted">النتائج المطابقة: <b id="hqSideListCount">0</b> بلاغ</span>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-xs btn-primary py-0 px-2" onclick="hqSearchPickFirst()"><i class="fas fa-location-crosshairs"></i> تحديد الأول على الخريطة</button>
+                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="hqClearSearch()">مسح</button>
+                <button type="button" class="btn btn-xs btn-outline-success py-0 px-2" onclick="hqOpenReportsModal()"><i class="fas fa-file-export"></i> تقرير</button>
+              </div>
+            </div>
           </div>
           <div id="hqSideIncidentsList"></div>
         </div>
@@ -1829,6 +1872,33 @@
 
       <!-- الخريطة التفاعلية بكامل الشاشة -->
       <div class="hq-map-wrap">
+        <!-- شريط البحث الفوري عن بلاغ على الخريطة -->
+        <div class="hq-search-wrap" id="hqMapSearchWrap">
+          <div class="d-flex align-items-center gap-1">
+            <i class="fas fa-magnifying-glass text-warning ms-1"></i>
+            <select id="hqMapSearchField" class="form-select form-select-sm" style="max-width:130px;font-size:.76rem" onchange="hqSyncSearchField(this.value)">
+              <option value="all">البحث في الكل</option>
+              <option value="no">رقم البلاغ</option>
+              <option value="dir">المحافظة</option>
+              <option value="type">نوع البلاغ</option>
+              <option value="desc">وصف البلاغ</option>
+              <option value="loc">موقع البلاغ</option>
+              <option value="act">الإجراء المتخذ</option>
+              <option value="staff">اسم / رقم الموظف</option>
+              <option value="veh">رقم / نوع الآلية</option>
+              <option value="team">رقم الفرقة</option>
+              <option value="date">تاريخ البلاغ</option>
+            </select>
+            <input type="search" id="hqMapSearchInput" class="form-control form-control-sm" style="font-size:.78rem" oninput="hqOnSearchText(this.value,true)" onfocus="hqRenderSearchDropdown()" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ: رقم، موقع، نوع، موظف، آلية...">
+            <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-2" onclick="hqSearchPickFirst()" title="انتقال إلى البلاغ على الخريطة"><i class="fas fa-location-crosshairs"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-light py-1 px-2" onclick="hqClearSearch()" title="مسح البحث"><i class="fas fa-xmark"></i></button>
+          </div>
+          <div class="hq-search-drop" id="hqSearchDropdown"></div>
+        </div>
+
+        <!-- لوحة معلومات البلاغ المحدد الثابتة على الخريطة -->
+        <div class="hq-selected-card" id="hqSelectedCard"></div>
+
         <div class="hq-pick-banner" id="hqPickBanner">
           <i class="fas fa-crosshairs fa-spin"></i> اضغط على أي موقع في الخريطة لالتقاط إحداثيات البلاغ...
           <button type="button" class="btn btn-xs btn-dark py-0 px-2" onclick="hqTogglePickCoord(false)">إلغاء</button>
@@ -3189,7 +3259,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.68';
+    const APP_VERSION = '2026.10.09.69';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -6497,11 +6567,13 @@ function mapSearch(go){
   if(go&&hits.length)return mapGoto(hits[0].r.id);
   box.innerHTML=hits.length?hits.slice(0,8).map(({r,n})=>`<button type="button" class="list-group-item list-group-item-action small" onclick="mapGoto(${r.id})"><b>#${n}</b> — بلاغ ${esc(r.reportNumber||'ــــ')} — ${esc(r.reportDate)} — ${esc(String(r.missionType||'').slice(0,55))}</button>`).join('')+(hits.length>8?`<div class="list-group-item small text-muted">و${hits.length-8} نتيجة أخرى، أضف كلمات للتضييق</div>`:''):'<div class="list-group-item small text-muted">لا توجد نتائج</div>';
 }
+var MAP_ACTIVE_ID=null;
 function mapGoto(id){
   const m=MK[id];
   if(!m)return showAlert('هذا البلاغ ليس له موقع صحيح ظاهر على الخريطة (راجع القائمة الجانبية أو فلتر الحالة).','warning');
+  MAP_ACTIVE_ID=id;
   document.getElementById('mapResults').innerHTML='';
-  MAP.setView(m.getLatLng(),15);m.openPopup();
+  MAP.setView(m.getLatLng(),15,{animate:false});m.openPopup();
 }
 function mapPlace(id){if(!mapEditGuard())return;placingId=id;showAlert('انقر على الخريطة لتحديد موقع البلاغ.','info');}
 function newReportAt(lon,lat){
@@ -6589,12 +6661,14 @@ function renderMap(fit){
     const ll=[parseFloat(r.latitude),parseFloat(r.longitude)];pts.push(ll);
     const icon=L.divIcon({className:'',html:`<div class="pin" style="background:${STATUSES[s]||'#1f6fb2'}">${i+1}</div>`,iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-14]});
     const m=L.marker(ll,{draggable:!!MAP_EDIT,icon,title:r.missionType}).addTo(MLAYER);
-    MK[r.id]=m;m.bindPopup(()=>popupHTML(r.id,i+1),{minWidth:270,maxWidth:340});
+    MK[r.id]=m;m.bindPopup(()=>popupHTML(r.id,i+1),{minWidth:270,maxWidth:340,maxHeight:320,closeOnClick:false});
+    m.on('click',()=>{MAP_ACTIVE_ID=r.id;});
     m.on('dragend',()=>{if(!MAP_EDIT)return;const p=m.getLatLng();setCoords(r.id,p.lng,p.lat);showAlert('تم تعديل موقع البلاغ.');});
   });
   document.getElementById('mapLegend').innerHTML=Object.keys(STATUSES).map(k=>`<span class="me-3"><i class="fas fa-circle" style="color:${STATUSES[k]}"></i> ${k} (${counts[k]||0})</span>`).join('');
   document.getElementById('mapPending').innerHTML=pending.length?`<div class="list-group">${pending.map(({r,n})=>`<div class="list-group-item small"><b>#${n}</b> ${esc(String(r.missionType||'').slice(0,45))}<br><button class="btn btn-sm btn-outline-primary mt-1" onclick="mapPlace(${r.id})"><i class="fas fa-location-crosshairs"></i> حدّد على الخريطة</button></div>`).join('')}</div>`:'<p class="text-muted small">كل البلاغات الميدانية لها إحداثيات صحيحة.</p>';
-  if(fit&&pts.length)MAP.fitBounds(pts,{padding:[40,40],maxZoom:14});
+  if(fit&&pts.length&&!MAP_ACTIVE_ID)MAP.fitBounds(pts,{padding:[40,40],maxZoom:14});
+  if(MAP_ACTIVE_ID&&MK[MAP_ACTIVE_ID]){try{MK[MAP_ACTIVE_ID].openPopup();}catch(e){}}
 }
 document.getElementById('map-tab').addEventListener('shown.bs.tab',()=>{initMap();MAP.invalidateSize();renderMap(true);});
 const _rr=refreshReportsUI;
@@ -9782,6 +9856,7 @@ function nrpOfficialExcel(){
    ===================================================================== */
 var HQ_UNLOCKED = false;
 var HQMAP = null, HQ_LAYER = null, HQMARKS = {}, HQ_PICKING = false;
+var HQ_SELECTED_KEY = '';
 var HQ_LAST_REPORT = null;
 var HQ_DIRS_KEY = 'customDirectoratesV1';
 var HQ_TRANSFERS_KEY = 'hqTransfersV1';
@@ -9846,7 +9921,10 @@ function showHQ(){
   hqRenderDirsList();
   setTimeout(function(){
     hqInitMap();
-    if(HQMAP){ try{ HQMAP.invalidateSize(); }catch(e){} hqRenderMap(hqFiltered(),true); }
+    if(HQMAP){
+      try{ HQMAP.invalidateSize(); }catch(e){}
+      if(!HQ_SELECTED_KEY) hqRenderMap(hqFiltered(),true);
+    }
   },160);
   try{ window.scrollTo(0,0); }catch(e){}
 }
@@ -9928,9 +10006,16 @@ function hqDurText(s,e){
   return (hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm+' ساعة';
 }
 
-/* ---------------------------- الفلترة والقراءة ---------------------------- */
+/* ---------------------------- الفلترة والبحث والقراءة ---------------------------- */
 function hqFilters(){
-  return { dir:hqVal('hqFilterDir'), status:hqVal('hqFilterStatus'), from:hqVal('hqFilterFrom'), to:hqVal('hqFilterTo'), q:hqVal('hqFilterSearch') };
+  return {
+    dir:hqVal('hqFilterDir'),
+    status:hqVal('hqFilterStatus'),
+    from:hqVal('hqFilterFrom'),
+    to:hqVal('hqFilterTo'),
+    field:hqVal('hqFilterField')||hqVal('hqMapSearchField')||hqVal('hqSideSearchField')||'all',
+    q:hqVal('hqFilterSearch')||hqVal('hqMapSearchInput')||hqVal('hqSideSearchInput')||''
+  };
 }
 function hqAllEntries(){
   loadCustomDirectorates();
@@ -9941,6 +10026,26 @@ function hqAllEntries(){
   });
   return out;
 }
+function hqFieldText(e,field){
+  var r=e.r, d=e.d||{};
+  var staffTxt=(r.staff||[]).map(function(s){ return (s.name||'')+' '+(s.number||'')+' '+(s.role||s.title||''); }).join(' ');
+  var veh=(typeof reportVehicles==='function'?reportVehicles(r):[]);
+  var vehTxt=veh.map(function(v){ return (v.type||'')+' '+(v.number||'')+' '+(v.ownership||''); }).join(' ');
+  var map={
+    no: r.reportNumber,
+    dir: (d.short||'')+' '+(d.long||'')+' '+(d.code||''),
+    type: r.missionType,
+    desc: r.reportDescription,
+    loc: r.location,
+    act: r.actionsTaken,
+    staff: staffTxt,
+    veh: vehTxt,
+    team: r.teamNo,
+    date: (r.reportDate||'')+' '+(r.reportDate?fmtDMY(r.reportDate):'')+' '+(dayName(r.reportDate)||'')
+  };
+  if(field && field!=='all') return String(map[field]==null?'':map[field]);
+  return [map.no,map.dir,map.type,map.desc,map.loc,map.act,map.staff,map.veh,map.team,map.date,r.reporter,r.status||r.reportStatus].join(' ');
+}
 function hqMatch(e,f){
   var r=e.r;
   if(f.dir && e.key!==f.dir) return false;
@@ -9949,15 +10054,69 @@ function hqMatch(e,f){
   if(f.to && String(r.reportDate||'')>f.to) return false;
   if(f.q){
     var nq=normalizeArabic(f.q);
-    var hay=normalizeArabic([
-      r.reportNumber,r.location,r.missionType,r.reportDescription,r.actionsTaken,r.reporter,r.teamNo,
-      (r.staff||[]).map(function(s){ return (s.name||'')+' '+(s.number||''); }).join(' ')
-    ].join(' '));
+    var hay=normalizeArabic(hqFieldText(e,f.field||'all'));
     if(hay.indexOf(nq)<0) return false;
   }
   return true;
 }
 function hqFiltered(){ var f=hqFilters(); return hqAllEntries().filter(function(e){ return hqMatch(e,f); }); }
+function hqSyncSearchField(val){
+  ['hqFilterField','hqMapSearchField','hqSideSearchField'].forEach(function(id){
+    var el=hqEl(id); if(el && el.value!==val) el.value=val;
+  });
+  hqRenderAll(false);
+  hqRenderSearchDropdown();
+}
+function hqOnSearchText(val,showDrop){
+  ['hqFilterSearch','hqMapSearchInput','hqSideSearchInput'].forEach(function(id){
+    var el=hqEl(id); if(el && el.value!==val) el.value=val;
+  });
+  hqRenderAll(false);
+  if(showDrop) hqRenderSearchDropdown();
+  else hqHideSearchDropdown();
+}
+function hqClearSearch(){
+  ['hqFilterSearch','hqMapSearchInput','hqSideSearchInput'].forEach(function(id){
+    var el=hqEl(id); if(el) el.value='';
+  });
+  hqHideSearchDropdown();
+  hqRenderAll(true);
+}
+function hqHideSearchDropdown(){
+  var d=hqEl('hqSearchDropdown'); if(d){ d.style.display='none'; d.innerHTML=''; }
+}
+function hqRenderSearchDropdown(){
+  var d=hqEl('hqSearchDropdown'); if(!d) return;
+  var q=hqVal('hqMapSearchInput')||hqVal('hqFilterSearch')||hqVal('hqSideSearchInput');
+  if(!q){ d.style.display='none'; d.innerHTML=''; return; }
+  var list=hqFiltered().slice(0,12);
+  if(!list.length){
+    d.innerHTML='<div class="p-2 small text-muted text-center">لا توجد بلاغات مطابقة لـ «'+esc(q)+'»</div>';
+    d.style.display='block';
+    return;
+  }
+  d.innerHTML=list.map(function(e){
+    var r=e.r, color=hqDirColor(e.key);
+    return '<button type="button" class="hq-search-item" onclick="hqPickSearchResult(\''+e.key+'\',\''+String(r.id)+'\')">'
+      +'<div class="d-flex justify-content-between align-items-center">'
+        +'<span><span class="badge" style="background:'+color+'">'+esc(e.d.short)+'</span> <b>بلاغ '+esc(String(r.reportNumber||'—'))+'</b> — '+esc(r.missionType||'')+'</span>'
+        +'<span class="text-muted" style="font-size:.72rem">'+esc(r.reportDate||'')+'</span>'
+      +'</div>'
+      +'<div class="text-secondary mt-1" style="font-size:.73rem"><i class="fas fa-location-dot text-danger"></i> '+esc(r.location||'')+'</div>'
+    +'</button>';
+  }).join('');
+  d.style.display='block';
+}
+function hqPickSearchResult(dirKey,id){
+  hqHideSearchDropdown();
+  hqFocusReport(dirKey,id);
+}
+function hqSearchPickFirst(){
+  var list=hqFiltered();
+  if(!list.length) return showAlert('لا توجد بلاغات مطابقة للبحث الحالي.','warning');
+  hqHideSearchDropdown();
+  hqFocusReport(list[0].key, list[0].r.id);
+}
 
 function hqFillDirSelectors(){
   loadCustomDirectorates();
@@ -10017,8 +10176,16 @@ function hqRenderMap(list,fit){
       iconSize:[30,44], iconAnchor:[15,40], popupAnchor:[0,-38]
     });
     var m=L.marker(ll,{icon:icon,title:e.d.short+' — '+(r.missionType||'')}).addTo(HQ_LAYER);
-    HQMARKS[e.key+'|'+r.id]=m;
-    m.bindPopup(function(){ return hqPopupHTML(e); },{minWidth:280,maxWidth:380});
+    var mKey=e.key+'|'+r.id;
+    HQMARKS[mKey]=m;
+    m.bindPopup(function(){ return hqPopupHTML(e); },{
+      minWidth:280, maxWidth:360, maxHeight:310,
+      autoPan:true, autoPanPaddingTopLeft:[20,80], autoPanPaddingBottomRight:[20,50],
+      closeOnClick:false, autoClose:true
+    });
+    m.on('click',function(){
+      hqSelectReport(e.key, r.id, false);
+    });
   });
   var legend=hqEl('hqMapLegend');
   if(legend){
@@ -10031,6 +10198,11 @@ function hqRenderMap(list,fit){
   if(list.length && !valid) note='لا توجد بلاغات ذات إحداثيات صحيحة ضمن الفلتر الحالي.';
   if(note) showAlert(note,'info');
   if(fit && pts.length){ try{ HQMAP.fitBounds(pts,{padding:[40,40],maxZoom:12}); }catch(e){} }
+  if(HQ_SELECTED_KEY && HQMARKS[HQ_SELECTED_KEY]){
+    try{ HQMARKS[HQ_SELECTED_KEY].openPopup(); }catch(e){}
+    var sp=HQ_SELECTED_KEY.split('|');
+    hqRenderSelectedCard(sp[0], sp[1]);
+  }
 }
 function hqPopupHTML(e){
   var r=e.r, color=hqDirColor(e.key);
@@ -10040,7 +10212,7 @@ function hqPopupHTML(e){
   var vehTxt=veh.length?veh.map(function(v){ return esc(v.type||'')+(v.number?' — '+esc(String(v.number)):''); }).join('<br>'):'لا يوجد';
   var tr=r.transferInfo?('<div class="small mb-1 text-success"><i class="fas fa-share-nodes"></i> محوّل من: '+esc(r.transferInfo.fromName||'')+' — '+esc(hqFmtDT(r.transferInfo.at))+'</div>'):'';
   var opts=DIRECTORATES.filter(function(d){ return d.key!==e.key; }).map(function(d){ return '<option value="'+d.key+'">'+esc(d.short)+'</option>'; }).join('');
-  return '<div dir="rtl" style="min-width:270px">'
+  return '<div dir="rtl" style="min-width:265px">'
     +'<div class="fw-bold mb-1"><span class="badge" style="background:'+color+'">'+esc(e.d.short)+'</span> بلاغ '+esc(String(r.reportNumber||'—'))+'</div>'
     +'<div class="small text-muted mb-1">'+esc(r.reportDate||'')+' · '+esc(dayName(r.reportDate)||'')+'</div>'
     +'<div class="mb-1"><i class="fas fa-bullhorn"></i> '+esc(r.missionType||'')+'</div>'
@@ -10061,14 +10233,82 @@ function hqPopupHTML(e){
     +'<a class="small d-inline-block mt-2" href="#" onclick="hqShowReportDetails(\''+e.key+'\',\''+String(r.id)+'\');return false"><i class="fas fa-file-lines"></i> عرض تفاصيل البلاغ كاملة</a>'
   +'</div>';
 }
+function hqRenderSelectedCard(dirKey,id){
+  var box=hqEl('hqSelectedCard'); if(!box) return;
+  var rs=getLSFor(dirKey,LS_KEYS.reports,[])||[];
+  var r=rs.find(function(x){ return String(x&&x.id)===String(id); });
+  if(!r){ box.style.display='none'; box.innerHTML=''; return; }
+  var d=hqDirByKey(dirKey)||{key:dirKey,short:dirKey};
+  var color=hqDirColor(dirKey);
+  var st=String(r.status||r.reportStatus||'منجز');
+  var staff=(r.staff||[]).length?r.staff.map(function(s){ return esc(staffNameNo(s))+(s.role?' / '+esc(s.role):''); }).join('<br>'):'لا يوجد';
+  var veh=(typeof reportVehicles==='function'?reportVehicles(r):[]);
+  var vehTxt=veh.length?veh.map(function(v){ return esc(v.type||'')+(v.number?' — '+esc(String(v.number)):''); }).join('<br>'):'لا يوجد';
+  var opts=DIRECTORATES.filter(function(x){ return x.key!==dirKey; }).map(function(x){ return '<option value="'+x.key+'">'+esc(x.short)+'</option>'; }).join('');
+  box.innerHTML='<div dir="rtl">'
+    +'<div class="d-flex justify-content-between align-items-center pb-1 mb-2 border-bottom">'
+      +'<div class="fw-bold"><span class="badge" style="background:'+color+'">'+esc(d.short)+'</span> بلاغ '+esc(String(r.reportNumber||'—'))+'</div>'
+      +'<button type="button" class="btn btn-xs btn-outline-danger py-0 px-2" onclick="hqCloseSelectedCard()" title="إغلاق لوحة البلاغ"><i class="fas fa-xmark"></i> إغلاق</button>'
+    +'</div>'
+    +'<div class="small text-muted mb-1"><i class="fas fa-calendar-day"></i> '+esc(r.reportDate||'')+' · '+esc(dayName(r.reportDate)||'')+' · <span class="badge bg-secondary">'+esc(st)+'</span></div>'
+    +'<div class="small fw-bold mb-1 text-primary"><i class="fas fa-bullhorn"></i> '+esc(r.missionType||'')+'</div>'
+    +(r.reportDescription?'<div class="small mb-1 text-secondary border-start border-3 ps-2">'+escBr(r.reportDescription)+'</div>':'')
+    +'<div class="small mb-1"><i class="fas fa-location-dot text-danger"></i> <b>الموقع:</b> '+esc(r.location||'')+'</div>'
+    +'<div class="small mb-1"><i class="fas fa-clock text-info"></i> <b>الوقت:</b> '+esc(r.startTime||'')+' — '+esc(r.endTime||'')+' <b>('+esc(r.duration||'')+')</b></div>'
+    +(r.actionsTaken?'<div class="small mb-1"><i class="fas fa-screwdriver-wrench text-success"></i> <b>الإجراء:</b> '+escBr(r.actionsTaken)+'</div>':'')
+    +'<div class="small mb-1"><i class="fas fa-id-card text-primary"></i> <b>الكادر:</b><br>'+staff+'</div>'
+    +'<div class="small mb-2"><i class="fas fa-truck text-warning"></i> <b>الآليات:</b><br>'+vehTxt+'</div>'
+    +'<div class="border rounded p-2 bg-light mb-2">'
+      +'<label class="small fw-bold mb-1"><i class="fas fa-share-nodes"></i> تحويل هذا البلاغ إلى مديرية فرعية</label>'
+      +'<div class="d-flex gap-1">'
+        +'<select class="form-select form-select-sm" id="hqCardTarget_'+dirKey+'_'+r.id+'">'+opts+'</select>'
+        +'<button type="button" class="btn btn-sm btn-warning fw-bold" onclick="hqTransferFromSelectedCard(\''+dirKey+'\',\''+String(r.id)+'\')">تحويل</button>'
+      +'</div>'
+    +'</div>'
+    +'<div class="d-flex justify-content-between align-items-center">'
+      +'<button type="button" class="btn btn-xs btn-primary py-1 px-2" onclick="hqShowReportDetails(\''+dirKey+'\',\''+String(r.id)+'\')"><i class="fas fa-file-lines"></i> عرض البطاقة الكاملة</button>'
+      +'<span class="small text-muted">'+esc([r.longitude,r.latitude].filter(Boolean).join(' / '))+'</span>'
+    +'</div>'
+  +'</div>';
+  box.style.display='block';
+}
+function hqCloseSelectedCard(){
+  HQ_SELECTED_KEY='';
+  var box=hqEl('hqSelectedCard');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+  try{ if(HQMAP) HQMAP.closePopup(); }catch(e){}
+  document.querySelectorAll('#hqSideIncidentsList .hq-inc-card.active-card').forEach(function(el){ el.classList.remove('active-card'); });
+}
+function hqTransferFromSelectedCard(srcKey,id){
+  var sel=hqEl('hqCardTarget_'+srcKey+'_'+id);
+  if(!sel) return showAlert('اختر المديرية المستهدفة أولاً.','warning');
+  hqTransferReport(srcKey,id,sel.value);
+}
+function hqSelectReport(dirKey,id,panMap){
+  HQ_SELECTED_KEY=dirKey+'|'+id;
+  hqRenderSelectedCard(dirKey,id);
+  document.querySelectorAll('#hqSideIncidentsList .hq-inc-card').forEach(function(el){
+    el.classList.toggle('active-card', el.getAttribute('data-hqkey')===HQ_SELECTED_KEY);
+  });
+  if(panMap){
+    hqInitMap();
+    var m=HQMARKS[HQ_SELECTED_KEY];
+    if(m && HQMAP){
+      try{
+        var z=Math.max(HQMAP.getZoom()||8, 14);
+        HQMAP.setView(m.getLatLng(), z, {animate:false});
+        m.openPopup();
+      }catch(e){}
+    }
+  }
+}
 function hqFocusReport(dirKey,id){
   hqInitMap();
+  hqSelectReport(dirKey,id,true);
   var m=HQMARKS[dirKey+'|'+id];
-  if(!m){ showAlert('لا توجد إحداثيات صحيحة لهذا البلاغ على الخريطة.','warning'); return; }
-  try{ HQMAP.setView(m.getLatLng(),14,{animate:true}); m.openPopup(); }catch(e){}
-  hqToggleSidebar(true);
+  if(!m){ showAlert('تم عرض بيانات البلاغ (لا توجد إحداثيات على الخريطة لهذا البلاغ).','info'); }
 }
-function hqMapFit(){ hqRenderMap(hqFiltered(),true); }
+function hqMapFit(){ hqCloseSelectedCard(); hqRenderMap(hqFiltered(),true); }
 
 function hqRenderSideList(list){
   var box=hqEl('hqSideIncidentsList'); if(!box) return;
@@ -10083,9 +10323,11 @@ function hqRenderSideList(list){
   }
   box.innerHTML=show.map(function(e){
     var r=e.r, color=hqDirColor(e.key), st=String(r.status||r.reportStatus||'منجز');
+    var k=e.key+'|'+r.id;
+    var isAct=(HQ_SELECTED_KEY===k)?' active-card':'';
     var opts=DIRECTORATES.filter(function(d){ return d.key!==e.key; }).map(function(d){ return '<option value="'+d.key+'">'+esc(d.short)+'</option>'; }).join('');
     var tr=r.transferInfo?('<div class="small text-success mt-1"><i class="fas fa-share-nodes"></i> محوّل من '+esc(r.transferInfo.fromName||'')+'</div>'):'';
-    return '<div class="hq-inc-card" style="border-right-color:'+color+'">'
+    return '<div class="hq-inc-card'+isAct+'" data-hqkey="'+esc(k)+'" style="border-right-color:'+color+'">'
       +'<div class="d-flex justify-content-between align-items-start gap-2">'
         +'<div class="fw-bold small"><span class="badge" style="background:'+color+'">'+esc(e.d.short)+'</span> '+esc(String(r.reportNumber||'—'))+'</div>'
         +'<span class="badge bg-secondary">'+esc(st)+'</span>'
@@ -10146,10 +10388,10 @@ function hqTransferReport(srcKey,id,targetKey){
   src.splice(i,1);
   setLSFor(srcKey,LS_KEYS.reports,src);
   try{ reportTombAdd([oldId],srcKey); }catch(e){}
+  if(HQ_SELECTED_KEY===srcKey+'|'+oldId) HQ_SELECTED_KEY=targetKey+'|'+rep.id;
   hqLogTransfer(rep.transferInfo,rep);
   hqRenderAll(false);
   try{ if(ACTIVE_DIR&&(ACTIVE_DIR.key===srcKey||ACTIVE_DIR.key===targetKey)) refreshAllReportsUI(); }catch(e){}
-  closeHQMapPopup();
   showAlert('تم تحويل البلاغ '+String(rep.reportNumber||'')+' من «'+hqDirName(srcKey)+'» إلى «'+hqDirName(targetKey)+'».','success');
 }
 function closeHQMapPopup(){ try{ if(HQMAP) HQMAP.closePopup(); }catch(e){} }
