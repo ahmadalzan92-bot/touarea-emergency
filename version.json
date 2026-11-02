@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.93",
+  "version": "2026.10.09.94",
   "released": "2026-11-02",
-  "notes": "استخدام VML (v:shape + v:imagedata) لعرض الصور في Excel HTML (أفضل دعم من data URI) + dir=rtl. إصدار 2026.10.09.93."
+  "notes": "إصلاح writer ZIP: offset محلي يُكتب في موضع 42 (وليس 40) في central directory. إصدار 2026.10.09.94."
 }
