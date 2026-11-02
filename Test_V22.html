@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.73';
+    const APP_VERSION = '2026.10.09.74';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9393,7 +9393,7 @@ function nrpRow(r,i){
   return [
     i+1, dayName(r.reportDate)||'', r.reportDate?fmtDMY(r.reportDate):'', nrpProvVal(),
     numOrStr(r.reportNumber)||'', nrpTypeText(r), r.actionsTaken||'', r.teamNo||'',
-    nrpStaffText(r), v.types, v.owns, v.numbers,
+    hqStaffNamesText(r), hqStaffNumbersText(r), v.types, v.owns, v.numbers,
     inT.start, inT.end, d.inH?numOrStr(fmtH(d.inH)):'',
     outT.start, outT.end, d.outH?numOrStr(fmtH(d.outH)):'',
     nrpStatus(r), r.responseSpeed||'',
@@ -9406,7 +9406,7 @@ function nrpDutyInfo(rs){ var inH=0,outH=0; rs.forEach(function(r){var d=nrpDuty
 function nrpTableHTML(rs){
   var rows=rs.map(function(r,i){
     var v=nrpRow(r,i), ph=nrpPhotos(r);
-    var photoCell = ph.length? (esc(ph.length+' صورة') + (ph[0]&&ph[0].data?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">'):'')) : '';
+    var photoCell = ph.length&&(ph[0]&&ph[0].data)?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">') : (ph.length?(ph.length+' صورة'):'');
     return '<tr>'
       +'<td>'+(i+1)+'</td>'
       +'<td>'+esc(v[1])+'</td>'
@@ -9418,17 +9418,19 @@ function nrpTableHTML(rs){
       +'<td>'+esc(v[7])+'</td>'
       +'<td class="nrp-l">'+escBr(v[8])+'</td>'
       +'<td class="nrp-l">'+escBr(v[9])+'</td>'
-      +'<td>'+escBr(v[10])+'</td>'
+      +'<td class="nrp-l">'+escBr(v[10])+'</td>'
       +'<td>'+escBr(v[11])+'</td>'
       +'<td>'+escBr(v[12])+'</td>'
       +'<td>'+escBr(v[13])+'</td>'
-      +'<td>'+esc(v[14])+'</td>'
+      +'<td>'+escBr(v[14])+'</td>'
       +'<td>'+escBr(v[15])+'</td>'
-      +'<td>'+escBr(v[16])+'</td>'
-      +'<td>'+esc(v[17])+'</td>'
-      +'<td>'+esc(v[18])+'</td>'
+      +'<td>'+esc(v[16])+'</td>'
+      +'<td>'+escBr(v[17])+'</td>'
+      +'<td>'+escBr(v[18])+'</td>'
       +'<td>'+esc(v[19])+'</td>'
-      +'<td>'+escBr(v[20])+'</td>'
+      +'<td>'+esc(v[20])+'</td>'
+      +'<td>'+esc(v[21])+'</td>'
+      +'<td>'+escBr(v[22])+'</td>'
       +'<td>'+photoCell+'</td>'
       +'</tr>';
   }).join('')||'<tr><td colspan="23" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
@@ -9436,6 +9438,7 @@ function nrpTableHTML(rs){
     +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
     +'<th rowspan="2">رقم البلاغ</th><th rowspan="2" style="width:8%">نوع البلاغ</th><th rowspan="2" style="width:13%">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
     +'<th rowspan="2" style="width:16%">أسماء العاملين في الفرقة مع بيان الوظيفة<br><small>(مهندس/ مراقب/ سائق/ سائق الية...الخ)</small></th>'
+    +'<th rowspan="2" style="width:11%">الرقم الوظيفي</th>'
     +'<th colspan="3">الآليات المستخدمة</th>'
     +'<th colspan="3">خلال أوقات العمل</th>'
     +'<th colspan="3">خارج أوقات العمل</th>'
@@ -9467,6 +9470,7 @@ function nrpDetailBlocks(O){
   b.push({type:'col',k:'proc',t:'الإجراء المتخذ',w:'11%',c:'l'});
   b.push({type:'col',k:'team',t:'رقم الفرقة',w:'3.5%',c:'c'});
   if(O.staff) b.push({type:'col',k:'staff',t:'أسماء العاملين في الفرقة مع بيان الوظيفة',w:'9%',c:'l'});
+  if(O.staff) b.push({type:'col',k:'staffNo',t:'الرقم الوظيفي',w:'7%',c:'c'});
   b.push({type:'group',k:'veh',label:'الآليات المستخدمة',on:!!O.vehicles,sub:[{k:'vType',t:'نوع الآلية',w:'4%'},{k:'vOwn',t:'حكومي / مستأجر',w:'4%'},{k:'vNo',t:'رقم الآلية',w:'3.5%'}]});
   b.push({type:'group',k:'in',label:'خلال أوقات العمل',on:true,sub:[{k:'inS',t:'وقت البدء',w:'3.5%'},{k:'inE',t:'وقت الانتهاء',w:'3.5%'},{k:'inH',t:'مدة العمل الكلي',w:'4%'}]});
   b.push({type:'group',k:'out',label:'خارج أوقات العمل',on:true,sub:[{k:'outS',t:'وقت البدء',w:'3.5%'},{k:'outE',t:'وقت الانتهاء',w:'3.5%'},{k:'outH',t:'مدة العمل الكلي',w:'4%'}]});
@@ -9560,7 +9564,7 @@ function buildNrpDetailWS(rs,meta){
   cols.forEach(function(col,ci){ if(!col.vmerge) aoa[1][ci]=col.title; });
   rs.forEach(function(r,i){
     var v=nrpRow(r,i), ph=nrpPhotos(r);
-    var map={idx:(i+1),day:v[1],date:v[2],prov:v[3],num:numOrStr(v[4]),type:v[5],proc:v[6],team:v[7],staff:v[8],vType:v[9],vOwn:v[10],vNo:v[11],inS:v[12],inE:v[13],inH:v[14],outS:v[15],outE:v[16],outH:v[17],status:v[18],speed:v[19],coords:v[20],photos:(ph.length?ph.length+' صورة':'')};
+    var map={idx:(i+1),day:v[1],date:v[2],prov:v[3],num:numOrStr(v[4]),type:v[5],proc:v[6],team:v[7],staff:v[8],staffNo:v[9],vType:v[10],vOwn:v[11],vNo:v[12],inS:v[13],inE:v[14],inH:v[15],outS:v[16],outE:v[17],outH:v[18],status:v[19],speed:v[20],coords:v[21],photos:(ph.length?ph.length+' صورة':'')};
     aoa.push(cols.map(function(col){ var x=map[col.k]; return x==null?'':x; }));
   });
   var ws=XLSX.utils.aoa_to_sheet(aoa);
