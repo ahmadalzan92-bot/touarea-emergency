@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.83",
+  "version": "2026.10.09.84",
   "released": "2026-11-02",
-  "notes": "إعادة كتابة writer ZIP (offsets in separate loop with i variable) لضمان offsets صحيحة وفتح ملف Excel في Excel/openpyxl."
+  "notes": "Debug version."
 }
