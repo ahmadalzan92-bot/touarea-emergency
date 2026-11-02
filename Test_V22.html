@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.86';
+    const APP_VERSION = '2026.10.09.87';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -11056,43 +11056,44 @@ function hqWriteZip(entries){
   var td = new TextEncoder();
   var entriesArr = Array.from(entries);
   var n = entriesArr.length;
-  // First pass: build local headers and data, compute offsets
+  // Build local headers + data, tracking offsets
   var locals = [];
-  var offset = 0;
-  var offsets = new Array(n);
-  var i;
-  for (i = 0; i < n; i++) {
-    var pair = entriesArr[i];
-    var name = pair[0];
-    var data = pair[1];
-    var nameBytes = td.encode(name);
-    var local = new Uint8Array(30 + nameBytes.length);
+  var offsetList = [];
+  var pos = 0;
+  var idx1;
+  for (idx1 = 0; idx1 < n; idx1++) {
+    var pair1 = entriesArr[idx1];
+    var name1 = pair1[0];
+    var data1 = pair1[1];
+    var nb1 = td.encode(name1);
+    var local = new Uint8Array(30 + nb1.length);
     var ldv = new DataView(local.buffer);
     ldv.setUint32(0, 0x04034b50, true);
     ldv.setUint16(4, 20, true);
     ldv.setUint16(6, 0, true);
     ldv.setUint16(8, 0, true);
     ldv.setUint32(10, 0, true);
-    ldv.setUint32(14, hqCrc32(data), true);
-    ldv.setUint32(18, data.length, true);
-    ldv.setUint32(22, data.length, true);
-    ldv.setUint16(26, nameBytes.length, true);
+    ldv.setUint32(14, hqCrc32(data1), true);
+    ldv.setUint32(18, data1.length, true);
+    ldv.setUint32(22, data1.length, true);
+    ldv.setUint16(26, nb1.length, true);
     ldv.setUint16(28, 0, true);
-    local.set(nameBytes, 30);
-    offsets[i] = offset;
+    local.set(nb1, 30);
+    offsetList[idx1] = pos;
     locals.push(local);
-    locals.push(data);
-    offset = offset + (30 + nameBytes.length) + data.length;
+    locals.push(data1);
+    pos = pos + local.length + data1.length;
   }
-  // Second pass: build central directory
+  // Build central directory
   var cds = [];
   var cdSize = 0;
-  for (i = 0; i < n; i++) {
-    var pair2 = entriesArr[i];
+  var idx2;
+  for (idx2 = 0; idx2 < n; idx2++) {
+    var pair2 = entriesArr[idx2];
     var name2 = pair2[0];
     var data2 = pair2[1];
-    var nameBytes2 = td.encode(name2);
-    var cd = new Uint8Array(46 + nameBytes2.length);
+    var nb2 = td.encode(name2);
+    var cd = new Uint8Array(46 + nb2.length);
     var cdv = new DataView(cd.buffer);
     cdv.setUint32(0, 0x02014b50, true);
     cdv.setUint16(4, 20, true);
@@ -11104,20 +11105,21 @@ function hqWriteZip(entries){
     cdv.setUint32(16, hqCrc32(data2), true);
     cdv.setUint32(20, data2.length, true);
     cdv.setUint32(24, data2.length, true);
-    cdv.setUint16(28, nameBytes2.length, true);
+    cdv.setUint16(28, nb2.length, true);
     cdv.setUint16(30, 0, true);
     cdv.setUint16(32, 0, true);
     cdv.setUint16(34, 0, true);
     cdv.setUint32(36, 0, true);
-    var _lo = 0; for (var _k = 0; _k < i; _k++) { _lo = _lo + (30 + td.encode(entriesArr[_k][0]).length) + entriesArr[_k][1].length; } window.__dbgLo = window.__dbgLo || []; window.__dbgLo.push({i:i, _lo:_lo}); cdv.setUint32(40, _lo, true);
-    cd.set(nameBytes2, 46);
+    cdv.setUint32(40, offsetList[idx2], true);
+    cd.set(nb2, 46);
     cds.push(cd);
-    cdSize += cd.length;
+    cdSize = cdSize + cd.length;
   }
   // Assemble
-  var cdStart = offset;
+  var cdStart = pos;
   var allParts = locals.slice();
-  for (i = 0; i < cds.length; i++) { allParts.push(cds[i]); }
+  var idx3;
+  for (idx3 = 0; idx3 < cds.length; idx3++) { allParts.push(cds[idx3]); }
   var eocd = new Uint8Array(22);
   var edv = new DataView(eocd.buffer);
   edv.setUint32(0, 0x06054b50, true);
@@ -11128,10 +11130,10 @@ function hqWriteZip(entries){
   edv.setUint16(20, 0, true);
   allParts.push(eocd);
   var total = 0;
-  for (i = 0; i < allParts.length; i++) total += allParts[i].length;
+  for (idx3 = 0; idx3 < allParts.length; idx3++) total += allParts[idx3].length;
   var out = new Uint8Array(total);
   var o = 0;
-  for (i = 0; i < allParts.length; i++) { out.set(allParts[i], o); o += allParts[i].length; }
+  for (idx3 = 0; idx3 < allParts.length; idx3++) { out.set(allParts[idx3], o); o += allParts[idx3].length; }
   return out;
 }
 
