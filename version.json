@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.107",
+  "version": "2026.10.09.108",
   "released": "2026-11-02",
-  "notes": "Phase 4 Security: AES-256-GCM encryption functions, automated backup endpoint, security monitoring (anomaly detection), security alerts viewer, session invalidation, 2FA with QR code."
+  "notes": "Option A (SSO): Government login bypasses directorate password. RBAC enforcement (viewer=read-only, staff=read+write, admin=full). govApplyRBAC hides/disables buttons based on role."
 }
