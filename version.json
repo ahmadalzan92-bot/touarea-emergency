@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.112",
+  "version": "2026.10.09.113",
   "released": "2026-11-02",
-  "notes": "Fix: \"change directorate\" button now properly returns to card screen (clear auto-enter timer). Auto-enter delay increased to 1.5s. Timer cleared on enterDirectorate and openHome."
+  "notes": "Fix: \"change directorate\" returns to card screen (clear auto-enter timer). Auto-enter delay 500ms. Timer cleared on enterDirectorate and openHome. ACTIVE_DIR set to user governorate on login. DIR_STORAGE cleared on logout."
 }
