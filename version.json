@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.78",
+  "version": "2026.10.09.79",
   "released": "2026-11-02",
-  "notes": "إصلاح ترتيب localOffset في writer ZIP (كان يُحسب بعد البناء) لضمان فتح ملف Excel في Excel/openpyxl بدون BadZipFile."
+  "notes": "إصلاح offsets حقول CRC/size في central directory (كانت مزاحة بـ2 بايت) لضمان فتح ملف Excel في Excel/openpyxl."
 }
