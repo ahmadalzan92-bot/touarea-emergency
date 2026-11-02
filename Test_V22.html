@@ -1276,7 +1276,9 @@
     .hq-rep-bar{background:#f1f5f9;padding:10px 14px;border-bottom:1px solid #cbd5e1;display:flex;flex-wrap:wrap;gap:8px;align-items:end}
     .hq-rep-body{flex:1;overflow:auto;padding:14px;background:#e2e8f0}
     .hq-rep-paper{background:#fff;padding:14px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);min-height:100%}
-    .hq-search-wrap{position:absolute;top:12px;right:14px;z-index:1005;width:450px;max-width:calc(100% - 70px);background:rgba(15,23,42,.93);border:1.5px solid #f59e0b;border-radius:10px;padding:7px 9px;box-shadow:0 8px 24px rgba(0,0,0,.42);color:#fff}
+    .hq-search-wrap{position:absolute;top:12px;right:14px;z-index:1005;width:470px;max-width:calc(100% - 70px);background:rgba(15,23,42,.93);border:1.5px solid #f59e0b;border-radius:10px;padding:7px 9px;box-shadow:0 8px 24px rgba(0,0,0,.42);color:#fff}
+    .hq-search-open-btn{position:absolute;top:12px;right:14px;z-index:1005;background:rgba(15,23,42,.93);color:#ffd166;border:1.5px solid #f59e0b;border-radius:9px;padding:6px 12px;font-weight:800;font-size:.8rem;box-shadow:0 6px 18px rgba(0,0,0,.38);display:none;align-items:center;gap:6px;cursor:pointer}
+    .hq-search-open-btn:hover{background:#0f2c52;color:#fff}
     .hq-search-drop{max-height:280px;overflow-y:auto;margin-top:6px;background:#fff;color:#1e293b;border-radius:8px;border:1px solid #cbd5e1;display:none;box-shadow:0 10px 24px rgba(0,0,0,.32)}
     .hq-search-item{padding:7px 10px;border:none;border-bottom:1px solid #e2e8f0;cursor:pointer;font-size:.78rem;text-align:right;width:100%;background:#fff;display:block;transition:background .12s}
     .hq-search-item:hover{background:#eff6ff}
@@ -1872,11 +1874,16 @@
 
       <!-- الخريطة التفاعلية بكامل الشاشة -->
       <div class="hq-map-wrap">
+        <!-- زر إعادة إظهار شريط البحث العائم عند إغلاقه -->
+        <button type="button" class="hq-search-open-btn" id="hqOpenSearchBtn" onclick="hqToggleSearchBar(true)" title="إظهار شريط البحث عن بلاغ">
+          <i class="fas fa-magnifying-glass"></i> بحث عن بلاغ
+        </button>
+
         <!-- شريط البحث الفوري عن بلاغ على الخريطة -->
         <div class="hq-search-wrap" id="hqMapSearchWrap">
           <div class="d-flex align-items-center gap-1">
             <i class="fas fa-magnifying-glass text-warning ms-1"></i>
-            <select id="hqMapSearchField" class="form-select form-select-sm" style="max-width:130px;font-size:.76rem" onchange="hqSyncSearchField(this.value)">
+            <select id="hqMapSearchField" class="form-select form-select-sm" style="max-width:125px;font-size:.76rem" onchange="hqSyncSearchField(this.value)">
               <option value="all">البحث في الكل</option>
               <option value="no">رقم البلاغ</option>
               <option value="dir">المحافظة</option>
@@ -1891,7 +1898,8 @@
             </select>
             <input type="search" id="hqMapSearchInput" class="form-control form-control-sm" style="font-size:.78rem" oninput="hqOnSearchText(this.value,true)" onfocus="hqRenderSearchDropdown()" onkeydown="if(event.key==='Enter'){event.preventDefault();hqSearchPickFirst();}" placeholder="ابحث عن بلاغ: رقم، موقع، نوع، موظف، آلية...">
             <button type="button" class="btn btn-sm btn-warning fw-bold py-1 px-2" onclick="hqSearchPickFirst()" title="انتقال إلى البلاغ على الخريطة"><i class="fas fa-location-crosshairs"></i></button>
-            <button type="button" class="btn btn-sm btn-outline-light py-1 px-2" onclick="hqClearSearch()" title="مسح البحث"><i class="fas fa-xmark"></i></button>
+            <button type="button" class="btn btn-sm btn-outline-secondary text-light py-1 px-2" onclick="hqClearSearch()" title="مسح نص البحث"><i class="fas fa-eraser"></i></button>
+            <button type="button" class="btn btn-sm btn-danger py-1 px-2" onclick="hqToggleSearchBar(false)" title="إغلاق شريط البحث"><i class="fas fa-xmark"></i></button>
           </div>
           <div class="hq-search-drop" id="hqSearchDropdown"></div>
         </div>
@@ -3259,7 +3267,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.69';
+    const APP_VERSION = '2026.10.09.70';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9965,7 +9973,7 @@ function hqInitMap(){
   var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'});
   if(!HQMAP){
     HQMAP=L.map('hqMapBox',{layers:[street],zoomControl:true}).setView([31.55,36.05],8);
-    L.control.layers({'خريطة':street,'أقمار صناعية':sat},null,{position:'topright'}).addTo(HQMAP);
+    L.control.layers({'خريطة':street,'أقمار صناعية':sat},null,{position:'bottomright',collapsed:false}).addTo(HQMAP);
     HQMAP.on('click',function(ev){
       if(!HQ_PICKING) return;
       var lat=Math.round(ev.latlng.lat*1e7)/1e7, lon=Math.round(ev.latlng.lng*1e7)/1e7;
@@ -10081,6 +10089,18 @@ function hqClearSearch(){
   });
   hqHideSearchDropdown();
   hqRenderAll(true);
+}
+function hqToggleSearchBar(show){
+  var wrap=hqEl('hqMapSearchWrap');
+  var btn=hqEl('hqOpenSearchBtn');
+  var isVis=(show===undefined)?(wrap && wrap.style.display==='none'):!!show;
+  if(wrap) wrap.style.display=isVis?'block':'none';
+  if(btn) btn.style.display=isVis?'none':'inline-flex';
+  if(!isVis) hqHideSearchDropdown();
+  else{
+    var inp=hqEl('hqMapSearchInput');
+    if(inp) setTimeout(function(){ try{ inp.focus(); }catch(e){} },40);
+  }
 }
 function hqHideSearchDropdown(){
   var d=hqEl('hqSearchDropdown'); if(d){ d.style.display='none'; d.innerHTML=''; }
