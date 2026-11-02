@@ -11315,6 +11315,7 @@ function govLogin(){
       sessionStorage.setItem('gov_auth_role', res.data.role);
       var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
       var ui=document.getElementById('govUserInfo'); if(ui) ui.innerHTML='<i class="fas fa-user-shield"></i> '+res.data.username+' ('+res.data.role+')';
+      if(res.data.sessionVersion !== undefined) sessionStorage.setItem('gov_session_version', res.data.sessionVersion);
       var ab=document.getElementById('govAuditBtn'); if(ab && res.data.role==='admin') ab.style.display='';
       showAlert('مرحباً '+res.data.username+' — تم تسجيل الدخول بنجاح.','success');
       // Reload data
@@ -11414,7 +11415,30 @@ function govLogout(){
   sessionStorage.removeItem('gov_auth_role');
   location.reload();
 }
-function govIsAuth(){ return !!sessionStorage.getItem('gov_auth_token'); }
+function govIsAuth(){
+  var tok = sessionStorage.getItem('gov_auth_token');
+  if(!tok) return false;
+  // Check session version (invalidate on password change)
+  try {
+    var sv = sessionStorage.getItem('gov_session_version');
+    if(sv){
+      fetch(CLOUD_API_BASE+'/api/auth/me',{headers:{'Authorization':'Bearer '+tok,'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(d && d.sessionVersion !== undefined && String(d.sessionVersion) !== String(sv)){
+            // Session invalidated
+            sessionStorage.removeItem('gov_auth_token');
+            sessionStorage.removeItem('gov_auth_user');
+            sessionStorage.removeItem('gov_auth_role');
+            sessionStorage.removeItem('gov_session_version');
+            var m = document.getElementById('govLoginModal'); if(m) m.style.display = 'flex';
+            var msg = document.getElementById('govLoginMsg'); if(msg){msg.textContent='تم تغيير كلمة المرور. يرجى تسجيل الدخول مجدداً.';msg.style.display='block';}
+          }
+        }).catch(function(){});
+    }
+  } catch(e){}
+  return true;
+}
 function govGetUser(){ return sessionStorage.getItem('gov_auth_user')||''; }
 function govGetRole(){ return sessionStorage.getItem('gov_auth_role')||'viewer'; }
 // Check auth on page load
@@ -11437,5 +11461,20 @@ document.addEventListener('keydown', function(e){
 });
 </script>
 
+
+<script>
+
+// Security monitoring: check for anomalies
+function govSecurityCheck(){
+  // Check if session is still valid
+  if(govIsAuth()){
+    fetch(CLOUD_API_BASE+'/api/auth/me',{headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+      .then(function(r){ if(r.status===401){ govLogout(); } })
+      .catch(function(){});
+  }
+}
+setInterval(govSecurityCheck, 5*60*1000); // Check every 5 minutes
+
+</script>
 </body>
 </html>

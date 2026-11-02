@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.105",
+  "version": "2026.10.09.106",
   "released": "2026-11-02",
-  "notes": "Phase 3 Security: 2FA with QR code (Google Authenticator compatible), AES-256-GCM encryption functions, automated backup endpoint, persistent rate limiting support."
+  "notes": "Phase 3 Security: Session invalidation on password change, 2FA with QR code, AES-256-GCM encryption functions, automated backup endpoint, persistent rate limiting support."
 }

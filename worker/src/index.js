@@ -1,4 +1,4 @@
-// Phase 3: Advanced Security - Encryption at Rest, 2FA UI, Automated Backups, XSS Prevention
+// Phase 4: Enterprise Security - Encryption at Rest, Automated Backups, Security Monitoring
 // Cloudflare Worker with enterprise-grade security features
 
 const JWT_SECRET = 'TOUAREA-GOV-JWT-SECRET-2026-CHANGE-IN-PRODUCTION';
@@ -57,13 +57,14 @@ async function encryptData(plaintext) {
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
   combined.set(iv);
   combined.set(new Uint8Array(encrypted), iv.length);
-  return btoa(String.fromCharCode(...combined));
+  return 'ENC:' + btoa(String.fromCharCode(...combined));
 }
 
 async function decryptData(ciphertext) {
+  if (!ciphertext || !ciphertext.startsWith('ENC:')) return ciphertext; // Not encrypted, return as-is
   try {
     const enc = new TextEncoder();
-    const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
+    const combined = Uint8Array.from(atob(ciphertext.slice(4)), c => c.charCodeAt(0));
     const iv = combined.slice(0, 12);
     const data = combined.slice(12);
     const key = await getEncryptionKey();
@@ -102,7 +103,7 @@ async function generateTOTPCode(secret, counter) {
   return code.toString().padStart(6, '0');
 }
 
-// Rate limiting (in-memory, use KV for production persistence)
+// Rate limiting (use KV for persistence in production)
 const rateLimitStore = new Map();
 function checkRateLimit(ip) {
   const now = Date.now();
@@ -116,7 +117,7 @@ function checkRateLimit(ip) {
   return true;
 }
 
-// Input validation
+// Input validation + XSS sanitization
 function validateKey(key) {
   if (!key || typeof key !== 'string') return false;
   if (key.length > 256) return false;
@@ -130,7 +131,6 @@ function validateValue(value) {
   return true;
 }
 
-// Sanitize HTML to prevent XSS
 function sanitizeHtml(str) {
   if (typeof str !== 'string') return str;
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
@@ -155,6 +155,26 @@ async function auditLog(db, user, action, target, details, ip) {
   } catch (e) { console.error('Audit log error:', e.message); }
 }
 
+// Security monitoring - detect anomalies
+async function securityMonitor(db, user, action, ip) {
+  try {
+    // Check for brute force (5+ failed logins in 10 min)
+    const recentFails = await db.prepare(
+      'SELECT COUNT(*) as cnt FROM audit_log WHERE action = ? AND ip = ? AND ts > ?'
+    ).bind('LOGIN_FAILED', ip, Date.now() - 10 * 60 * 1000).first();
+    if (recentFails && recentFails.cnt >= 5) {
+      await auditLog(db, 'SYSTEM', 'SECURITY_ALERT', 'brute_force', `IP ${ip} has ${recentFails.cnt} failed logins in 10 min`, ip);
+    }
+    // Check for unusual data access (100+ reads in 1 min)
+    const recentReads = await db.prepare(
+      'SELECT COUNT(*) as cnt FROM audit_log WHERE action = ? AND user = ? AND ts > ?'
+    ).bind('DATA_READ', user, Date.now() - 60 * 1000).first();
+    if (recentReads && recentReads.cnt >= 100) {
+      await auditLog(db, 'SYSTEM', 'SECURITY_ALERT', 'data_exfiltration', `User ${user} has ${recentReads.cnt} reads in 1 min`, ip);
+    }
+  } catch (e) { console.error('Security monitor error:', e.message); }
+}
+
 // Automated backup
 async function createBackup(db) {
   try {
@@ -163,6 +183,8 @@ async function createBackup(db) {
     for (const r of rows.results) backup.data[r.key] = { value: r.value, ts: r.ts };
     const backupKey = 'backup_' + Date.now();
     await db.prepare('INSERT INTO backups (key, data, ts) VALUES (?, ?, ?)').bind(backupKey, JSON.stringify(backup), Date.now()).run();
+    // Keep only last 30 backups
+    await db.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY ts DESC LIMIT 30)').run();
     return backupKey;
   } catch (e) {
     console.error('Backup error:', e.message);
@@ -170,13 +192,16 @@ async function createBackup(db) {
   }
 }
 
-// Scheduled backup (called by cron trigger)
-async function scheduledBackup(db) {
-  const backupKey = await createBackup(db);
-  if (backupKey) {
-    console.log('Scheduled backup created:', backupKey);
+// Session invalidation
+async function invalidateUserSessions(db, username) {
+  // In a full implementation, this would revoke JWT tokens
+  // For now, we update a "session_version" that the client checks
+  try {
+    await db.prepare('UPDATE users SET session_version = COALESCE(session_version, 0) + 1 WHERE username = ?').bind(username).run();
+  } catch (e) {
+    // Column might not exist yet
+    console.error('Session invalidation error:', e.message);
   }
-  return backupKey;
 }
 
 const securityHeaders = {
@@ -219,9 +244,10 @@ export default {
         const body = await request.json();
         const { username, password, totpCode } = body;
         if (!username || !password) return jsonResponse({ error: 'Username and password required' }, securityHeaders, 400);
-        const row = await db.prepare('SELECT username, password_hash, salt, role, failed_attempts, locked_until, totp_secret, totp_enabled FROM users WHERE username = ?').bind(username).first();
+        const row = await db.prepare('SELECT username, password_hash, salt, role, failed_attempts, locked_until, totp_secret, totp_enabled, session_version FROM users WHERE username = ?').bind(username).first();
         if (!row) {
           await auditLog(db, username, 'LOGIN_FAILED', 'auth', 'User not found', clientIP);
+          await securityMonitor(db, username, 'LOGIN_FAILED', clientIP);
           return jsonResponse({ error: 'Invalid credentials' }, securityHeaders, 401);
         }
         if (row.locked_until && row.locked_until > Date.now()) {
@@ -234,6 +260,7 @@ export default {
           const lockUntil = attempts >= 5 ? Date.now() + 15 * 60 * 1000 : null;
           await db.prepare('UPDATE users SET failed_attempts = ?, locked_until = ? WHERE username = ?').bind(attempts, lockUntil, username).run();
           await auditLog(db, username, 'LOGIN_FAILED', 'auth', 'Invalid password, attempt ' + attempts, clientIP);
+          await securityMonitor(db, username, 'LOGIN_FAILED', clientIP);
           return jsonResponse({ error: 'Invalid credentials' }, securityHeaders, 401);
         }
         if (row.totp_enabled && row.totp_secret) {
@@ -245,7 +272,7 @@ export default {
           }
         }
         await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = null, last_login = ? WHERE username = ?').bind(Date.now(), username).run();
-        const jwt = createJWT({ username: row.username, role: row.role });
+        const jwt = createJWT({ username: row.username, role: row.role, sv: row.session_version || 0 });
         await auditLog(db, username, 'LOGIN_SUCCESS', 'auth', 'Login successful' + (row.totp_enabled ? ' (2FA)' : ''), clientIP);
         return jsonResponse({ token: jwt, username: row.username, role: row.role, totpEnabled: !!row.totp_enabled }, securityHeaders);
       }
@@ -280,7 +307,7 @@ export default {
         }
         const newSalt = crypto.randomUUID();
         const newHash = await hashPassword(newPassword, newSalt);
-        await db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE username = ?').bind(newHash, newSalt, user.username).run();
+        await db.prepare('UPDATE users SET password_hash = ?, salt = ?, session_version = COALESCE(session_version, 0) + 1 WHERE username = ?').bind(newHash, newSalt, user.username).run();
         await auditLog(db, user.username, 'PASSWORD_CHANGED', 'auth', 'Password changed successfully', clientIP);
         return jsonResponse({ ok: true }, securityHeaders);
       }
@@ -318,8 +345,8 @@ export default {
 
       if (path === '/api/auth/me' && method === 'GET') {
         if (!user) return jsonResponse({ error: 'Not authenticated' }, securityHeaders, 401);
-        const row = await db.prepare('SELECT username, role, totp_enabled FROM users WHERE username = ?').bind(user.username).first();
-        return jsonResponse({ username: row.username, role: row.role, totpEnabled: !!row.totp_enabled }, securityHeaders);
+        const row = await db.prepare('SELECT username, role, totp_enabled, session_version FROM users WHERE username = ?').bind(user.username).first();
+        return jsonResponse({ username: row.username, role: row.role, totpEnabled: !!row.totp_enabled, sessionVersion: row.session_version || 0 }, securityHeaders);
       }
 
       if (path === '/api/audit-log' && method === 'GET') {
@@ -330,7 +357,7 @@ export default {
         return jsonResponse({ logs: rows.results }, securityHeaders);
       }
 
-      // === BACKUP ENDPOINT ===
+      // === BACKUP ENDPOINTS ===
       if (path === '/api/backup' && method === 'POST') {
         if (!user || !hasPermission(user.role, 'manage_users')) return jsonResponse({ error: 'Admin access required' }, securityHeaders, 403);
         const backupKey = await createBackup(db);
@@ -345,6 +372,21 @@ export default {
         if (!user || !hasPermission(user.role, 'manage_users')) return jsonResponse({ error: 'Admin access required' }, securityHeaders, 403);
         const rows = await db.prepare('SELECT key, ts FROM backups ORDER BY ts DESC').all();
         return jsonResponse({ backups: rows.results }, securityHeaders);
+      }
+
+      if (path === '/api/backup/restore' && method === 'POST') {
+        if (!user || !hasPermission(user.role, 'manage_users')) return jsonResponse({ error: 'Admin access required' }, securityHeaders, 403);
+        const body = await request.json();
+        const { backupKey } = body;
+        const backup = await db.prepare('SELECT data FROM backups WHERE key = ?').bind(backupKey).first();
+        if (!backup) return jsonResponse({ error: 'Backup not found' }, securityHeaders, 404);
+        const backupData = JSON.parse(backup.data);
+        // Restore all keys
+        for (const [key, val] of Object.entries(backupData.data)) {
+          await db.prepare('INSERT OR REPLACE INTO store (key, value, ts) VALUES (?, ?, ?)').bind(key, val.value, val.ts).run();
+        }
+        await auditLog(db, user.username, 'BACKUP_RESTORED', 'backup', 'Restored from: ' + backupKey, clientIP);
+        return jsonResponse({ ok: true, restored: Object.keys(backupData.data).length }, securityHeaders);
       }
 
       // === DATA ENDPOINTS ===
@@ -388,6 +430,19 @@ export default {
       return jsonResponse({ error: 'Not found' }, securityHeaders, 404);
     } catch (e) {
       return jsonResponse({ error: e.message }, securityHeaders, 500);
+    }
+  },
+
+  // Scheduled handler for automated backups (cron trigger)
+  async scheduled(event, env) {
+    try {
+      const db = env.DB;
+      const backupKey = await createBackup(db);
+      if (backupKey) {
+        console.log('Scheduled backup created:', backupKey);
+      }
+    } catch (e) {
+      console.error('Scheduled backup error:', e.message);
     }
   }
 };
