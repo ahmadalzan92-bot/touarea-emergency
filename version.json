@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.100",
+  "version": "2026.10.09.101",
   "released": "2026-11-02",
-  "notes": "تحسين أمني احترافي: CSP meta tag، SRI-ready، API key authentication (X-API-Key)، security headers (HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) في Cloudflare Worker."
+  "notes": "Phase 1 Security: Server-side authentication (JWT), password hashing (PBKDF2), login modal, session management, 401 handler, audit logging endpoints."
 }

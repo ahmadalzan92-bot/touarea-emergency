@@ -3501,8 +3501,18 @@
     }
     async function cloudReq(path, opts){
       opts = opts || {};
+      var _tok = sessionStorage.getItem('gov_auth_token') || '';
       opts.headers = Object.assign({'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}, opts.headers || {});
+      if(_tok) opts.headers['Authorization'] = 'Bearer ' + _tok;
       const res = await fetch(CLOUD_API_BASE + path, opts);
+      if(res.status === 401){
+        sessionStorage.removeItem('gov_auth_token');
+        sessionStorage.removeItem('gov_auth_user');
+        sessionStorage.removeItem('gov_auth_role');
+        var m = document.getElementById('govLoginModal'); if(m) m.style.display = 'flex';
+        var msg = document.getElementById('govLoginMsg'); if(msg){msg.textContent='انتهت جلسة العمل. يرجى تسجيل الدخول مجدداً.';msg.style.display='block';}
+        throw new Error('Unauthorized');
+      }
       if(!res.ok) throw new Error('cloud request failed: ' + path + ' ' + res.status);
       return res.json();
     }
@@ -11251,5 +11261,76 @@ function hqDownloadXlsxWithImages(baseBytes, filename){
 }
 
 </script>
+
+<!-- ======================== Login Modal (Government Security) ======================== -->
+<div id="govLoginModal" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0f2c52,#1a3a6b);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'Cairo',Tahoma,sans-serif">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:32px 28px;box-shadow:0 24px 60px rgba(0,0,0,.4);text-align:center">
+    <img src="logo-web.png" alt="شعار الوزارة" style="width:72px;height:72px;border-radius:50%;background:#f1f5f9;padding:4px;margin-bottom:12px">
+    <h2 style="font-size:1.15rem;font-weight:800;color:#0f2c52;margin-bottom:4px">المملكة الأردنية الهاشمية</h2>
+    <h3 style="font-size:1rem;font-weight:700;color:#1a3a6b;margin-bottom:2px">وزارة الأشغال العامة والإسكان</h3>
+    <p style="font-size:.85rem;color:#64748b;margin-bottom:20px">مديرية الطوارئ — نظام إدارة بلاغات الحوادث</p>
+    <div id="govLoginMsg" style="background:#fef2f2;color:#b91c1c;padding:8px 12px;border-radius:8px;font-size:.82rem;margin-bottom:14px;display:none"></div>
+    <div style="text-align:right;margin-bottom:12px">
+      <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">اسم المستخدم</label>
+      <input type="text" id="govLoginUser" class="form-control" placeholder="أدخل اسم المستخدم" style="border-radius:8px;padding:10px 12px" autocomplete="username">
+    </div>
+    <div style="text-align:right;margin-bottom:18px">
+      <label style="font-size:.82rem;font-weight:700;color:#334155;display:block;margin-bottom:4px">كلمة المرور</label>
+      <input type="password" id="govLoginPass" class="form-control" placeholder="أدخل كلمة المرور" style="border-radius:8px;padding:10px 12px" autocomplete="current-password">
+    </div>
+    <button type="button" class="btn btn-primary w-100 fw-bold" style="border-radius:8px;padding:10px" onclick="govLogin()"><i class="fas fa-key"></i> دخول</button>
+    <p style="font-size:.72rem;color:#94a3b8;margin-top:16px;margin-bottom:0"><i class="fas fa-shield-halved"></i> نظام آمن — جميع العمليات مسجّلة (Audit Log)</p>
+  </div>
+</div>
+
+
+<script>
+// ======================== Government Authentication (Phase 1) ========================
+function govLogin(){
+  var u=(document.getElementById('govLoginUser')||{}).value||'';
+  var p=(document.getElementById('govLoginPass')||{}).value||'';
+  var msg=document.getElementById('govLoginMsg');
+  if(!u||!p){ if(msg){msg.textContent='أدخل اسم المستخدم وكلمة المرور.';msg.style.display='block';} return; }
+  fetch(CLOUD_API_BASE+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})
+    .then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});})
+    .then(function(res){
+      if(!res.ok){ if(msg){msg.textContent=res.data.error||'بيانات الدخول غير صحيحة.';msg.style.display='block';} return; }
+      sessionStorage.setItem('gov_auth_token', res.data.token);
+      sessionStorage.setItem('gov_auth_user', res.data.username);
+      sessionStorage.setItem('gov_auth_role', res.data.role);
+      var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
+      showAlert('مرحباً '+res.data.username+' — تم تسجيل الدخول بنجاح.','success');
+      // Reload data
+      if(typeof cloudPullAll==='function') cloudPullAll();
+    })
+    .catch(function(e){ if(msg){msg.textContent='تعذّر الاتصال بالخادم: '+e.message;msg.style.display='block';} });
+}
+function govLogout(){
+  sessionStorage.removeItem('gov_auth_token');
+  sessionStorage.removeItem('gov_auth_user');
+  sessionStorage.removeItem('gov_auth_role');
+  location.reload();
+}
+function govIsAuth(){ return !!sessionStorage.getItem('gov_auth_token'); }
+function govGetUser(){ return sessionStorage.getItem('gov_auth_user')||''; }
+function govGetRole(){ return sessionStorage.getItem('gov_auth_role')||'viewer'; }
+// Check auth on page load
+document.addEventListener('DOMContentLoaded', function(){
+  if(!govIsAuth()){
+    var m=document.getElementById('govLoginModal'); if(m) m.style.display='flex';
+  } else {
+    var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
+  }
+});
+// Enter key on password field
+document.addEventListener('keydown', function(e){
+  var m=document.getElementById('govLoginModal');
+  if(m && m.style.display!=='none' && e.key==='Enter'){
+    var u=document.getElementById('govLoginUser'), p=document.getElementById('govLoginPass');
+    if(document.activeElement===p || document.activeElement===u) govLogin();
+  }
+});
+</script>
+
 </body>
 </html>
