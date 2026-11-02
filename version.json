@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.94",
+  "version": "2026.10.09.95",
   "released": "2026-11-02",
-  "notes": "إصلاح writer ZIP: offset محلي يُكتب في موضع 42 (وليس 40) في central directory. إصدار 2026.10.09.94."
+  "notes": "تصدير NRP Excel بصيغة .xlsx (row-per-staff layout مع merged cells) — صور 64×48 في خلية الصورة، إحداثيات في عمود موقع البلاغ."
 }
