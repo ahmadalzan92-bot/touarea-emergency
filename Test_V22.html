@@ -2,6 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://touarea-api.ahmadalzan92.workers.dev https://fonts.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>نظام إدارة بلاغات الحوادث - محافظة مأدبا</title>
 
@@ -3499,6 +3500,8 @@
       b.querySelector('span:last-child').textContent = _cloudOnline ? 'متصل بالسحابة ☁️' : 'غير متصل ⚠️';
     }
     async function cloudReq(path, opts){
+      opts = opts || {};
+      opts.headers = Object.assign({'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}, opts.headers || {});
       const res = await fetch(CLOUD_API_BASE + path, opts);
       if(!res.ok) throw new Error('cloud request failed: ' + path + ' ' + res.status);
       return res.json();
@@ -3509,7 +3512,7 @@
       if(text === undefined) return false;
       await cloudReq('/api/key/' + encodeURIComponent(fullKey), {
         method:'PUT',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json','X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'},
         body: JSON.stringify({ value: text })
       });
       return true;

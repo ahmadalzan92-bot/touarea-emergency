@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.99",
+  "version": "2026.10.09.100",
   "released": "2026-11-02",
-  "notes": "إضافة dropdown (منجز/مؤجل/قيد التنفيذ/جديد) لخانة البحث عند اختيار «حالة البلاغ» كحقل بحث في صفحة المركز (HQ)."
+  "notes": "تحسين أمني احترافي: CSP meta tag، SRI-ready، API key authentication (X-API-Key)، security headers (HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy) في Cloudflare Worker."
 }
