@@ -3296,7 +3296,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.111';
+    const APP_VERSION = '2026.10.09.112';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3867,9 +3867,11 @@
         '<button type="button" class="btn btn-lg btn-warning w-100 fw-bold" onclick="enterDirectorate(\''+lk.key+'\')"><i class="fas fa-forward"></i> متابعة مع '+lk.short+'</button>':'';
     }
     function openHome(){
+      if(window._autoEnterTimer){ clearTimeout(window._autoEnterTimer); window._autoEnterTimer=null; }
       ACTIVE_DIR=DIRECTORATES.find(d=>d.key===(localStorage.getItem(DIR_STORAGE)||ACTIVE_DIR.key||'madaba'))||DIRECTORATES[2];
       buildHomeGrid();
-      const hs=document.getElementById('homeScreen'); if(hs) hs.style.display='block';
+      ['homeScreen','centralScreen'].forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=(id==='homeScreen'?'block':'none'); });
+      var hq=document.getElementById('hqScreen'); if(hq) hq.style.display='none';
     }
     const DEFAULT_PW_SUFFIX='@123456789';
     function defaultDirPass(d){ return ((d&&d.code)||'').toUpperCase() + DEFAULT_PW_SUFFIX; }
@@ -3931,6 +3933,7 @@
     }
     let CENTRAL_UNLOCKED=false;
     function enterDirectorate(key){
+  if(window._autoEnterTimer){ clearTimeout(window._autoEnterTimer); window._autoEnterTimer=null; }
   if(govIsAuth()){
     selectDirectorate(key);
     return;
@@ -4056,6 +4059,7 @@
       setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
     }
     function enterDirectorate(key){
+  if(window._autoEnterTimer){ clearTimeout(window._autoEnterTimer); window._autoEnterTimer=null; }
   if(govIsAuth()){
     selectDirectorate(key);
     return;
@@ -4098,7 +4102,8 @@
       // Auto-enter if user has a single governorate
       if(govIsAuth() && govGetGovernorate() && govGetGovernorate()!=='all' && govGetRole()!=='admin'){
         var gk = govGetGovernorate();
-        setTimeout(function(){ try{ enterDirectorate(gk); }catch(e){} }, 300);
+        if(window._autoEnterTimer) clearTimeout(window._autoEnterTimer);
+        window._autoEnterTimer = setTimeout(function(){ try{ enterDirectorate(gk); }catch(e){} window._autoEnterTimer=null; }, 1500);
       }
       if(cloudAvailable()){
         cloudPullAll().then(doBoot).catch(doBoot);

@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.111",
+  "version": "2026.10.09.112",
   "released": "2026-11-02",
-  "notes": "Option A (SSO) complete + disable non-assigned directorate cards for non-admin users. Admin sees all cards enabled. Staff/Viewer see only their governorate card enabled, others faded/disabled."
+  "notes": "Fix: \"change directorate\" button now properly returns to card screen (clear auto-enter timer). Auto-enter delay increased to 1.5s. Timer cleared on enterDirectorate and openHome."
 }
