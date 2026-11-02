@@ -3276,7 +3276,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.89';
+    const APP_VERSION = '2026.10.09.90';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -9404,39 +9404,64 @@ function nrpRow(r,i){
 function nrpDutyInfo(rs){ var inH=0,outH=0; rs.forEach(function(r){var d=nrpDuty(r);inH+=d.inH||0;outH+=d.outH||0;}); return {inH:roundH(inH),outH:roundH(outH)}; }
 
 function nrpTableHTML(rs){
-  var rows=rs.map(function(r,i){
-    var v=nrpRow(r,i), ph=nrpPhotos(r);
+  var rowsHtml = '';
+  var idx = 0;
+  (rs||[]).forEach(function(r){
+    var v = nrpRow(r, idx);
+    var ph = nrpPhotos(r);
     var photoCell = ph.length&&(ph[0]&&ph[0].data)?('<img class="nrp-photo" src="'+nrpThumb(ph[0].data)+'" alt="صورة البلاغ">') : (ph.length?(ph.length+' صورة'):'');
-    return '<tr>'
-      +'<td>'+(i+1)+'</td>'
-      +'<td>'+esc(v[1])+'</td>'
-      +'<td>'+esc(v[2])+'</td>'
-      +'<td>'+esc(v[3])+'</td>'
-      +'<td>'+esc(v[4])+'</td>'
-      +'<td class="nrp-l">'+escBr(v[5])+'</td>'
-      +'<td class="nrp-l">'+escBr(v[6])+'</td>'
-      +'<td>'+esc(v[7])+'</td>'
-      +'<td class="nrp-l">'+escBr(v[8])+'</td>'
-      +'<td class="nrp-l">'+escBr(v[9])+'</td>'
-      +'<td class="nrp-l">'+escBr(v[10])+'</td>'
-      +'<td>'+escBr(v[11])+'</td>'
-      +'<td>'+escBr(v[12])+'</td>'
-      +'<td>'+escBr(v[13])+'</td>'
-      +'<td>'+escBr(v[14])+'</td>'
-      +'<td>'+escBr(v[15])+'</td>'
-      +'<td>'+esc(v[16])+'</td>'
-      +'<td>'+escBr(v[17])+'</td>'
-      +'<td>'+escBr(v[18])+'</td>'
-      +'<td>'+esc(v[19])+'</td>'
-      +'<td>'+esc(v[20])+'</td>'
-      +'<td>'+esc(v[21])+'</td>'
-      +'<td>'+photoCell+'</td>'
-      +'</tr>';
-  }).join('')||'<tr><td colspan="23" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
-  var head='<thead><tr>'
+    var staff = (r.staff||[]);
+    var seen = {}, uniq = [];
+    staff.forEach(function(s){
+      var C = staffCanonical(s);
+      var k = C.number ? ('N:'+C.number) : ('M:'+normalizeArabic(C.name||''));
+      if(seen[k]) return; seen[k]=1; uniq.push({s:s,C:C});
+    });
+    if(!uniq.length) uniq = [{s:null,C:{name:'',number:'',title:''}}];
+    var n = uniq.length;
+    var merged = function(content, cls){
+      return '<td'+(cls?' class="'+cls+'"':'')+' rowspan="'+n+'" style="vertical-align:middle">'+content+'</td>';
+    };
+    uniq.forEach(function(u, ui){
+      rowsHtml += '<tr>';
+      if(ui===0){
+        rowsHtml += merged(idx+1);
+        rowsHtml += merged(esc(v[1]));
+        rowsHtml += merged(esc(v[2]));
+        rowsHtml += merged(esc(v[3]));
+        rowsHtml += merged(esc(v[4]));
+        rowsHtml += merged(escBr(v[5]),'nrp-l');
+        rowsHtml += merged(escBr(v[6]),'nrp-l');
+        rowsHtml += merged(esc(v[7]));
+      }
+      var nameTxt = u.s ? (esc(staffCanonical(u.s).name||'')+(staffCanonical(u.s).title?(' / '+esc(staffCanonical(u.s).title)):'')) : '';
+      var numTxt = u.s ? esc(staffCanonical(u.s).number||'') : '';
+      rowsHtml += '<td class="nrp-l">'+nameTxt+'</td>';
+      rowsHtml += '<td class="nrp-l">'+numTxt+'</td>';
+      if(ui===0){
+        rowsHtml += merged(escBr(v[10]),'nrp-l');
+        rowsHtml += merged(escBr(v[11]));
+        rowsHtml += merged(escBr(v[12]));
+        rowsHtml += merged(escBr(v[13]));
+        rowsHtml += merged(escBr(v[14]));
+        rowsHtml += merged(esc(v[15]));
+        rowsHtml += merged(escBr(v[16]));
+        rowsHtml += merged(escBr(v[17]));
+        rowsHtml += merged(esc(v[18]));
+        rowsHtml += merged(esc(v[19]));
+        rowsHtml += merged(esc(v[20]));
+        rowsHtml += merged(escBr(v[21]));
+        rowsHtml += merged(photoCell);
+      }
+      rowsHtml += '</tr>';
+    });
+    idx++;
+  });
+  if(!rowsHtml) rowsHtml = '<tr><td colspan="23" style="color:#888">لا توجد بلاغات ضمن الفترة المحددة</td></tr>';
+  var head = '<thead><tr>'
     +'<th rowspan="2">الرقم</th><th rowspan="2">اليوم</th><th rowspan="2">التاريخ</th><th rowspan="2">المحافظة</th>'
     +'<th rowspan="2">رقم البلاغ</th><th rowspan="2" style="width:8%">نوع البلاغ</th><th rowspan="2" style="width:13%">الإجراء المتخذ</th><th rowspan="2">رقم الفرقة</th>'
-    +'<th rowspan="2" style="width:16%">أسماء العاملين في الفرقة مع بيان الوظيفة<br><small>(مهندس/ مراقب/ سائق/ سائق الية...الخ)</small></th>'
+    +'<th rowspan="2" style="width:16%">أسماء العاملين في الفرقة<br><small>(مهندس/ مراقب/ سائق/ سائق آلية...الخ)</small></th>'
     +'<th rowspan="2" style="width:11%">الرقم الوظيفي</th>'
     +'<th colspan="3">الآليات المستخدمة</th>'
     +'<th colspan="3">خلال أوقات العمل</th>'
@@ -9449,14 +9474,14 @@ function nrpTableHTML(rs){
     +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
     +'<th>وقت البدء</th><th>وقت الانتهاء</th><th>مدة العمل الكلي</th>'
     +'</tr></thead>';
-  var sign='<table class="nrp-sign"><tr>'
+  var sign = '<table class="nrp-sign"><tr>'
     +'<td><div class="nrp-sig-title">مدير مديرية الأشغال</div>'+(_nrpSignImg?('<img src="'+_nrpSignImg+'" alt="التوقيع">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr1Val())+'</div></td>'
     +'<td><div class="nrp-sig-title">مدير مديرية الطوارئ</div>'+(_nrpStampImg?('<img src="'+_nrpStampImg+'" alt="الختم">'):'<div class="nrp-line"></div>')+'<div>'+esc(nrpMgr2Val())+'</div></td>'
     +'</tr></table>';
-  var credit='<div class="nrp-credit">تقرير البلاغات ضمن مناطق الاختصاص — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ'+(ACTIVE_DIR.short?(' • '+esc(ACTIVE_DIR.short)):'')+'</div>';
-  return '<div class="nrp"><table class="nrp-main">'+head+'<tbody>'+rows+'</tbody></table>'+sign+credit+'</div>';
+  var credit = '<div class="nrp-credit">تقرير البلاغات ضمن مناطق الاختصاص — إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ'+(ACTIVE_DIR.short?(' • '+esc(ACTIVE_DIR.short)):'')+'</div>';
+  return '<div class="nrp"><table class="nrp-main">'+head+'<tbody>'+rowsHtml+'</tbody></table>'+sign+credit+'</div>';
 }
-// --- تفصيل الأعمدة للتقرير الرسمي (مطابق لأعمدة معاينة النموذج) ---
+
 function nrpDetailBlocks(O){
   O=O||{};
   var b=[];
