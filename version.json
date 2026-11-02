@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.88",
+  "version": "2026.10.09.89",
   "released": "2026-11-02",
-  "notes": "إعادة كتابة writer ZIP (entries.forEach with Map) لضمان offsets صحيحة وفتح ملف Excel في Excel/openpyxl."
+  "notes": "تصدير Excel لصفحة المركز (HQ) بصيغة HTML-XLS مع عرض الصور 64×48 داخل الخلايا (Excel يفتحها ويعرض الصور)، وإزالة نص «صورة» من خلية الصورة."
 }
