@@ -3438,7 +3438,7 @@
           _autoRefreshBusy = false;
           if(_autoRefreshQueued){ _autoRefreshQueued=false; scheduleAutoRefresh(); }
         }
-      }, 350);
+      }, 800);
     }
     try{ window.addEventListener('storage', function(e){ if(e && e.key && isAutoRefreshKey(e.key)) scheduleAutoRefresh(); }); }catch(e){}
     function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } if(key===LS_KEYS.reports && Array.isArray(val)) reportTombRemove(val.map(r=>r&&r.id), dirKeyOf()); cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
@@ -3679,7 +3679,7 @@
       if(cloudPollTimerReady()) return;
       if(!cloudAvailable()) return;
       cloudPullAll();
-      _cloudPollTimer = setInterval(cloudPullAll, 15000);
+      _cloudPollTimer = setInterval(cloudPullAll, 60000);
       window.addEventListener('beforeunload', ()=>{ if(_cloudPollTimer) clearInterval(_cloudPollTimer); });
     }
     function cloudPollTimerReady(){ return _cloudPollTimer !== null && _cloudPollTimer !== undefined; }
