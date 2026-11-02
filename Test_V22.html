@@ -1308,6 +1308,11 @@
       <div class="home-grid" id="homeGrid"></div>
       <div style="text-align:center"><span class="home-admin" onclick="openAdmin()"><i class="fas fa-user-shield"></i> التحكم الرئيسي — إعادة ضبط كلمات المرور</span></div>
       <div class="home-foot">إعداد وتصميم م. أحمد الزن — نظام إدارة بلاغات الطوارئ 2025-2026</div>
+  <div style="text-align:center;margin-top:8px;font-size:.8rem;color:#64748b">
+    <span id="govUserInfo"></span>
+    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="govLogout()" style="font-size:.75rem"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
+    <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="govShowAuditLog()" id="govAuditBtn" style="font-size:.75rem;display:none"><i class="fas fa-clipboard-list"></i> سجل التدقيق</button>
+  </div>
     </div>
   </div>
   <div id="passModal">
@@ -11299,12 +11304,44 @@ function govLogin(){
       sessionStorage.setItem('gov_auth_user', res.data.username);
       sessionStorage.setItem('gov_auth_role', res.data.role);
       var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
+      var ui=document.getElementById('govUserInfo'); if(ui) ui.innerHTML='<i class="fas fa-user-shield"></i> '+res.data.username+' ('+res.data.role+')';
+      var ab=document.getElementById('govAuditBtn'); if(ab && res.data.role==='admin') ab.style.display='';
       showAlert('مرحباً '+res.data.username+' — تم تسجيل الدخول بنجاح.','success');
       // Reload data
       if(typeof cloudPullAll==='function') cloudPullAll();
     })
     .catch(function(e){ if(msg){msg.textContent='تعذّر الاتصال بالخادم: '+e.message;msg.style.display='block';} });
 }
+
+function govCloseAuditModal(){ var m=document.getElementById('govAuditModal'); if(m) m.style.display='none'; }
+function govShowAuditLog(){
+  if(govGetRole()!=='admin'){ showAlert('صلاحيات المدير مطلوبة.','warning'); return; }
+  var modal = document.getElementById('govAuditModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'govAuditModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:95vw;max-width:900px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden"><div style="background:#0f2c52;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><b><i class="fas fa-clipboard-list"></i> سجل التدقيق (Audit Log)</b><button class="btn btn-sm btn-light" onclick="govCloseAuditModal()">إغلاق</button></div><div style="padding:12px;overflow:auto;flex:1"><div id="govAuditContent">جارٍ التحميل...</div></div></div>';
+    modal.addEventListener('click', function(ev){ if(ev.target===modal) modal.style.display='none'; });
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  var content = document.getElementById('govAuditContent');
+  if(content) content.innerHTML = 'جارٍ التحميل...';
+  fetch(CLOUD_API_BASE+'/api/audit-log?limit=100', {headers:{'Authorization':'Bearer '+(sessionStorage.getItem('gov_auth_token')||''),'X-API-Key':'TOUAREA-GOV-2026-SECURE-KEY'}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.logs || !d.logs.length){ content.innerHTML = '<p class="text-muted text-center">لا توجد سجلات تدقيق.</p>'; return; }
+      var html = '<table class="table table-sm table-bordered" style="font-size:.8rem"><thead class="table-light"><tr><th>المستخدم</th><th>الإجراء</th><th>الهدف</th><th>التفاصيل</th><th>IP</th><th>الوقت</th></tr></thead><tbody>';
+      d.logs.forEach(function(l){
+        html += '<tr><td>'+esc(l.user)+'</td><td><span class="badge bg-info">'+esc(l.action)+'</span></td><td>'+esc(l.target)+'</td><td class="small">'+esc(l.details)+'</td><td class="small">'+esc(l.ip)+'</td><td class="small">'+new Date(l.ts).toLocaleString('ar-JO')+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      content.innerHTML = html;
+    })
+    .catch(function(e){ content.innerHTML = '<p class="text-danger">تعذّر تحميل سجل التدقيق: '+esc(e.message)+'</p>'; });
+}
+
 function govLogout(){
   sessionStorage.removeItem('gov_auth_token');
   sessionStorage.removeItem('gov_auth_user');
@@ -11320,6 +11357,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='flex';
   } else {
     var m=document.getElementById('govLoginModal'); if(m) m.style.display='none';
+    var ui=document.getElementById('govUserInfo'); var un=sessionStorage.getItem('gov_auth_user')||''; var rl=sessionStorage.getItem('gov_auth_role')||''; if(ui && un) ui.innerHTML='<i class="fas fa-user-shield"></i> '+un+' ('+rl+')';
+    var ab=document.getElementById('govAuditBtn'); if(ab && rl==='admin') ab.style.display='';
   }
 });
 // Enter key on password field

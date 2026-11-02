@@ -1,5 +1,5 @@
 {
-  "version": "2026.10.09.101",
+  "version": "2026.10.09.103",
   "released": "2026-11-02",
-  "notes": "Phase 1 Security: Server-side authentication (JWT), password hashing (PBKDF2), login modal, session management, 401 handler, audit logging endpoints."
+  "notes": "Phase 2 Security (fixed): RBAC، Rate Limiting، Input Validation، Audit Log viewer (admin only)، User info display، Logout button. Fix: onclick quote escaping in govShowAuditLog."
 }
