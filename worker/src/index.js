@@ -152,6 +152,9 @@ async function auditLog(db, user, action, target, details, ip) {
     await db.prepare('INSERT INTO audit_log (user, action, target, details, ip, ts) VALUES (?, ?, ?, ?, ?, ?)').bind(
       user || 'anonymous', action, target || '', details || '', ip || '', Date.now()
     ).run();
+    if (Math.random() < 0.05) {
+      await db.prepare('DELETE FROM audit_log WHERE id NOT IN (SELECT id FROM audit_log ORDER BY ts DESC LIMIT 1500)').run();
+    }
   } catch (e) { console.error('Audit log error:', e.message); }
 }
 
@@ -177,7 +180,7 @@ async function createBackup(db) {
     for (const r of rows.results) backup.data[r.key] = { value: r.value, ts: r.ts };
     const backupKey = 'backup_' + Date.now();
     await db.prepare('INSERT INTO backups (key, data, ts) VALUES (?, ?, ?)').bind(backupKey, JSON.stringify(backup), Date.now()).run();
-    await db.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY ts DESC LIMIT 30)').run();
+    await db.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY ts DESC LIMIT 5)').run();
     return backupKey;
   } catch (e) {
     console.error('Backup error:', e.message);
@@ -224,15 +227,17 @@ export default {
     const token = authHeader.replace('Bearer ', '');
     const user = token ? verifyJWT(token) : null;
 
+
     try {
       const db = env.DB;
+
 
       // === AUTH ENDPOINTS ===
       if (path === '/api/auth/login' && method === 'POST') {
         const body = await request.json();
         const { username, password, totpCode } = body;
         if (!username || !password) return jsonResponse({ error: 'Username and password required' }, securityHeaders, 400);
-        const row = await db.prepare('SELECT username, password_hash, salt, role, failed_attempts, locked_until, totp_secret, totp_enabled, session_version FROM users WHERE username = ?').bind(username).first();
+        const row = await db.prepare('SELECT username, password_hash, salt, role, failed_attempts, locked_until, totp_secret, totp_enabled, session_version, governorate FROM users WHERE username = ?').bind(username).first();
         if (!row) {
           await auditLog(db, username, 'LOGIN_FAILED', 'auth', 'User not found', clientIP);
           await securityMonitor(db, username, 'LOGIN_FAILED', clientIP);
@@ -262,13 +267,13 @@ export default {
         await db.prepare('UPDATE users SET failed_attempts = 0, locked_until = null, last_login = ? WHERE username = ?').bind(Date.now(), username).run();
         const jwt = createJWT({ username: row.username, role: row.role, sv: row.session_version || 0 });
         await auditLog(db, username, 'LOGIN_SUCCESS', 'auth', 'Login successful' + (row.totp_enabled ? ' (2FA)' : ''), clientIP);
-        return jsonResponse({ token: jwt, username: row.username, role: row.role, totpEnabled: !!row.totp_enabled, sessionVersion: row.session_version || 0 }, securityHeaders);
+        return jsonResponse({ token: jwt, username: row.username, role: row.role, totpEnabled: !!row.totp_enabled, sessionVersion: row.session_version || 0, governorate: row.governorate || '' }, securityHeaders);
       }
 
       if (path === '/api/auth/register' && method === 'POST') {
         if (!user || !hasPermission(user.role, 'manage_users')) return jsonResponse({ error: 'Admin access required' }, securityHeaders, 403);
         const body = await request.json();
-        const { username, password, role } = body;
+        const { username, password, role, governorate } = body;
         if (!username || !password) return jsonResponse({ error: 'Username and password required' }, securityHeaders, 400);
         if (username.length < 3 || username.length > 50) return jsonResponse({ error: 'Username must be 3-50 characters' }, securityHeaders, 400);
         if (password.length < 8) return jsonResponse({ error: 'Password must be at least 8 characters' }, securityHeaders, 400);
@@ -276,8 +281,8 @@ export default {
         if (existing) return jsonResponse({ error: 'User already exists' }, securityHeaders, 409);
         const salt = crypto.randomUUID();
         const hash = await hashPassword(password, salt);
-        await db.prepare('INSERT INTO users (username, password_hash, salt, role, created_at) VALUES (?, ?, ?, ?, ?)').bind(username, hash, salt, role || 'viewer', Date.now()).run();
-        await auditLog(db, user.username, 'USER_CREATED', 'users', 'Created user: ' + username + ' role: ' + (role || 'viewer'), clientIP);
+        await db.prepare('INSERT INTO users (username, password_hash, salt, role, governorate, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(username, hash, salt, role || 'viewer', governorate || '', Date.now()).run();
+        await auditLog(db, user.username, 'USER_CREATED', 'users', 'Created user: ' + username + ' role: ' + (role || 'viewer') + ' gov: ' + (governorate || 'all'), clientIP);
         return jsonResponse({ ok: true, username, role: role || 'viewer' }, securityHeaders);
       }
 
@@ -383,6 +388,39 @@ export default {
         return jsonResponse({ alerts: rows.results }, securityHeaders);
       }
 
+      // === STORAGE STATS ENDPOINT ===
+      if (path === '/api/storage-stats' && method === 'GET') {
+        const storeRows = await db.prepare('SELECT key, OCTET_LENGTH(value) as bytes, ts FROM store ORDER BY bytes DESC').all();
+        const backupStat = await db.prepare('SELECT COUNT(*) as cnt, COALESCE(SUM(OCTET_LENGTH(data)),0) as bytes FROM backups').first();
+        const auditStat = await db.prepare('SELECT COUNT(*) as cnt, COALESCE(SUM(OCTET_LENGTH(user)+OCTET_LENGTH(action)+COALESCE(OCTET_LENGTH(target),0)+COALESCE(OCTET_LENGTH(details),0)),0) as bytes FROM audit_log').first();
+        let storeBytes = 0;
+        const items = (storeRows.results || []).map(r => {
+          storeBytes += (r.bytes || 0);
+          return { key: r.key, bytes: r.bytes || 0, ts: r.ts };
+        });
+        const backupsBytes = (backupStat && backupStat.bytes) || 0;
+        const auditBytes = (auditStat && auditStat.bytes) || 0;
+        const totalUsedBytes = storeBytes + backupsBytes + auditBytes;
+        const limitBytes = 500 * 1024 * 1024; // 500 MB D1 limit
+        return jsonResponse({
+          limitBytes,
+          totalUsedBytes,
+          storeBytes,
+          backupsBytes,
+          backupsCount: (backupStat && backupStat.cnt) || 0,
+          auditBytes,
+          auditCount: (auditStat && auditStat.cnt) || 0,
+          items
+        }, securityHeaders);
+      }
+
+      if (path === '/api/storage-cleanup' && method === 'POST') {
+        if (!user || !hasPermission(user.role, 'manage_users')) return jsonResponse({ error: 'Admin access required' }, securityHeaders, 403);
+        await db.prepare('DELETE FROM audit_log WHERE id NOT IN (SELECT id FROM audit_log ORDER BY ts DESC LIMIT 500)').run();
+        await db.prepare('DELETE FROM backups WHERE id NOT IN (SELECT id FROM backups ORDER BY ts DESC LIMIT 2)').run();
+        return jsonResponse({ ok: true }, securityHeaders);
+      }
+
       // === DATA ENDPOINTS ===
       if (path === '/api/all' && method === 'GET') {
         const rows = await db.prepare('SELECT key, value, ts FROM store').all();
@@ -421,11 +459,9 @@ export default {
         const body = await request.json();
         const value = typeof body.value === 'string' ? body.value : JSON.stringify(body.value);
         if (!validateValue(value)) return jsonResponse({ error: 'Invalid value' }, securityHeaders, 400);
-        // Encrypt sensitive data before storing
-        const encryptedValue = await encryptData(value);
-        await db.prepare('INSERT OR REPLACE INTO store (key, value, ts) VALUES (?, ?, ?)').bind(key, encryptedValue, Date.now()).run();
-        await auditLog(db, user.username, 'DATA_UPDATE', key, 'Updated ' + key, clientIP);
-        await securityMonitor(db, user.username, 'DATA_UPDATE', clientIP);
+        // Store UTF-8 JSON directly to avoid 33% Base64 inflation and V8 stack overflow on multi-MB keys
+        await db.prepare('INSERT OR REPLACE INTO store (key, value, ts) VALUES (?, ?, ?)').bind(key, value, Date.now()).run();
+        await auditLog(db, user.username, 'DATA_UPDATE', key, 'Updated ' + key + ' (' + Math.round(value.length / 1024) + ' KB)', clientIP);
         return jsonResponse({ ok: true }, securityHeaders);
       }
 

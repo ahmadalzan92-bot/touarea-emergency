@@ -1317,6 +1317,7 @@
   </div>
   <div style="text-align:center;margin-top:8px;font-size:.8rem;color:#64748b">
     <span id="govUserInfo"></span>
+    <button type="button" class="btn btn-sm btn-outline-success ms-2" onclick="govShowStorageManager()" style="font-size:.75rem"><i class="fas fa-hdd"></i> المساحة والتخزين</button>
     <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="govLogout()" style="font-size:.75rem"><i class="fas fa-sign-out-alt"></i> تسجيل خروج</button>
     <button type="button" class="btn btn-sm btn-outline-info ms-2" onclick="govShowAuditLog()" id="govAuditBtn" style="font-size:.75rem;display:none"><i class="fas fa-clipboard-list"></i> سجل التدقيق</button>
     <button type="button" class="btn btn-sm btn-outline-warning ms-2" onclick="govShowSecurityAlerts()" id="govAlertsBtn" style="font-size:.75rem;display:none"><i class="fas fa-exclamation-triangle"></i> تنبيهات أمنية</button>
@@ -3296,7 +3297,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // ======================== التحديث السحابي والعمل دون اتصال ========================
-    const APP_VERSION = '2026.10.09.119';
+    const APP_VERSION = '2026.10.09.120';
 
     // ترحيل بيانات النسخة المدمجة القديمة (APK) إلى الأصل السحابي عبر window.name
     (function migrateNativeData(){
@@ -3394,10 +3395,151 @@
     // ===== شواهد حذف البلاغات (Tombstones) =====
     // تُبقي معرفات البلاغات المحذوفة حتى لا تعيدها المزامنة السحابية أو نسخة قديمة من البيانات
     function dirKeyOf(dirKey){ return dirKey || (ACTIVE_DIR&&ACTIVE_DIR.key) || 'madaba'; }
+    // ===== محرك التخزين الموسع على قرص الكمبيوتر (IndexedDB + Disk Folder Sync) =====
+    window.__diskCache = window.__diskCache || Object.create(null);
+    window.__idbInstance = null;
+    window.__localFolderHandle = null;
+    window.__localFolderSyncTimer = null;
+
+    function openComputerDiskDB(){
+      if(window.__idbInstance) return Promise.resolve(window.__idbInstance);
+      return new Promise(function(resolve){
+        try{
+          if(typeof indexedDB === 'undefined'){ resolve(null); return; }
+          var req = indexedDB.open('TouareaComputerDiskDB', 1);
+          req.onupgradeneeded = function(ev){
+            var db = ev.target.result;
+            if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+          };
+          req.onsuccess = function(ev){
+            window.__idbInstance = ev.target.result;
+            resolve(window.__idbInstance);
+          };
+          req.onerror = function(){ resolve(null); };
+        }catch(e){ resolve(null); }
+      });
+    }
+
+    function diskGetItem(k){
+      if(k in window.__diskCache) return window.__diskCache[k];
+      try{
+        var v = localStorage.getItem(k);
+        if(v !== null) window.__diskCache[k] = v;
+        return v;
+      }catch(e){ return null; }
+    }
+
+    function diskSetItem(k, text){
+      var str = String(text);
+      window.__diskCache[k] = str;
+      // 1) Save to IndexedDB on computer hard drive (unlimited GBs)
+      openComputerDiskDB().then(function(db){
+        if(!db) return;
+        try{
+          var tx = db.transaction('kv', 'readwrite');
+          tx.objectStore('kv').put(str, k);
+        }catch(e){}
+      });
+      // 2) Also try localStorage; if 5MB cap is reached, free large report blobs from localStorage while keeping them in IndexedDB + __diskCache
+      try{
+        localStorage.setItem(k, str);
+      }catch(e){
+        try{
+          var freed = false;
+          for(var i = localStorage.length - 1; i >= 0; i--){
+            var lk = localStorage.key(i);
+            if(lk && lk.indexOf('__incidentReports') > -1){
+              var existingVal = localStorage.getItem(lk);
+              if(existingVal) window.__diskCache[lk] = existingVal;
+              localStorage.removeItem(lk);
+              freed = true;
+            }
+          }
+          if(freed && k.indexOf('__incidentReports') === -1){
+            try{ localStorage.setItem(k, str); }catch(_){}
+          }
+        }catch(_){}
+      }
+      // 3) If a computer folder is linked, schedule auto-save to computer disk file
+      if(window.__localFolderHandle) scheduleComputerFolderWrite();
+    }
+
+    function scheduleComputerFolderWrite(){
+      if(window.__localFolderSyncTimer) clearTimeout(window.__localFolderSyncTimer);
+      window.__localFolderSyncTimer = setTimeout(function(){
+        window.__localFolderSyncTimer = null;
+        writeLiveBackupToComputerFolder();
+      }, 1500);
+    }
+
+    async function writeLiveBackupToComputerFolder(){
+      if(!window.__localFolderHandle) return false;
+      try{
+        var dump = { savedAt: new Date().toISOString(), version: typeof APP_VERSION!=='undefined'?APP_VERSION:'', data: {} };
+        for(var i=0;i<localStorage.length;i++){
+          var lk = localStorage.key(i);
+          if(lk && cloudSyncableKey(lk)) dump.data[lk] = localStorage.getItem(lk);
+        }
+        Object.keys(window.__diskCache).forEach(function(dk){
+          if(cloudSyncableKey(dk)) dump.data[dk] = window.__diskCache[dk];
+        });
+        var fh = await window.__localFolderHandle.getFileHandle('touarea_computer_storage.json', { create: true });
+        var wr = await fh.createWritable();
+        await wr.write(JSON.stringify(dump));
+        await wr.close();
+        window.__lastComputerSaveTs = Date.now();
+        return true;
+      }catch(e){ return false; }
+    }
+
+    // Hydrate memory cache from IndexedDB on startup
+    openComputerDiskDB().then(function(db){
+      if(!db) return;
+      try{
+        var tx = db.transaction('kv', 'readonly');
+        var store = tx.objectStore('kv');
+        var reqKeys = store.getAllKeys();
+        var reqVals = store.getAll();
+        reqKeys.onsuccess = function(){
+          reqVals.onsuccess = function(){
+            var keys = reqKeys.result || [];
+            var vals = reqVals.result || [];
+            var hydrated = false;
+            for(var i=0;i<keys.length;i++){
+              var k = keys[i], v = vals[i];
+              if(typeof v === 'string' && !(k in window.__diskCache)){
+                window.__diskCache[k] = v;
+                hydrated = true;
+              } else if(typeof v === 'string' && v.length > (window.__diskCache[k]||'').length){
+                window.__diskCache[k] = v;
+                hydrated = true;
+              }
+            }
+            // Also seed IndexedDB with any existing localStorage keys not yet in IndexedDB
+            try{
+              var txw = db.transaction('kv', 'readwrite');
+              var stw = txw.objectStore('kv');
+              for(var j=0;j<localStorage.length;j++){
+                var lk = localStorage.key(j);
+                if(lk && !(lk in window.__diskCache)){
+                  var lv = localStorage.getItem(lk);
+                  if(lv !== null){
+                    window.__diskCache[lk] = lv;
+                    stw.put(lv, lk);
+                  }
+                }
+              }
+            }catch(e){}
+            if(hydrated && typeof scheduleAutoRefresh === 'function') scheduleAutoRefresh();
+          };
+        };
+      }catch(e){}
+    });
+
     function reportTombKey(dirKey){ return dirKeyOf(dirKey)+'__'+LS_KEYS.deletedReports; }
     function reportTombList(dirKey){
       try{
-        const a=JSON.parse(localStorage.getItem(reportTombKey(dirKey))||'[]');
+        const a=JSON.parse(diskGetItem(reportTombKey(dirKey))||'[]');
         return Array.isArray(a)?a:[];
       }catch(e){ return []; }
     }
@@ -3433,7 +3575,7 @@
     }
     function getLS(key, fallback){
       let v;
-      try{ v=JSON.parse(localStorage.getItem(rawLSKey(key)) || JSON.stringify(fallback)); }catch(e){ return fallback; }
+      try{ v=JSON.parse(diskGetItem(rawLSKey(key)) || JSON.stringify(fallback)); }catch(e){ return fallback; }
       if(key===LS_KEYS.reports && Array.isArray(v)) v=reportTombFilter(v);
       return v;
     }
@@ -3458,15 +3600,15 @@
       }, 800);
     }
     try{ window.addEventListener('storage', function(e){ if(e && e.key && isAutoRefreshKey(e.key)) scheduleAutoRefresh(); }); }catch(e){}
-    function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } if(key===LS_KEYS.reports && Array.isArray(val)) reportTombRemove(val.map(r=>r&&r.id), dirKeyOf()); cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
+    function setLS(key, val){ const k=rawLSKey(key); let text=''; try{ text=JSON.stringify(val); diskSetItem(k, text); }catch(e){ return; } if(key===LS_KEYS.reports && Array.isArray(val)) reportTombRemove(val.map(r=>r&&r.id), dirKeyOf()); cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
     function lsKeyFor(key, dirKey){ return (key==='opendirKey'||key==='opendirPasswordsV2') ? key : dirKey+'__'+key; }
     function getLSFor(dirKey, key, fallback){
       let v;
-      try{ v=JSON.parse(localStorage.getItem(lsKeyFor(key,dirKey)) || JSON.stringify(fallback)); }catch(e){ return fallback; }
+      try{ v=JSON.parse(diskGetItem(lsKeyFor(key,dirKey)) || JSON.stringify(fallback)); }catch(e){ return fallback; }
       if(key===LS_KEYS.reports && Array.isArray(v)) v=reportTombFilter(v,dirKey);
       return v;
     }
-    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); let text=''; try{ text=JSON.stringify(val); localStorage.setItem(k, text); }catch(e){ try{ showAlert('مساحة التخزين المحلي ممتلئة! احذف بيانات قديمة أو قلّل حجم المرفقات.','danger'); }catch(_){} return; } if(key===LS_KEYS.reports && Array.isArray(val)) reportTombRemove(val.map(r=>r&&r.id), dirKey); cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
+    function setLSFor(dirKey, key, val){ const k=lsKeyFor(key,dirKey); let text=''; try{ text=JSON.stringify(val); diskSetItem(k, text); }catch(e){ return; } if(key===LS_KEYS.reports && Array.isArray(val)) reportTombRemove(val.map(r=>r&&r.id), dirKey); cloudPush(k, val); if(isAutoRefreshKey(k)) scheduleAutoRefresh(); }
 
     // ======================== المزامنة السحابية (Cloudflare Worker API) ========================
     const CLOUD_API_BASE = 'https://touarea-api.ahmadalzan92.workers.dev';
@@ -3636,7 +3778,7 @@
           if(raw===LS_KEYS.deletedReports) continue;
           const rec = all[fullKey];
           if(!rec || rec.value === null || rec.value === undefined) continue;
-          const localRaw = localStorage.getItem(fullKey);
+          const localRaw = diskGetItem(fullKey);
           const localTs = meta[fullKey] || 0;
           const cloudTs = rec.ts || 0;
           // 2-أ) قوائم البلاغات والكادر والآليات: دمج اتحادي بدل الاستبدال.
@@ -3648,7 +3790,7 @@
                 try{ await cloudPut(fullKey, mergedText); meta[fullKey]=Date.now(); cloudClearPending(fullKey); delete pending[fullKey]; }catch(e){}
               }
               if(mergedText !== localRaw){
-                try{ localStorage.setItem(fullKey, mergedText); }catch(e){}
+                try{ diskSetItem(fullKey, mergedText); }catch(e){}
                 meta[fullKey]=Date.now();
                 changed = true;
               }
@@ -3662,7 +3804,7 @@
           let storeValue = rec.value;
           if(raw===LS_KEYS.reports) storeValue = filterReportsValue(rec.value, fullKey.split('__')[0]);
           if(localRaw === null || (cloudTs > localTs && cloudTs > 0)){
-            try{ localStorage.setItem(fullKey, storeValue); }catch(e){}
+            try{ diskSetItem(fullKey, storeValue); }catch(e){}
             meta[fullKey] = cloudTs;
             changed = true;
             if(storeValue !== rec.value){ try{ await cloudPut(fullKey, storeValue); meta[fullKey]=Date.now(); }catch(e){} }
@@ -5296,14 +5438,14 @@ function compressImageFile(file){
       const to=setTimeout(()=>{ fin(); resolve(null); },8000);
       img.onload=()=>{
         try{
-          const MAX=1600;
+          const MAX=760;
           let w=img.width,h=img.height;
           if(Math.max(w,h)>MAX){ const r=MAX/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
           const c=document.createElement('canvas');c.width=w;c.height=h;
           const cc=c.getContext('2d');
           cc.fillStyle='#fff';cc.fillRect(0,0,w,h);
           cc.drawImage(img,0,0,w,h);
-          const out=c.toDataURL('image/jpeg',0.82);
+          const out=c.toDataURL('image/jpeg',0.64);
           clearTimeout(to);
           fin();
           resolve({name:(file.name||'image.jpg').replace(/\.[^.]+$/,'')+'.jpg',type:'image/jpeg',data:out,size:Math.round(out.length*0.75)});
@@ -11836,6 +11978,253 @@ function govLogin(){
     })
     .catch(function(e){ if(msg){msg.textContent='تعذّر الاتصال بالخادم: '+e.message;msg.style.display='block';} });
 }
+
+
+// ======================== إدارة المساحة والتخزين الهجين (كمبيوتر + سحابة) ========================
+function govRecompressDataUrl(dataUrl, maxDim, quality){
+  return new Promise(function(resolve){
+    if(!dataUrl || typeof dataUrl !== 'string' || dataUrl.indexOf('data:image/') !== 0 || dataUrl.length < 65000){
+      resolve(dataUrl);
+      return;
+    }
+    var img = new Image();
+    var timer = setTimeout(function(){ resolve(dataUrl); }, 5000);
+    img.onload = function(){
+      clearTimeout(timer);
+      try{
+        var w = img.width, h = img.height;
+        var MAX = maxDim || 760;
+        if(Math.max(w,h) > MAX){
+          var r = MAX / Math.max(w,h);
+          w = Math.round(w*r);
+          h = Math.round(h*r);
+        }
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        var out = c.toDataURL('image/jpeg', quality || 0.62);
+        resolve(out.length < dataUrl.length ? out : dataUrl);
+      }catch(e){ resolve(dataUrl); }
+    };
+    img.onerror = function(){ clearTimeout(timer); resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
+async function govOptimizeAllImages(silent){
+  var btn = document.getElementById('govOptImgBtn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري ضغط وتحسين الصور...'; }
+  var beforeBytes = 0, afterBytes = 0, touchedKeys = 0;
+  try{
+    var dirs = (typeof DIRECTORATES !== 'undefined' ? DIRECTORATES : [{key:'madaba'}]);
+    for(var di=0; di<dirs.length; di++){
+      var dk = dirs[di].key;
+      var fullKey = dk + '__incidentReports';
+      var raw = diskGetItem(fullKey);
+      if(!raw || raw.length < 60000) continue;
+      beforeBytes += raw.length;
+      var list = [];
+      try{ list = JSON.parse(raw); }catch(e){ continue; }
+      if(!Array.isArray(list)) continue;
+      var modified = false;
+      for(var i=0; i<list.length; i++){
+        var rep = list[i];
+        if(!rep || typeof rep !== 'object') continue;
+        // Check photos array or fields
+        if(Array.isArray(rep.photos)){
+          for(var p=0; p<rep.photos.length; p++){
+            var ph = rep.photos[p];
+            if(ph && typeof ph === 'object' && typeof ph.data === 'string' && ph.data.length > 65000){
+              var opt = await govRecompressDataUrl(ph.data, 760, 0.62);
+              if(opt.length < ph.data.length){ ph.data = opt; ph.size = Math.round(opt.length * 0.75); modified = true; }
+            } else if(typeof ph === 'string' && ph.length > 65000){
+              var opt2 = await govRecompressDataUrl(ph, 760, 0.62);
+              if(opt2.length < ph.length){ rep.photos[p] = opt2; modified = true; }
+            }
+          }
+        }
+        var photoFields = ['beforePhoto','duringPhoto','afterPhoto','photo','image','imgBefore','imgDuring','imgAfter'];
+        for(var pf=0; pf<photoFields.length; pf++){
+          var fn = photoFields[pf];
+          var fv = rep[fn];
+          if(typeof fv === 'string' && fv.length > 65000){
+            var opt3 = await govRecompressDataUrl(fv, 760, 0.62);
+            if(opt3.length < fv.length){ rep[fn] = opt3; modified = true; }
+          } else if(fv && typeof fv === 'object' && typeof fv.data === 'string' && fv.data.length > 65000){
+            var opt4 = await govRecompressDataUrl(fv.data, 760, 0.62);
+            if(opt4.length < fv.data.length){ fv.data = opt4; fv.size = Math.round(opt4.length * 0.75); modified = true; }
+          }
+        }
+      }
+      var newRaw = JSON.stringify(list);
+      afterBytes += newRaw.length;
+      if(modified && newRaw.length < raw.length){
+        touchedKeys++;
+        diskSetItem(fullKey, newRaw);
+        try{ await cloudPut(fullKey, newRaw); }catch(e){}
+      }
+    }
+    if(!silent){
+      var savedKB = Math.max(0, Math.round((beforeBytes - afterBytes) / 1024));
+      showAlert(touchedKeys > 0 ? ('تم تحسين وضغط الصور بنجاح وتوفير ' + savedKB + ' KB (' + (savedKB/1024).toFixed(2) + ' MB) من المساحة!') : 'جميع الصور مضغوطة ومحسّنة مسبقاً بأفضل حجم.', 'success');
+      govRefreshStorageStats();
+    }
+  }catch(e){
+    if(!silent) showAlert('حدث خطأ أثناء تحسين الصور: ' + e.message, 'danger');
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="fas fa-compress-arrows-alt"></i> ضغط وتحسين الصور لتوفير المساحة فوراً'; }
+  }
+}
+
+async function govLinkComputerFolder(){
+  try{
+    if(typeof window.showDirectoryPicker !== 'function'){
+      govExportComputerFile();
+      return;
+    }
+    var handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    if(handle){
+      window.__localFolderHandle = handle;
+      var ok = await writeLiveBackupToComputerFolder();
+      if(ok){
+        showAlert('تم ربط المجلد على جهاز الكمبيوتر وحفظ البيانات داخله تلقائياً (touarea_computer_storage.json)!', 'success');
+        govRefreshStorageStats();
+      }
+    }
+  }catch(e){
+    if(e && e.name !== 'AbortError') showAlert('تعذّر ربط المجلد: ' + e.message, 'warning');
+  }
+}
+
+function govExportComputerFile(){
+  try{
+    var dump = { savedAt: new Date().toISOString(), version: typeof APP_VERSION!=='undefined'?APP_VERSION:'', data: {} };
+    for(var i=0;i<localStorage.length;i++){
+      var lk = localStorage.key(i);
+      if(lk && cloudSyncableKey(lk)) dump.data[lk] = localStorage.getItem(lk);
+    }
+    Object.keys(window.__diskCache||{}).forEach(function(dk){
+      if(cloudSyncableKey(dk)) dump.data[dk] = window.__diskCache[dk];
+    });
+    var blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'touarea_computer_backup_' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showAlert('تم حفظ ملف قاعدة البيانات على جهاز الكمبيوتر بنجاح.', 'success');
+  }catch(e){ showAlert('تعذّر التصدير: ' + e.message, 'danger'); }
+}
+
+function govCloseStorageModal(){
+  var m = document.getElementById('govStorageModal');
+  if(m) m.style.display = 'none';
+}
+
+async function govRefreshStorageStats(){
+  var box = document.getElementById('govStorageStatsBody');
+  if(!box) return;
+  box.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> جاري فحص مساحة التخزين على الكمبيوتر والسحابة...</div>';
+  try{
+    var pcQuota = 0, pcUsage = 0;
+    if(navigator.storage && navigator.storage.estimate){
+      var est = await navigator.storage.estimate();
+      pcQuota = est.quota || 0;
+      pcUsage = est.usage || 0;
+    }
+    var res = await fetch(CLOUD_API_BASE + '/api/storage-stats', {
+      headers: {
+        'Authorization': 'Bearer ' + (sessionStorage.getItem('gov_auth_token')||localStorage.getItem('gov_auth_token')||''),
+        'X-API-Key': 'TOUAREA-GOV-2026-SECURE-KEY'
+      }
+    });
+    var cloud = await res.json();
+    var cLimitMB = ((cloud.limitBytes || 524288000) / (1024*1024)).toFixed(0);
+    var cUsedMB = ((cloud.totalUsedBytes || 0) / (1024*1024)).toFixed(2);
+    var cRemMB = Math.max(0, (cLimitMB - cUsedMB)).toFixed(2);
+    var cPct = Math.min(100, (((cloud.totalUsedBytes || 0) / (cloud.limitBytes || 524288000)) * 100)).toFixed(2);
+
+    var pcLimitGB = pcQuota ? (pcQuota / (1024*1024*1024)).toFixed(1) : 'غير محدود (مفتوح)';
+    var pcUsedMB = (pcUsage / (1024*1024)).toFixed(2);
+    var folderStatus = window.__localFolderHandle
+      ? '<span class="badge bg-success">مربوط بمجلد الكمبيوتر (حفظ تلقائي نشط)</span>'
+      : '<span class="badge bg-secondary">غير مربوط بمجلد خارجي (IndexedDB نشط)</span>';
+
+    var topItemsHtml = '';
+    (cloud.items || []).slice(0, 6).forEach(function(it){
+      var kb = (it.bytes / 1024).toFixed(1);
+      var mb = (it.bytes / (1024*1024)).toFixed(2);
+      topItemsHtml += '<tr><td dir="ltr" class="small fw-bold">' + esc(it.key) + '</td><td>' + kb + ' KB (' + mb + ' MB)</td></tr>';
+    });
+
+    box.innerHTML =
+      '<div class="row g-3 mb-3">' +
+        '<div class="col-md-6">' +
+          '<div style="border:1px solid #cbd5e1;border-radius:10px;padding:14px;background:#f8fafc;height:100%">' +
+            '<h6 class="fw-bold text-primary mb-2"><i class="fas fa-laptop"></i> 1. التخزين على جهاز الكمبيوتر (IndexedDB + القرص)</h6>' +
+            '<div class="small mb-1">المساحة المتاحة للمتصفح على قرص الكمبيوتر: <b class="text-success">' + pcLimitGB + (pcQuota ? ' GB' : '') + '</b></div>' +
+            '<div class="small mb-1">المستهلك حالياً على الكمبيوتر: <b>' + pcUsedMB + ' MB</b></div>' +
+            '<div class="small mb-2">حالة مجلد الكمبيوتر المباشر: ' + folderStatus + '</div>' +
+            '<div class="small text-muted">يعمل محرك IndexedDB تلقائياً لتجاوز سقف الـ 5MB التقليدي وحفظ آلاف البلاغات والصور على قرص الكمبيوتر.</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="col-md-6">' +
+          '<div style="border:1px solid #cbd5e1;border-radius:10px;padding:14px;background:#f8fafc;height:100%">' +
+            '<h6 class="fw-bold text-dark mb-2"><i class="fas fa-cloud"></i> 2. التخزين السحابي المشترك (Cloudflare D1)</h6>' +
+            '<div class="small mb-1">المساحة الكلية المتاحة: <b>' + cLimitMB + ' MB</b></div>' +
+            '<div class="small mb-1">المستهلك حالياً: <b class="text-danger">' + cUsedMB + ' MB (' + cPct + '%)</b></div>' +
+            '<div class="small mb-2">المساحة المتبقية: <b class="text-success">' + cRemMB + ' MB (' + (100 - cPct).toFixed(2) + '%)</b></div>' +
+            '<div class="progress" style="height:10px;border-radius:999px"><div class="progress-bar bg-success" style="width:' + Math.max(2, cPct) + '%"></div></div>' +
+            '<div class="small text-muted mt-2">البلاغات: ' + ((cloud.storeBytes||0)/(1024*1024)).toFixed(2) + ' MB | النسخ: ' + ((cloud.backupsBytes||0)/(1024*1024)).toFixed(2) + ' MB | السجل: ' + ((cloud.auditBytes||0)/1024).toFixed(1) + ' KB</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="d-flex flex-wrap gap-2 mb-3">' +
+        '<button type="button" id="govOptImgBtn" class="btn btn-sm btn-warning fw-bold" onclick="govOptimizeAllImages(false)"><i class="fas fa-compress-arrows-alt"></i> ضغط وتحسين الصور لتوفير المساحة فوراً</button>' +
+        '<button type="button" class="btn btn-sm btn-primary fw-bold" onclick="govLinkComputerFolder()"><i class="fas fa-folder-open"></i> ربط مجلد حفظ تلقائي على جهاز الكمبيوتر</button>' +
+        '<button type="button" class="btn btn-sm btn-success fw-bold" onclick="govExportComputerFile()"><i class="fas fa-download"></i> تنزيل نسخة كاملة للكمبيوتر (.json)</button>' +
+      '</div>' +
+      '<h6 class="fw-bold small mb-2">أكبر البيانات المحفوظة حالياً:</h6>' +
+      '<table class="table table-sm table-bordered mb-0" style="font-size:.78rem"><thead class="table-light"><tr><th>المفتاح / المحافظة</th><th>الحجم</th></tr></thead><tbody>' + topItemsHtml + '</tbody></table>';
+  }catch(e){
+    box.innerHTML = '<div class="alert alert-danger mb-0">تعذّر جلب إحصائيات المساحة: ' + esc(e.message) + '</div>';
+  }
+}
+
+function govShowStorageManager(){
+  var modal = document.getElementById('govStorageModal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'govStorageModal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML =
+      '<div style="background:#fff;border-radius:12px;width:96vw;max-width:780px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)">' +
+        '<div style="background:#0f2c52;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center">' +
+          '<b><i class="fas fa-hdd"></i> إدارة المساحة والتخزين (الكمبيوتر + السحابة)</b>' +
+          '<button class="btn btn-sm btn-light fw-bold" onclick="govCloseStorageModal()">إغلاق</button>' +
+        '</div>' +
+        '<div id="govStorageStatsBody" style="padding:16px;overflow:auto;flex:1"></div>' +
+      '</div>';
+    modal.addEventListener('click', function(ev){ if(ev.target === modal) modal.style.display = 'none'; });
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  govRefreshStorageStats();
+}
+
+// Auto-optimize oversized report images once per session after cloud load
+setTimeout(function(){
+  try{
+    if(govIsAuth() && !sessionStorage.getItem('gov_img_opt_v120')){
+      sessionStorage.setItem('gov_img_opt_v120', '1');
+      govOptimizeAllImages(true);
+    }
+  }catch(e){}
+}, 6000);
 
 function govCloseAuditModal(){ var m=document.getElementById('govAuditModal'); if(m) m.style.display='none'; }
 
